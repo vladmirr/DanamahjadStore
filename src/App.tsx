@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 import { AppProvider, useApp } from './context/AppContext';
-import { LoginScreen } from './components/auth/LoginScreen';
+import { Login } from './components/auth/Login';
 import { BottomNav } from './components/layout/BottomNav';
 import { Sidebar } from './components/layout/Sidebar';
 import { OverviewDashboard } from './components/dashboard/OverviewDashboard';
@@ -15,21 +15,33 @@ import { InvoiceModal } from './components/modals/InvoiceModal';
 import { StatementModal } from './components/modals/StatementModal';
 
 const MainLayout: React.FC = () => {
-  const { adminUser, activeTab, setIsSidebarOpen } = useApp();
+  const { adminUser, logout, activeTab, setIsSidebarOpen } = useApp();
 
   // Shared modal states triggered across components/header
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
-  // If user is not logged in, enforce the strict single-admin authentication barrier
+  // If user is not logged in, render ONLY the Login screen centered on the page
   if (!adminUser || !adminUser.isLoggedIn) {
-    return <LoginScreen />;
+    return <Login />;
   }
 
   return (
     <div className="min-h-screen bg-[#08090d] text-slate-100 flex flex-col antialiased selection:bg-amber-500/30 selection:text-amber-200 relative">
       {/* Top Right Floating Action Buttons */}
       <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-40 flex items-center gap-2">
+        {/* Logout Button */}
+        <motion.button
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={logout}
+          className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500/50 text-rose-300 hover:text-white shadow-xl shadow-black/80 backdrop-blur-md transition-all cursor-pointer group select-none text-xs sm:text-sm font-bold"
+          title="چوونەدەرەوە لە سیستم"
+        >
+          <LogOut className="w-4 h-4 text-rose-400 group-hover:scale-110 transition-transform" />
+          <span>چوونەدەرەوە</span>
+        </motion.button>
+
         {/* Menu Button */}
         <motion.button
           whileHover={{ scale: 1.05 }}

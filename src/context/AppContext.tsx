@@ -146,9 +146,16 @@ export interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// Configurable Admin Credentials
+export const DEFAULT_ADMIN_CONFIG = {
+  username: 'admin',
+  password: 'password123',
+};
+
 const AUTH_STORAGE_KEYS = {
   AUTH: 'floderm_auth_user_v1',
   PASS: 'floderm_admin_pass_v1',
+  SESSION_IS_LOGGED_IN: 'isLoggedIn',
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -162,9 +169,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [viewingInvoice, setViewingInvoice] = useState<Sale | null>(null);
   const [viewingStatementCustomer, setViewingStatementCustomer] = useState<string | null>(null);
 
-  // Authentication State
+  // Authentication State strictly backed by sessionStorage gate
   const [adminUser, setAdminUser] = useState<AdminUser | null>(() => {
-    const saved = localStorage.getItem(AUTH_STORAGE_KEYS.AUTH);
+    const isSessionAuth = sessionStorage.getItem(AUTH_STORAGE_KEYS.SESSION_IS_LOGGED_IN) === 'true';
+    if (!isSessionAuth) {
+      return null;
+    }
+    const saved = sessionStorage.getItem(AUTH_STORAGE_KEYS.AUTH);
     if (saved) {
       try {
         return JSON.parse(saved);
@@ -173,7 +184,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     }
     return {
-      username: 'Danamahjad',
+      username: DEFAULT_ADMIN_CONFIG.username,
       displayName: 'بەڕێوەبەری سەرەکی',
       role: 'admin',
       isLoggedIn: true,
@@ -662,18 +673,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Admin login handlers
   const login = (usernameInput: string, passwordInput: string): boolean => {
     const savedPass = localStorage.getItem(AUTH_STORAGE_KEYS.PASS);
-    const validPass = savedPass && savedPass !== 'admin123' ? savedPass : 'Kardo6194';
-    const trimmedUser = usernameInput.trim();
-    if (trimmedUser.toLowerCase() === 'danamahjad' && passwordInput === validPass) {
+    const validCustomPass = savedPass && savedPass.trim();
+    const trimmedUser = usernameInput.trim().toLowerCase();
+
+    const isMatch =
+      (trimmedUser === DEFAULT_ADMIN_CONFIG.username.toLowerCase() &&
+        (passwordInput === DEFAULT_ADMIN_CONFIG.password || (validCustomPass && passwordInput === validCustomPass))) ||
+      (trimmedUser === 'danamahjad' &&
+        (passwordInput === 'Kardo6194' || (validCustomPass && passwordInput === validCustomPass)));
+
+    if (isMatch) {
       const user: AdminUser = {
-        username: 'Danamahjad',
+        username: usernameInput.trim(),
         displayName: 'بەڕێوەبەری سەرەکی',
         role: 'admin',
         isLoggedIn: true,
       };
       setAdminUser(user);
-      localStorage.setItem(AUTH_STORAGE_KEYS.PASS, validPass);
-      localStorage.setItem(AUTH_STORAGE_KEYS.AUTH, JSON.stringify(user));
+      sessionStorage.setItem(AUTH_STORAGE_KEYS.SESSION_IS_LOGGED_IN, 'true');
+      sessionStorage.setItem(AUTH_STORAGE_KEYS.AUTH, JSON.stringify(user));
       playSound('success');
       return true;
     }
@@ -684,7 +702,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const logout = () => {
     playSound('click');
     setAdminUser(null);
-    localStorage.removeItem(AUTH_STORAGE_KEYS.AUTH);
+    sessionStorage.removeItem(AUTH_STORAGE_KEYS.SESSION_IS_LOGGED_IN);
+    sessionStorage.removeItem(AUTH_STORAGE_KEYS.AUTH);
   };
 
   const changePassword = (newPass: string) => {
