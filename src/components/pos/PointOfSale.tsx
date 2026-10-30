@@ -67,21 +67,13 @@ export const PointOfSale: React.FC = () => {
     setSelectedProductId(prod.id);
     setSelectedUnitType('unit');
     setSelectedQuantity('');
-    setCustomPrice(prod.sellingPricePerUnit.toString());
+    setCustomPrice('');
   };
 
   // Change unit type
   const handleUnitTypeChange = (type: 'carton' | 'unit') => {
     setSelectedUnitType(type);
-    if (currentProduct) {
-      if (type === 'carton') {
-        setCustomPrice(
-          (currentProduct.sellingPricePerUnit * currentProduct.unitsPerCarton).toString()
-        );
-      } else {
-        setCustomPrice(currentProduct.sellingPricePerUnit.toString());
-      }
-    }
+    setCustomPrice('');
   };
 
   // Add line to cart
@@ -141,6 +133,7 @@ export const PointOfSale: React.FC = () => {
 
     // Reset adder
     setSelectedQuantity('');
+    setCustomPrice('');
   };
 
   // Remove item from cart
@@ -395,7 +388,8 @@ export const PointOfSale: React.FC = () => {
                       onChange={(e) => setCustomPrice(e.target.value)}
                       onFocus={(e) => e.target.select()}
                       onClick={(e) => (e.target as HTMLInputElement).select()}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 font-numeric font-bold"
+                      placeholder={defaultPrice > 0 ? defaultPrice.toString() : '0'}
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-400 placeholder-amber-400/40 focus:outline-none focus:ring-1 focus:ring-amber-500 font-numeric font-bold"
                     />
                   </div>
                 </div>
