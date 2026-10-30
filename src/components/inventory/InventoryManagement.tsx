@@ -68,6 +68,25 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     });
   }, [products, searchTerm, stockFilter]);
 
+  // Monetary stock values
+  const filteredCostValue = useMemo(() => {
+    return filteredProducts.reduce(
+      (acc, p) => acc + (p.costPricePerUnit || 0) * (p.totalUnits || 0),
+      0
+    );
+  }, [filteredProducts]);
+
+  const filteredSellingValue = useMemo(() => {
+    return filteredProducts.reduce(
+      (acc, p) => acc + (p.sellingPricePerUnit || 0) * (p.totalUnits || 0),
+      0
+    );
+  }, [filteredProducts]);
+
+  const totalFilteredUnits = useMemo(() => {
+    return filteredProducts.reduce((acc, p) => acc + (p.totalUnits || 0), 0);
+  }, [filteredProducts]);
+
   // Open modal for add
   const handleOpenAdd = () => {
     setEditingProduct(null);
@@ -170,6 +189,72 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
         </motion.button>
       </div>
 
+      {/* Inventory Monetary Value Stat Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Total Cost Value (سەرمایەی کۆگا بە نرخی کڕین) */}
+        <div className="p-4 rounded-2xl glass-card border border-amber-500/25 relative overflow-hidden bg-gradient-to-br from-amber-500/10 via-slate-900/60 to-slate-900/90 shadow-lg shadow-amber-500/5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-300">کۆی بەهای سەرمایە (تێچووی کۆگا)</span>
+            <div className="p-2 rounded-xl bg-amber-500/20 text-amber-400">
+              <DollarSign className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-amber-300 font-numeric tracking-tight">
+            {formatIQD(filteredCostValue)}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            کۆی پارەی کاڵاکانی کۆگا بە نرخی کڕین
+          </p>
+        </div>
+
+        {/* Total Selling Value (بەهای فرۆشتن) */}
+        <div className="p-4 rounded-2xl glass-card border border-cyan-500/25 relative overflow-hidden bg-gradient-to-br from-cyan-500/10 via-slate-900/60 to-slate-900/90 shadow-lg shadow-cyan-500/5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-300">کۆی بەهای فرۆشتن (پێشبینیکراو)</span>
+            <div className="p-2 rounded-xl bg-cyan-500/20 text-cyan-400">
+              <TrendingUp className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-cyan-300 font-numeric tracking-tight">
+            {formatIQD(filteredSellingValue)}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            بەهای پارەی کۆگا لە کاتی فرۆشتندا
+          </p>
+        </div>
+
+        {/* Expected Net Profit */}
+        <div className="p-4 rounded-2xl glass-card border border-emerald-500/25 relative overflow-hidden bg-gradient-to-br from-emerald-500/10 via-slate-900/60 to-slate-900/90 shadow-lg shadow-emerald-500/5">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-300">قازانجی خاوێنی چاوەڕوانکراو</span>
+            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+              <CheckCircle2 className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-emerald-400 font-numeric tracking-tight">
+            {formatIQD(Math.max(0, filteredSellingValue - filteredCostValue))}
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            جیاوازی فرۆشتن لەگەڵ تێچووی کڕین
+          </p>
+        </div>
+
+        {/* Total Quantity */}
+        <div className="p-4 rounded-2xl glass-card border border-slate-800 relative overflow-hidden bg-slate-900/80">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-300">کۆی گشتی دانەکانی کۆگا</span>
+            <div className="p-2 rounded-xl bg-slate-800 text-slate-300">
+              <Package className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-xl sm:text-2xl font-black text-white font-numeric tracking-tight">
+            {formatNumber(totalFilteredUnits)} <span className="text-xs font-normal text-slate-400">دانە</span>
+          </div>
+          <p className="text-[11px] text-slate-400 mt-1">
+            لە کۆی {filteredProducts.length} جۆری کاڵا
+          </p>
+        </div>
+      </div>
 
       {/* Search and Filters Bar */}
       <div className="p-4 rounded-2xl glass-card border border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">
@@ -224,6 +309,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                 <th className="py-3.5 px-4 font-semibold">یەکە لە کارتۆن</th>
                 <th className="py-3.5 px-4 font-semibold">کۆی دانەکان</th>
                 <th className="py-3.5 px-4 font-semibold">نرخی کڕین (دانە)</th>
+                <th className="py-3.5 px-4 font-semibold text-amber-300">کۆی بەهای سەرمایە (کڕین)</th>
                 <th className="py-3.5 px-4 font-semibold">دۆخ</th>
                 <th className="py-3.5 px-4 font-semibold text-center">کردارەکان</th>
               </tr>
@@ -231,7 +317,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
             <tbody className="divide-y divide-slate-800/60">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-slate-500">
+                  <td colSpan={8} className="py-12 text-center text-slate-500">
                     هیچ کاڵایەک نەدۆزرایەوە بەم مەرجانە!
                   </td>
                 </tr>
@@ -258,6 +344,9 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                       </td>
                       <td className="py-3 px-4 text-slate-300 font-numeric">
                         {formatIQD(p.costPricePerUnit)}
+                      </td>
+                      <td className="py-3 px-4 font-extrabold text-amber-300 font-numeric">
+                        {formatIQD(p.totalUnits * p.costPricePerUnit)}
                       </td>
                       <td className="py-3 px-4">
                         {isLow ? (
@@ -295,6 +384,25 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                 })
               )}
             </tbody>
+            <tfoot className="bg-slate-950 border-t-2 border-slate-700/90 font-bold text-xs">
+              <tr>
+                <td colSpan={3} className="py-3.5 px-4 text-slate-400">
+                  کۆی گشتی ({filteredProducts.length} جۆری کاڵا):
+                </td>
+                <td className="py-3.5 px-4 font-numeric text-white font-bold">
+                  {formatNumber(totalFilteredUnits)} دانە
+                </td>
+                <td className="py-3.5 px-4 text-slate-400 text-[11px]">
+                  کۆی سەرمایەی کۆگا:
+                </td>
+                <td className="py-3.5 px-4 font-numeric text-amber-300 font-black text-sm">
+                  {formatIQD(filteredCostValue)}
+                </td>
+                <td colSpan={2} className="py-3.5 px-4 text-left font-numeric text-cyan-300 text-[11px]">
+                  کۆی بەهای فرۆشتن: {formatIQD(filteredSellingValue)}
+                </td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       </div>
