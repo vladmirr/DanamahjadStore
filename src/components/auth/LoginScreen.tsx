@@ -38,11 +38,6 @@ export const LoginScreen: React.FC = () => {
     setTimeout(() => setIsShaking(false), 500);
   };
 
-  const handleFillDemo = () => {
-    setUsername('Danamahjad');
-    setPassword('Kardo6194');
-  };
-
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative overflow-hidden bg-[#08090d]">
       {/* Ambient gold background glows */}
@@ -170,21 +165,6 @@ export const LoginScreen: React.FC = () => {
               )}
             </motion.button>
           </form>
-
-          {/* Quick Demo Credentials Assistant */}
-          <div className="mt-6 pt-5 border-t border-slate-800 text-center">
-            <button
-              type="button"
-              onClick={handleFillDemo}
-              className="text-xs text-slate-400 hover:text-amber-400 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
-            >
-              <span>زانیاری چوونەژوورەوە:</span>
-              <span className="font-mono bg-slate-900 px-2 py-0.5 rounded text-amber-300 border border-slate-800">
-                Danamahjad / Kardo6194
-              </span>
-              <span className="underline mr-1">(کلیک بکە بۆ پڕکردنەوە)</span>
-            </button>
-          </div>
         </div>
 
         {/* Security badge footer */}
