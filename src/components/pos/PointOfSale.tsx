@@ -43,7 +43,7 @@ export const PointOfSale: React.FC = () => {
   // Selected item adder controls
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [selectedUnitType, setSelectedUnitType] = useState<'carton' | 'unit'>('unit');
-  const [selectedQuantity, setSelectedQuantity] = useState<string>('1');
+  const [selectedQuantity, setSelectedQuantity] = useState<string>('');
   const [customPrice, setCustomPrice] = useState<string>('');
   const [productSearch, setProductSearch] = useState('');
 
@@ -66,7 +66,7 @@ export const PointOfSale: React.FC = () => {
   const handleSelectProduct = (prod: Product) => {
     setSelectedProductId(prod.id);
     setSelectedUnitType('unit');
-    setSelectedQuantity('1');
+    setSelectedQuantity('');
     setCustomPrice(prod.sellingPricePerUnit.toString());
   };
 
@@ -88,8 +88,13 @@ export const PointOfSale: React.FC = () => {
   const handleAddToCart = () => {
     if (!currentProduct) return;
 
+    const qty = parseInt(selectedQuantity);
+    if (!qty || qty < 1) {
+      alert('تکایە ژمارە / بڕی فرۆشتن بنووسە');
+      return;
+    }
+
     const unitPrice = Number(customPrice) || defaultPrice;
-    const qty = Math.max(1, parseInt(selectedQuantity) || 1);
     const requiredUnits =
       selectedUnitType === 'carton' ? qty * currentProduct.unitsPerCarton : qty;
 
@@ -135,7 +140,7 @@ export const PointOfSale: React.FC = () => {
     }
 
     // Reset adder
-    setSelectedQuantity('1');
+    setSelectedQuantity('');
   };
 
   // Remove item from cart
@@ -374,12 +379,8 @@ export const PointOfSale: React.FC = () => {
                       onChange={(e) => setSelectedQuantity(e.target.value)}
                       onFocus={(e) => e.target.select()}
                       onClick={(e) => (e.target as HTMLInputElement).select()}
-                      onBlur={() => {
-                        if (!selectedQuantity || parseInt(selectedQuantity) < 1) {
-                          setSelectedQuantity('1');
-                        }
-                      }}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500 font-numeric font-bold"
+                      placeholder="0"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500 font-numeric font-bold"
                     />
                   </div>
 
