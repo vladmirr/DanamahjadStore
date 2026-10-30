@@ -12,7 +12,6 @@ import {
   Shield,
   AlertTriangle,
   ChevronLeft,
-  Cloud,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -213,15 +212,6 @@ export const Sidebar: React.FC = () => {
                       </button>
                     );
                   })}
-
-                  {/* Automatic Cloud Status Indicator */}
-                  <div className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 select-none">
-                    <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                      <span className="font-semibold text-[11px]">پاڵپشتی خۆکاری هەور چالاکە</span>
-                    </div>
-                    <Cloud className="w-3.5 h-3.5 text-emerald-400" />
-                  </div>
                 </div>
               </div>
             </div>
