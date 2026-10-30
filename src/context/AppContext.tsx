@@ -27,6 +27,7 @@ import {
   collection,
   doc,
   setDoc,
+  addDoc,
   deleteDoc,
   onSnapshot,
 } from 'firebase/firestore';
@@ -54,9 +55,10 @@ interface AppContextType {
   metrics: DashboardMetrics;
 
   // Actions
-  addProduct: (product: Omit<Product, 'id' | 'totalUnits' | 'createdAt' | 'updatedAt'>) => void;
-  updateProduct: (id: string, product: Partial<Product>) => void;
-  deleteProduct: (id: string) => void;
+  addProduct: (product: Omit<Product, 'id' | 'totalUnits' | 'createdAt' | 'updatedAt'>) => Promise<void> | void;
+  addItem: (product: Omit<Product, 'id' | 'totalUnits' | 'createdAt' | 'updatedAt'>) => Promise<void> | void;
+  updateProduct: (id: string, product: Partial<Product>) => Promise<void> | void;
+  deleteProduct: (id: string) => Promise<void> | void;
   createSale: (saleInput: {
     customerName: string;
     customerPhone?: string;
@@ -70,15 +72,15 @@ interface AppContextType {
     paidAmount: number;
     notes?: string;
   }) => Sale | null;
-  deleteSale: (id: string) => void;
+  deleteSale: (id: string) => Promise<void> | void;
   createPayment: (paymentInput: {
     customerName: string;
     amount: number;
     notes: string;
     date?: string;
   }) => PaymentVoucher;
-  deletePayment: (id: string) => void;
-  deleteCustomer: (customerName: string, rollbackInventory?: boolean) => void;
+  deletePayment: (id: string) => Promise<void> | void;
+  deleteCustomer: (customerName: string, rollbackInventory?: boolean) => Promise<void> | void;
 
   // Backup & Import
   exportExcel: (customerName?: string | unknown) => Promise<void>;
@@ -99,6 +101,9 @@ const AppContext = createContext<AppContextType | undefined>(undefined);
 const STORAGE_KEYS = {
   AUTH: 'floderm_auth_user_v1',
   PASS: 'floderm_admin_pass_v1',
+  CACHE_PRODUCTS: 'floderm_products_v1',
+  CACHE_SALES: 'floderm_sales_v1',
+  CACHE_PAYMENTS: 'floderm_payments_v1',
 };
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -118,7 +123,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return null;
       }
     }
-    // Default logged in session for initial smooth experience, or can be logged out
     return {
       username: 'Danamahjad',
       displayName: 'بەڕێوەبەری سەرەکی',
@@ -127,58 +131,106 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   });
 
-  // Inventory / Products State (Loaded directly via Firestore onSnapshot)
-  const [products, setProducts] = useState<Product[]>([]);
+  // 1. Initial State with instant cache restoration so refresh never shows blank data
+  const [products, setProducts] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CACHE_PRODUCTS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
 
-  // Sales State (Loaded directly via Firestore onSnapshot)
-  const [sales, setSales] = useState<Sale[]>([]);
+  const [sales, setSales] = useState<Sale[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CACHE_SALES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
 
-  // Payments / Debts State (Loaded directly via Firestore onSnapshot)
-  const [payments, setPayments] = useState<PaymentVoucher[]>([]);
+  const [payments, setPayments] = useState<PaymentVoucher[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.CACHE_PAYMENTS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch {}
+    return [];
+  });
 
-  // Real-time Firestore Subscriptions ('inventory', 'sales', 'debts')
+  // 2. Real-time Firestore onSnapshot Subscriptions for 'inventory', 'sales', and 'debts'
   useEffect(() => {
-    // 1. Listen directly to 'inventory' collection
+    // Listen directly to Firestore 'inventory' collection
     const unsubInventory = onSnapshot(
       collection(db, 'inventory'),
       (snapshot) => {
-        const items: Product[] = [];
-        snapshot.forEach((d) => {
-          items.push({ ...(d.data() as Product), id: d.id });
-        });
-        setProducts(items);
+        if (!snapshot.empty) {
+          const items: Product[] = [];
+          snapshot.forEach((d) => {
+            items.push({ ...(d.data() as Product), id: d.id });
+          });
+          setProducts(items);
+          localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(items));
+        } else {
+          // If Firestore inventory is empty, upload any existing cached items (like شەربەت)
+          const saved = localStorage.getItem(STORAGE_KEYS.CACHE_PRODUCTS);
+          if (saved) {
+            try {
+              const localItems: Product[] = JSON.parse(saved);
+              if (localItems.length > 0) {
+                setProducts(localItems);
+                localItems.forEach((item) => {
+                  setDoc(doc(db, 'inventory', item.id), item).catch(() => {});
+                });
+              }
+            } catch {}
+          }
+        }
       },
       (error) => {
         console.error('Firestore inventory real-time listener error:', error);
       }
     );
 
-    // 2. Listen directly to 'sales' collection
+    // Listen directly to Firestore 'sales' collection
     const unsubSales = onSnapshot(
       collection(db, 'sales'),
       (snapshot) => {
-        const items: Sale[] = [];
-        snapshot.forEach((d) => {
-          items.push({ ...(d.data() as Sale), id: d.id });
-        });
-        items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setSales(items);
+        if (!snapshot.empty) {
+          const items: Sale[] = [];
+          snapshot.forEach((d) => {
+            items.push({ ...(d.data() as Sale), id: d.id });
+          });
+          items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setSales(items);
+          localStorage.setItem(STORAGE_KEYS.CACHE_SALES, JSON.stringify(items));
+        }
       },
       (error) => {
         console.error('Firestore sales real-time listener error:', error);
       }
     );
 
-    // 3. Listen directly to 'debts' collection
+    // Listen directly to Firestore 'debts' collection
     const unsubDebts = onSnapshot(
       collection(db, 'debts'),
       (snapshot) => {
-        const items: PaymentVoucher[] = [];
-        snapshot.forEach((d) => {
-          items.push({ ...(d.data() as PaymentVoucher), id: d.id });
-        });
-        items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-        setPayments(items);
+        if (!snapshot.empty) {
+          const items: PaymentVoucher[] = [];
+          snapshot.forEach((d) => {
+            items.push({ ...(d.data() as PaymentVoucher), id: d.id });
+          });
+          items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setPayments(items);
+          localStorage.setItem(STORAGE_KEYS.CACHE_PAYMENTS, JSON.stringify(items));
+        }
       },
       (error) => {
         console.error('Firestore debts real-time listener error:', error);
@@ -232,18 +284,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     playSound('success');
   };
 
-  // Add Product (writes directly to Firestore 'inventory' collection)
-  const addProduct = (
+  // Add Product / Add Item (Awaits and writes directly to Firestore 'inventory' collection)
+  const addProduct = async (
     productInput: Omit<Product, 'id' | 'totalUnits' | 'createdAt' | 'updatedAt'>
   ) => {
     const now = new Date().toISOString();
     const cartons = Number(productInput.cartons) || 0;
     const unitsPerCarton = Number(productInput.unitsPerCarton) || 1;
     const totalUnits = cartons * unitsPerCarton;
+    const id = `prod-${Date.now()}`;
 
     const newProd: Product = {
       ...productInput,
-      id: `prod-${Date.now()}`,
+      id,
       cartons,
       unitsPerCarton,
       totalUnits,
@@ -251,57 +304,83 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatedAt: now,
     };
 
-    setProducts((prev) => [newProd, ...prev]);
-    // Write directly to 'inventory' collection in Firestore
-    setDoc(doc(db, 'inventory', newProd.id), newProd).catch((err) =>
-      console.warn('Firestore add inventory item error:', err)
-    );
+    // Optimistically update local state & backup cache
+    setProducts((prev) => {
+      const updatedList = [newProd, ...prev.filter((p) => p.id !== id)];
+      localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    // Write directly to 'inventory' Firestore collection
+    try {
+      await setDoc(doc(db, 'inventory', id), newProd);
+      console.log('Product written successfully to Firestore inventory:', id);
+    } catch (err) {
+      console.error('Firestore add inventory item error:', err);
+    }
+
     playSound('success');
   };
 
-  // Update Product (writes directly to Firestore 'inventory' collection)
-  const updateProduct = (id: string, updates: Partial<Product>) => {
-    setProducts((prev) =>
-      prev.map((p) => {
-        if (p.id !== id) return p;
-        const cartons = updates.cartons !== undefined ? Number(updates.cartons) : p.cartons;
-        const unitsPerCarton =
-          updates.unitsPerCarton !== undefined
-            ? Number(updates.unitsPerCarton)
-            : p.unitsPerCarton;
-        const totalUnits =
-          updates.totalUnits !== undefined
-            ? Number(updates.totalUnits)
-            : cartons * unitsPerCarton;
+  // Update Product (Awaits and writes directly to Firestore 'inventory' collection)
+  const updateProduct = async (id: string, updates: Partial<Product>) => {
+    const prod = products.find((p) => p.id === id);
+    if (!prod) return;
 
-        const updated = {
-          ...p,
-          ...updates,
-          cartons,
-          unitsPerCarton,
-          totalUnits,
-          updatedAt: new Date().toISOString(),
-        };
-        // Write directly to 'inventory' collection in Firestore
-        setDoc(doc(db, 'inventory', id), updated, { merge: true }).catch((err) =>
-          console.warn('Firestore update inventory item error:', err)
-        );
-        return updated;
-      })
-    );
+    const cartons = updates.cartons !== undefined ? Number(updates.cartons) : prod.cartons;
+    const unitsPerCarton =
+      updates.unitsPerCarton !== undefined
+        ? Number(updates.unitsPerCarton)
+        : prod.unitsPerCarton;
+    const totalUnits =
+      updates.totalUnits !== undefined
+        ? Number(updates.totalUnits)
+        : cartons * unitsPerCarton;
+
+    const updated: Product = {
+      ...prod,
+      ...updates,
+      cartons,
+      unitsPerCarton,
+      totalUnits,
+      updatedAt: new Date().toISOString(),
+    };
+
+    setProducts((prev) => {
+      const updatedList = prev.map((p) => (p.id === id ? updated : p));
+      localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    try {
+      await setDoc(doc(db, 'inventory', id), updated, { merge: true });
+      console.log('Product updated successfully in Firestore inventory:', id);
+    } catch (err) {
+      console.error('Firestore update inventory item error:', err);
+    }
+
     playSound('success');
   };
 
-  // Delete Product (deletes directly from Firestore 'inventory' collection)
-  const deleteProduct = (id: string) => {
-    setProducts((prev) => prev.filter((p) => p.id !== id));
-    deleteDoc(doc(db, 'inventory', id)).catch((err) =>
-      console.warn('Firestore delete inventory item error:', err)
-    );
+  // Delete Product (Deletes directly from Firestore 'inventory' collection)
+  const deleteProduct = async (id: string) => {
+    setProducts((prev) => {
+      const updatedList = prev.filter((p) => p.id !== id);
+      localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    try {
+      await deleteDoc(doc(db, 'inventory', id));
+      console.log('Product deleted from Firestore inventory:', id);
+    } catch (err) {
+      console.error('Firestore delete inventory item error:', err);
+    }
+
     playSound('delete');
   };
 
-  // Create Sale transaction
+  // Create Sale transaction (Writes directly to Firestore 'sales' and updates 'inventory')
   const createSale = (saleInput: {
     customerName: string;
     customerPhone?: string;
@@ -365,8 +444,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     // Deduct stock from inventory
-    setProducts((prev) =>
-      prev.map((prod) => {
+    setProducts((prev) => {
+      const updatedList = prev.map((prod) => {
         const soldLine = preparedItems.find((i) => i.productId === prod.id);
         if (!soldLine) return prod;
 
@@ -379,20 +458,28 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           cartons: newCartons,
           updatedAt: new Date().toISOString(),
         };
+
         setDoc(doc(db, 'inventory', prod.id), updated, { merge: true }).catch((err) =>
           console.warn('Firestore update inventory stock error:', err)
         );
+
         return updated;
-      })
-    );
+      });
+      localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(updatedList));
+      return updatedList;
+    });
 
     // Save sale to Firestore 'sales' collection
-    setSales((prev) => [newSale, ...prev]);
-    setDoc(doc(db, 'sales', newSale.id), newSale).catch((err) =>
-      console.warn('Firestore save sale error:', err)
-    );
+    setSales((prev) => {
+      const updatedList = [newSale, ...prev];
+      localStorage.setItem(STORAGE_KEYS.CACHE_SALES, JSON.stringify(updatedList));
+      return updatedList;
+    });
 
-    // Celebratory effects
+    setDoc(doc(db, 'sales', newSale.id), newSale).catch((err) => {
+      console.warn('Firestore save sale error:', err);
+    });
+
     confetti({
       particleCount: 80,
       spread: 70,
@@ -404,14 +491,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newSale;
   };
 
-  // Delete Sale (rolls back stock)
-  const deleteSale = (saleId: string) => {
+  // Delete Sale (Rolls back stock in Firestore 'inventory' and deletes from 'sales')
+  const deleteSale = async (saleId: string) => {
     const saleToDelete = sales.find((s) => s.id === saleId);
     if (!saleToDelete) return;
 
-    // Rollback inventory
-    setProducts((prev) =>
-      prev.map((prod) => {
+    setProducts((prev) => {
+      const updatedList = prev.map((prod) => {
         const itemSold = saleToDelete.items.find((i) => i.productId === prod.id);
         if (!itemSold) return prod;
 
@@ -424,21 +510,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           cartons: newCartons,
           updatedAt: new Date().toISOString(),
         };
+
         setDoc(doc(db, 'inventory', prod.id), updated, { merge: true }).catch((err) =>
           console.warn('Firestore rollback inventory stock error:', err)
         );
-        return updated;
-      })
-    );
 
-    setSales((prev) => prev.filter((s) => s.id !== saleId));
-    deleteDoc(doc(db, 'sales', saleId)).catch((err) =>
-      console.warn('Firestore delete sale error:', err)
-    );
+        return updated;
+      });
+      localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    setSales((prev) => {
+      const updatedList = prev.filter((s) => s.id !== saleId);
+      localStorage.setItem(STORAGE_KEYS.CACHE_SALES, JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    try {
+      await deleteDoc(doc(db, 'sales', saleId));
+    } catch (err) {
+      console.warn('Firestore delete sale error:', err);
+    }
+
     playSound('delete');
   };
 
-  // Create standalone customer payment voucher
+  // Create standalone customer payment voucher (Writes to Firestore 'debts' collection)
   const createPayment = (paymentInput: {
     customerName: string;
     amount: number;
@@ -454,10 +552,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       date: paymentInput.date || new Date().toISOString(),
     };
 
-    setPayments((prev) => [newVoucher, ...prev]);
-    setDoc(doc(db, 'debts', newVoucher.id), newVoucher).catch((err) =>
-      console.warn('Firestore save debt payment error:', err)
-    );
+    setPayments((prev) => {
+      const updatedList = [newVoucher, ...prev];
+      localStorage.setItem(STORAGE_KEYS.CACHE_PAYMENTS, JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    setDoc(doc(db, 'debts', newVoucher.id), newVoucher).catch((err) => {
+      console.warn('Firestore save debt payment error:', err);
+    });
+
     playSound('success');
 
     confetti({
@@ -470,27 +574,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newVoucher;
   };
 
-  // Delete payment
-  const deletePayment = (id: string) => {
-    setPayments((prev) => prev.filter((p) => p.id !== id));
-    deleteDoc(doc(db, 'debts', id)).catch((err) =>
-      console.warn('Firestore delete debt payment error:', err)
-    );
+  // Delete payment (Deletes from Firestore 'debts')
+  const deletePayment = async (id: string) => {
+    setPayments((prev) => {
+      const updatedList = prev.filter((p) => p.id !== id);
+      localStorage.setItem(STORAGE_KEYS.CACHE_PAYMENTS, JSON.stringify(updatedList));
+      return updatedList;
+    });
+
+    try {
+      await deleteDoc(doc(db, 'debts', id));
+    } catch (err) {
+      console.warn('Firestore delete debt payment error:', err);
+    }
+
     playSound('delete');
   };
 
-  // Delete customer account entirely (sales, payments, with optional inventory stock rollback)
-  const deleteCustomer = (customerName: string, rollbackInventory: boolean = true) => {
+  // Delete customer account entirely
+  const deleteCustomer = async (customerName: string, rollbackInventory: boolean = true) => {
     const trimmed = customerName.trim();
     if (!trimmed) return;
 
-    // Find all sales for this customer
     const customerSales = sales.filter((s) => s.customerName.trim() === trimmed);
 
-    // If rollbackInventory is true, restore stock for all products sold to this customer
     if (rollbackInventory && customerSales.length > 0) {
-      setProducts((prev) =>
-        prev.map((prod) => {
+      setProducts((prev) => {
+        const updatedList = prev.map((prod) => {
           let unitsToAdd = 0;
           customerSales.forEach((sale) => {
             sale.items.forEach((item) => {
@@ -511,12 +621,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             cartons: newCartons,
             updatedAt: new Date().toISOString(),
           };
+
           setDoc(doc(db, 'inventory', prod.id), updated, { merge: true }).catch((err) =>
             console.warn('Firestore rollback inventory error:', err)
           );
+
           return updated;
-        })
-      );
+        });
+        localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(updatedList));
+        return updatedList;
+      });
     }
 
     // Remove all sales of this customer from Firestore
@@ -532,10 +646,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
 
     // Remove from local state
-    setSales((prev) => prev.filter((s) => s.customerName.trim() !== trimmed));
-    setPayments((prev) => prev.filter((p) => p.customerName.trim() !== trimmed));
+    setSales((prev) => {
+      const updatedList = prev.filter((s) => s.customerName.trim() !== trimmed);
+      localStorage.setItem(STORAGE_KEYS.CACHE_SALES, JSON.stringify(updatedList));
+      return updatedList;
+    });
 
-    // Close statement modal if open for this customer
+    setPayments((prev) => {
+      const updatedList = prev.filter((p) => p.customerName.trim() !== trimmed);
+      localStorage.setItem(STORAGE_KEYS.CACHE_PAYMENTS, JSON.stringify(updatedList));
+      return updatedList;
+    });
+
     if (viewingStatementCustomer === trimmed) {
       setViewingStatementCustomer(null);
     }
@@ -547,7 +669,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const customers = useMemo<CustomerDebtSummary[]>(() => {
     const customerMap = new Map<string, CustomerDebtSummary>();
 
-    // Process all sales
     sales.forEach((s) => {
       const name = s.customerName.trim();
       const existing = customerMap.get(name) || {
@@ -561,7 +682,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
 
       existing.totalPurchases += s.totalAmount;
-      existing.totalPaid += s.paidAmount; // Cash paid during checkout
+      existing.totalPaid += s.paidAmount;
       existing.invoicesCount += 1;
       if (s.customerPhone && !existing.phone) {
         existing.phone = s.customerPhone;
@@ -573,7 +694,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       customerMap.set(name, existing);
     });
 
-    // Process all payment vouchers
     payments.forEach((p) => {
       const name = p.customerName.trim();
       const existing = customerMap.get(name) || {
@@ -594,36 +714,24 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       customerMap.set(name, existing);
     });
 
-    // Calculate final outstanding debt for each customer
     const list = Array.from(customerMap.values()).map((c) => ({
       ...c,
       outstandingDebt: Math.max(0, c.totalPurchases - c.totalPaid),
     }));
 
-    // Sort by largest debt first
     return list.sort((a, b) => b.outstandingDebt - a.outstandingDebt);
   }, [sales, payments]);
 
   // Compute Core Dashboard Metrics
   const metrics = useMemo<DashboardMetrics>(() => {
-    // 1. کۆی فرۆشی گشتی (Total Gross Sales)
     const totalGrossSales = sales.reduce((acc, s) => acc + s.totalAmount, 0);
-
-    // 2. تێچووی فرۆشراو (Cost of Goods Sold - COGS)
     const totalCOGS = sales.reduce((acc, s) => acc + s.totalCost, 0);
-
-    // 3. کۆی قازانجی گشتی (Total Gross Profit) = کۆی فرۆشی گشتی - تێچووی فرۆشراو
     const totalGrossProfit = totalGrossSales - totalCOGS;
-
-    // 4. کۆی پارەی وەرگیراو (Total Cash Received): Down payments from sales + payment vouchers
     const salesCashReceived = sales.reduce((acc, s) => acc + s.paidAmount, 0);
     const voucherCashReceived = payments.reduce((acc, p) => acc + p.amount, 0);
     const totalCashReceived = salesCashReceived + voucherCashReceived;
-
-    // 5. بڕی پارەی ماوە (Total Outstanding Debt): کۆی فرۆشی گشتی - کۆی پارەی وەرگیراو
     const totalOutstandingDebt = Math.max(0, totalGrossSales - totalCashReceived);
 
-    // Inventory metrics
     const totalInventoryCostValue = products.reduce(
       (acc, p) => acc + p.costPricePerUnit * p.totalUnits,
       0
@@ -662,6 +770,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts(INITIAL_PRODUCTS);
     setSales(INITIAL_SALES);
     setPayments(INITIAL_PAYMENTS);
+    localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(INITIAL_PRODUCTS));
+    localStorage.setItem(STORAGE_KEYS.CACHE_SALES, JSON.stringify(INITIAL_SALES));
+    localStorage.setItem(STORAGE_KEYS.CACHE_PAYMENTS, JSON.stringify(INITIAL_PAYMENTS));
     INITIAL_PRODUCTS.forEach((p) => setDoc(doc(db, 'inventory', p.id), p).catch(() => {}));
     INITIAL_SALES.forEach((s) => setDoc(doc(db, 'sales', s.id), s).catch(() => {}));
     INITIAL_PAYMENTS.forEach((p) => setDoc(doc(db, 'debts', p.id), p).catch(() => {}));
@@ -673,6 +784,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setProducts(SCREENSHOT_PRODUCTS);
     setSales(SCREENSHOT_SALES);
     setPayments(SCREENSHOT_PAYMENTS);
+    localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(SCREENSHOT_PRODUCTS));
+    localStorage.setItem(STORAGE_KEYS.CACHE_SALES, JSON.stringify(SCREENSHOT_SALES));
+    localStorage.setItem(STORAGE_KEYS.CACHE_PAYMENTS, JSON.stringify(SCREENSHOT_PAYMENTS));
     SCREENSHOT_PRODUCTS.forEach((p) => setDoc(doc(db, 'inventory', p.id), p).catch(() => {}));
     SCREENSHOT_SALES.forEach((s) => setDoc(doc(db, 'sales', s.id), s).catch(() => {}));
     SCREENSHOT_PAYMENTS.forEach((p) => setDoc(doc(db, 'debts', p.id), p).catch(() => {}));
@@ -707,10 +821,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (Array.isArray(parsed.products) && Array.isArray(parsed.sales)) {
         setProducts(parsed.products);
         setSales(parsed.sales);
+        localStorage.setItem(STORAGE_KEYS.CACHE_PRODUCTS, JSON.stringify(parsed.products));
+        localStorage.setItem(STORAGE_KEYS.CACHE_SALES, JSON.stringify(parsed.sales));
         parsed.products.forEach((p: Product) => setDoc(doc(db, 'inventory', p.id), p).catch(() => {}));
         parsed.sales.forEach((s: Sale) => setDoc(doc(db, 'sales', s.id), s).catch(() => {}));
         if (Array.isArray(parsed.payments)) {
           setPayments(parsed.payments);
+          localStorage.setItem(STORAGE_KEYS.CACHE_PAYMENTS, JSON.stringify(parsed.payments));
           parsed.payments.forEach((p: PaymentVoucher) => setDoc(doc(db, 'debts', p.id), p).catch(() => {}));
         }
         playSound('success');
@@ -740,6 +857,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         customers,
         metrics,
         addProduct,
+        addItem: addProduct,
         updateProduct,
         deleteProduct,
         createSale,
