@@ -141,7 +141,7 @@ export function getFirebaseDb(overrideConfig?: FirebaseConfig): Firestore | null
   try {
     const app = getApps().length > 0 ? getApp() : initializeApp(config);
     cachedApp = app;
-    cachedDb = getFirestore(app);
+    cachedDb = getFirestore(app, 'default');
     return cachedDb;
   } catch (error) {
     console.error('Error initializing Firebase:', error);

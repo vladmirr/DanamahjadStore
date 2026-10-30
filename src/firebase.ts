@@ -24,7 +24,7 @@ export const firebaseConfig = {
 
 // Initialize Firebase App & Firestore Database instance
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
-export const db = getFirestore(app);
+export const db = getFirestore(app, 'default');
 
 // Firestore Collection Names
 export const COLLECTIONS = {
