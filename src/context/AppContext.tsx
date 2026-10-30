@@ -97,9 +97,6 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 const STORAGE_KEYS = {
-  PRODUCTS: 'floderm_products_v1',
-  SALES: 'floderm_sales_v1',
-  PAYMENTS: 'floderm_payments_v1',
   AUTH: 'floderm_auth_user_v1',
   PASS: 'floderm_admin_pass_v1',
 };
@@ -141,92 +138,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Real-time Firestore Subscriptions ('inventory', 'sales', 'debts')
   useEffect(() => {
-    // 1. Listen to 'inventory' collection
+    // 1. Listen directly to 'inventory' collection
     const unsubInventory = onSnapshot(
       collection(db, 'inventory'),
       (snapshot) => {
-        if (!snapshot.empty) {
-          const items: Product[] = [];
-          snapshot.forEach((d) => items.push(d.data() as Product));
-          setProducts(items);
-        } else {
-          // If Firestore inventory is empty, check if we have existing items (like شەربەت) to auto-upload
-          const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-          if (saved) {
-            try {
-              const localItems: Product[] = JSON.parse(saved);
-              if (localItems.length > 0) {
-                setProducts(localItems);
-                localItems.forEach((item) => {
-                  setDoc(doc(db, 'inventory', item.id), item).catch((err) =>
-                    console.warn('Auto-sync item to Firestore inventory:', err)
-                  );
-                });
-              }
-            } catch {}
-          }
-        }
+        const items: Product[] = [];
+        snapshot.forEach((d) => {
+          items.push({ ...(d.data() as Product), id: d.id });
+        });
+        setProducts(items);
       },
       (error) => {
-        console.warn('Firestore inventory listener error:', error);
+        console.error('Firestore inventory real-time listener error:', error);
       }
     );
 
-    // 2. Listen to 'sales' collection
+    // 2. Listen directly to 'sales' collection
     const unsubSales = onSnapshot(
       collection(db, 'sales'),
       (snapshot) => {
-        if (!snapshot.empty) {
-          const items: Sale[] = [];
-          snapshot.forEach((d) => items.push(d.data() as Sale));
-          items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-          setSales(items);
-        } else {
-          const saved = localStorage.getItem(STORAGE_KEYS.SALES);
-          if (saved) {
-            try {
-              const localSales: Sale[] = JSON.parse(saved);
-              if (localSales.length > 0) {
-                setSales(localSales);
-                localSales.forEach((s) => {
-                  setDoc(doc(db, 'sales', s.id), s).catch(() => {});
-                });
-              }
-            } catch {}
-          }
-        }
+        const items: Sale[] = [];
+        snapshot.forEach((d) => {
+          items.push({ ...(d.data() as Sale), id: d.id });
+        });
+        items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setSales(items);
       },
       (error) => {
-        console.warn('Firestore sales listener error:', error);
+        console.error('Firestore sales real-time listener error:', error);
       }
     );
 
-    // 3. Listen to 'debts' collection
+    // 3. Listen directly to 'debts' collection
     const unsubDebts = onSnapshot(
       collection(db, 'debts'),
       (snapshot) => {
-        if (!snapshot.empty) {
-          const items: PaymentVoucher[] = [];
-          snapshot.forEach((d) => items.push(d.data() as PaymentVoucher));
-          items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-          setPayments(items);
-        } else {
-          const saved = localStorage.getItem(STORAGE_KEYS.PAYMENTS);
-          if (saved) {
-            try {
-              const localPayments: PaymentVoucher[] = JSON.parse(saved);
-              if (localPayments.length > 0) {
-                setPayments(localPayments);
-                localPayments.forEach((p) => {
-                  setDoc(doc(db, 'debts', p.id), p).catch(() => {});
-                });
-              }
-            } catch {}
-          }
-        }
+        const items: PaymentVoucher[] = [];
+        snapshot.forEach((d) => {
+          items.push({ ...(d.data() as PaymentVoucher), id: d.id });
+        });
+        items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        setPayments(items);
       },
       (error) => {
-        console.warn('Firestore debts listener error:', error);
+        console.error('Firestore debts real-time listener error:', error);
       }
     );
 
@@ -237,25 +192,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   }, []);
 
-  // Save to LocalStorage as offline fallback
-  useEffect(() => {
-    if (products.length > 0) {
-      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
-    }
-  }, [products]);
-
-  useEffect(() => {
-    if (sales.length > 0) {
-      localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
-    }
-  }, [sales]);
-
-  useEffect(() => {
-    if (payments.length > 0) {
-      localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
-    }
-  }, [payments]);
-
+  // Admin login session persistence
   useEffect(() => {
     if (adminUser) {
       localStorage.setItem(STORAGE_KEYS.AUTH, JSON.stringify(adminUser));

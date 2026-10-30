@@ -4,13 +4,14 @@ import {
   collection,
   doc,
   setDoc,
+  addDoc,
   deleteDoc,
   onSnapshot,
   getDocs,
   writeBatch,
 } from 'firebase/firestore';
 
-// Direct Firebase configuration (works on all devices and builds without env vars)
+// Hardcoded Firebase configuration for project mystore-51968
 export const firebaseConfig = {
   apiKey: "AIzaSyC6zc2Eg5wwNb2RKFUszfnvQ5Z8kzaOUyM",
   authDomain: "mystore-51968.firebaseapp.com",
@@ -21,11 +22,11 @@ export const firebaseConfig = {
   measurementId: "G-0B8566TBCX"
 };
 
-// Initialize Firebase App & export Cloud Firestore instance
+// Initialize Firebase App & Firestore Database instance
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
-// Collection References
+// Firestore Collection Names
 export const COLLECTIONS = {
   INVENTORY: 'inventory',
   SALES: 'sales',
@@ -36,6 +37,7 @@ export {
   collection,
   doc,
   setDoc,
+  addDoc,
   deleteDoc,
   onSnapshot,
   getDocs,
