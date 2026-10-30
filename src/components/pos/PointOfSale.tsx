@@ -292,7 +292,7 @@ export const PointOfSale: React.FC = () => {
                   <option value="">-- کاڵایەک هەڵبژێرە لە کۆگا --</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} (مەوجوود: {p.cartons} کارتۆن / {p.totalUnits} دانە) - {formatIQD(p.sellingPricePerUnit)}
+                      {p.name} (مەوجوود: {p.cartons} کارتۆن / {p.totalUnits} دانە)
                     </option>
                   ))}
                 </select>
@@ -388,8 +388,8 @@ export const PointOfSale: React.FC = () => {
                       onChange={(e) => setCustomPrice(e.target.value)}
                       onFocus={(e) => e.target.select()}
                       onClick={(e) => (e.target as HTMLInputElement).select()}
-                      placeholder={defaultPrice > 0 ? defaultPrice.toString() : '0'}
-                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-400 placeholder-amber-400/40 focus:outline-none focus:ring-1 focus:ring-amber-500 font-numeric font-bold"
+                      placeholder="0"
+                      className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-400 placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-amber-500 font-numeric font-bold"
                     />
                   </div>
                 </div>
@@ -459,11 +459,11 @@ export const PointOfSale: React.FC = () => {
                       <p className="text-[10px] text-slate-500 font-mono mt-0.5">{p.barcode || p.id}</p>
                     </div>
                     <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-emerald-400 font-numeric">
-                        {formatIQD(p.sellingPricePerUnit)}
+                      <span className="text-[11px] text-slate-400 font-numeric">
+                        مەوجوود: {p.cartons} CTN
                       </span>
-                      <span className="text-[10px] text-slate-400 font-numeric">
-                        {p.cartons} CTN
+                      <span className="text-[10px] text-slate-500 font-numeric">
+                        ({p.totalUnits} دانە)
                       </span>
                     </div>
                   </button>
