@@ -180,14 +180,15 @@ export async function testFirebaseConnection(config: FirebaseConfig): Promise<{ 
 
 // Generic Realtime Collection Subscription
 export function subscribeToCloudCollection<T>(
-  collectionName: 'products' | 'sales' | 'payments',
+  collectionName: 'inventory' | 'sales' | 'debts' | 'products' | 'payments',
   onData: (items: T[]) => void
 ): Unsubscribe | null {
   const db = getFirebaseDb();
   if (!db) return null;
 
   try {
-    const colRef = collection(db, collectionName);
+    const colName = collectionName === 'products' ? 'inventory' : collectionName === 'payments' ? 'debts' : collectionName;
+    const colRef = collection(db, colName);
     return onSnapshot(
       colRef,
       (snapshot) => {
@@ -198,7 +199,7 @@ export function subscribeToCloudCollection<T>(
         onData(items);
       },
       (error) => {
-        console.warn(`Firestore subscription warning on ${collectionName}:`, error);
+        console.warn(`Firestore subscription warning on ${colName}:`, error);
       }
     );
   } catch (error) {
@@ -209,7 +210,7 @@ export function subscribeToCloudCollection<T>(
 
 // Save or Update an item in Cloud
 export async function saveItemToCloud(
-  collectionName: 'products' | 'sales' | 'payments',
+  collectionName: 'inventory' | 'sales' | 'debts' | 'products' | 'payments',
   id: string,
   data: any
 ): Promise<boolean> {
@@ -217,7 +218,8 @@ export async function saveItemToCloud(
   if (!db) return false;
 
   try {
-    const docRef = doc(db, collectionName, id);
+    const colName = collectionName === 'products' ? 'inventory' : collectionName === 'payments' ? 'debts' : collectionName;
+    const docRef = doc(db, colName, id);
     await setDoc(docRef, data, { merge: true });
     return true;
   } catch (error) {
@@ -228,14 +230,15 @@ export async function saveItemToCloud(
 
 // Delete an item from Cloud
 export async function deleteItemFromCloud(
-  collectionName: 'products' | 'sales' | 'payments',
+  collectionName: 'inventory' | 'sales' | 'debts' | 'products' | 'payments',
   id: string
 ): Promise<boolean> {
   const db = getFirebaseDb();
   if (!db) return false;
 
   try {
-    const docRef = doc(db, collectionName, id);
+    const colName = collectionName === 'products' ? 'inventory' : collectionName === 'payments' ? 'debts' : collectionName;
+    const docRef = doc(db, colName, id);
     await deleteDoc(docRef);
     return true;
   } catch (error) {
@@ -260,7 +263,7 @@ export async function bulkUploadToCloud(
     let count = 0;
 
     products.forEach((p) => {
-      const docRef = doc(db, 'products', p.id);
+      const docRef = doc(db, 'inventory', p.id);
       batch.set(docRef, p);
       count++;
     });
@@ -272,7 +275,7 @@ export async function bulkUploadToCloud(
     });
 
     payments.forEach((py) => {
-      const docRef = doc(db, 'payments', py.id);
+      const docRef = doc(db, 'debts', py.id);
       batch.set(docRef, py);
       count++;
     });

@@ -22,12 +22,14 @@ import {
   playSound,
 } from '../utils/formatters';
 import { exportAllDataToExcel } from '../utils/excelExport';
+import { db } from '../firebase';
 import {
-  saveItemToCloud,
-  deleteItemFromCloud,
-  subscribeToCloudCollection,
-  getFirebaseDb,
-} from '../services/firebase';
+  collection,
+  doc,
+  setDoc,
+  deleteDoc,
+  onSnapshot,
+} from 'firebase/firestore';
 
 interface AppContextType {
   // Navigation & UI
@@ -128,56 +130,130 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
   });
 
-  // Products State
-  const [products, setProducts] = useState<Product[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return INITIAL_PRODUCTS;
-      }
-    }
-    return INITIAL_PRODUCTS;
-  });
+  // Inventory / Products State (Loaded directly via Firestore onSnapshot)
+  const [products, setProducts] = useState<Product[]>([]);
 
-  // Sales State
-  const [sales, setSales] = useState<Sale[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.SALES);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return INITIAL_SALES;
-      }
-    }
-    return INITIAL_SALES;
-  });
+  // Sales State (Loaded directly via Firestore onSnapshot)
+  const [sales, setSales] = useState<Sale[]>([]);
 
-  // Payments State
-  const [payments, setPayments] = useState<PaymentVoucher[]>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.PAYMENTS);
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch {
-        return INITIAL_PAYMENTS;
-      }
-    }
-    return INITIAL_PAYMENTS;
-  });
+  // Payments / Debts State (Loaded directly via Firestore onSnapshot)
+  const [payments, setPayments] = useState<PaymentVoucher[]>([]);
 
-  // Save to LocalStorage on updates
+  // Real-time Firestore Subscriptions ('inventory', 'sales', 'debts')
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    // 1. Listen to 'inventory' collection
+    const unsubInventory = onSnapshot(
+      collection(db, 'inventory'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const items: Product[] = [];
+          snapshot.forEach((d) => items.push(d.data() as Product));
+          setProducts(items);
+        } else {
+          // If Firestore inventory is empty, check if we have existing items (like شەربەت) to auto-upload
+          const saved = localStorage.getItem(STORAGE_KEYS.PRODUCTS);
+          if (saved) {
+            try {
+              const localItems: Product[] = JSON.parse(saved);
+              if (localItems.length > 0) {
+                setProducts(localItems);
+                localItems.forEach((item) => {
+                  setDoc(doc(db, 'inventory', item.id), item).catch((err) =>
+                    console.warn('Auto-sync item to Firestore inventory:', err)
+                  );
+                });
+              }
+            } catch {}
+          }
+        }
+      },
+      (error) => {
+        console.warn('Firestore inventory listener error:', error);
+      }
+    );
+
+    // 2. Listen to 'sales' collection
+    const unsubSales = onSnapshot(
+      collection(db, 'sales'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const items: Sale[] = [];
+          snapshot.forEach((d) => items.push(d.data() as Sale));
+          items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setSales(items);
+        } else {
+          const saved = localStorage.getItem(STORAGE_KEYS.SALES);
+          if (saved) {
+            try {
+              const localSales: Sale[] = JSON.parse(saved);
+              if (localSales.length > 0) {
+                setSales(localSales);
+                localSales.forEach((s) => {
+                  setDoc(doc(db, 'sales', s.id), s).catch(() => {});
+                });
+              }
+            } catch {}
+          }
+        }
+      },
+      (error) => {
+        console.warn('Firestore sales listener error:', error);
+      }
+    );
+
+    // 3. Listen to 'debts' collection
+    const unsubDebts = onSnapshot(
+      collection(db, 'debts'),
+      (snapshot) => {
+        if (!snapshot.empty) {
+          const items: PaymentVoucher[] = [];
+          snapshot.forEach((d) => items.push(d.data() as PaymentVoucher));
+          items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+          setPayments(items);
+        } else {
+          const saved = localStorage.getItem(STORAGE_KEYS.PAYMENTS);
+          if (saved) {
+            try {
+              const localPayments: PaymentVoucher[] = JSON.parse(saved);
+              if (localPayments.length > 0) {
+                setPayments(localPayments);
+                localPayments.forEach((p) => {
+                  setDoc(doc(db, 'debts', p.id), p).catch(() => {});
+                });
+              }
+            } catch {}
+          }
+        }
+      },
+      (error) => {
+        console.warn('Firestore debts listener error:', error);
+      }
+    );
+
+    return () => {
+      unsubInventory();
+      unsubSales();
+      unsubDebts();
+    };
+  }, []);
+
+  // Save to LocalStorage as offline fallback
+  useEffect(() => {
+    if (products.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.PRODUCTS, JSON.stringify(products));
+    }
   }, [products]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+    if (sales.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.SALES, JSON.stringify(sales));
+    }
   }, [sales]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+    if (payments.length > 0) {
+      localStorage.setItem(STORAGE_KEYS.PAYMENTS, JSON.stringify(payments));
+    }
   }, [payments]);
 
   useEffect(() => {
@@ -187,36 +263,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       localStorage.removeItem(STORAGE_KEYS.AUTH);
     }
   }, [adminUser]);
-
-  // Realtime Firebase Firestore Subscriptions (Sync Phone & Laptop)
-  useEffect(() => {
-    const db = getFirebaseDb();
-    if (!db) return;
-
-    const unsubProducts = subscribeToCloudCollection<Product>('products', (cloudProducts) => {
-      if (cloudProducts && cloudProducts.length > 0) {
-        setProducts(cloudProducts);
-      }
-    });
-
-    const unsubSales = subscribeToCloudCollection<Sale>('sales', (cloudSales) => {
-      if (cloudSales) {
-        setSales(cloudSales);
-      }
-    });
-
-    const unsubPayments = subscribeToCloudCollection<PaymentVoucher>('payments', (cloudPayments) => {
-      if (cloudPayments) {
-        setPayments(cloudPayments);
-      }
-    });
-
-    return () => {
-      unsubProducts?.();
-      unsubSales?.();
-      unsubPayments?.();
-    };
-  }, []);
 
   // Login handler
   const login = (usernameInput: string, passwordInput: string): boolean => {
@@ -249,7 +295,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     playSound('success');
   };
 
-  // Add Product
+  // Add Product (writes directly to Firestore 'inventory' collection)
   const addProduct = (
     productInput: Omit<Product, 'id' | 'totalUnits' | 'createdAt' | 'updatedAt'>
   ) => {
@@ -269,11 +315,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setProducts((prev) => [newProd, ...prev]);
-    saveItemToCloud('products', newProd.id, newProd);
+    // Write directly to 'inventory' collection in Firestore
+    setDoc(doc(db, 'inventory', newProd.id), newProd).catch((err) =>
+      console.warn('Firestore add inventory item error:', err)
+    );
     playSound('success');
   };
 
-  // Update Product
+  // Update Product (writes directly to Firestore 'inventory' collection)
   const updateProduct = (id: string, updates: Partial<Product>) => {
     setProducts((prev) =>
       prev.map((p) => {
@@ -296,17 +345,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           totalUnits,
           updatedAt: new Date().toISOString(),
         };
-        saveItemToCloud('products', id, updated);
+        // Write directly to 'inventory' collection in Firestore
+        setDoc(doc(db, 'inventory', id), updated, { merge: true }).catch((err) =>
+          console.warn('Firestore update inventory item error:', err)
+        );
         return updated;
       })
     );
     playSound('success');
   };
 
-  // Delete Product
+  // Delete Product (deletes directly from Firestore 'inventory' collection)
   const deleteProduct = (id: string) => {
     setProducts((prev) => prev.filter((p) => p.id !== id));
-    deleteItemFromCloud('products', id);
+    deleteDoc(doc(db, 'inventory', id)).catch((err) =>
+      console.warn('Firestore delete inventory item error:', err)
+    );
     playSound('delete');
   };
 
@@ -388,14 +442,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           cartons: newCartons,
           updatedAt: new Date().toISOString(),
         };
-        saveItemToCloud('products', prod.id, updated);
+        setDoc(doc(db, 'inventory', prod.id), updated, { merge: true }).catch((err) =>
+          console.warn('Firestore update inventory stock error:', err)
+        );
         return updated;
       })
     );
 
-    // Save sale
+    // Save sale to Firestore 'sales' collection
     setSales((prev) => [newSale, ...prev]);
-    saveItemToCloud('sales', newSale.id, newSale);
+    setDoc(doc(db, 'sales', newSale.id), newSale).catch((err) =>
+      console.warn('Firestore save sale error:', err)
+    );
 
     // Celebratory effects
     confetti({
@@ -429,13 +487,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           cartons: newCartons,
           updatedAt: new Date().toISOString(),
         };
-        saveItemToCloud('products', prod.id, updated);
+        setDoc(doc(db, 'inventory', prod.id), updated, { merge: true }).catch((err) =>
+          console.warn('Firestore rollback inventory stock error:', err)
+        );
         return updated;
       })
     );
 
     setSales((prev) => prev.filter((s) => s.id !== saleId));
-    deleteItemFromCloud('sales', saleId);
+    deleteDoc(doc(db, 'sales', saleId)).catch((err) =>
+      console.warn('Firestore delete sale error:', err)
+    );
     playSound('delete');
   };
 
@@ -456,7 +518,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     setPayments((prev) => [newVoucher, ...prev]);
-    saveItemToCloud('payments', newVoucher.id, newVoucher);
+    setDoc(doc(db, 'debts', newVoucher.id), newVoucher).catch((err) =>
+      console.warn('Firestore save debt payment error:', err)
+    );
     playSound('success');
 
     confetti({
@@ -472,7 +536,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Delete payment
   const deletePayment = (id: string) => {
     setPayments((prev) => prev.filter((p) => p.id !== id));
-    deleteItemFromCloud('payments', id);
+    deleteDoc(doc(db, 'debts', id)).catch((err) =>
+      console.warn('Firestore delete debt payment error:', err)
+    );
     playSound('delete');
   };
 
@@ -502,20 +568,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const newTotalUnits = prod.totalUnits + unitsToAdd;
           const newCartons = Math.floor(newTotalUnits / (prod.unitsPerCarton || 1));
 
-          return {
+          const updated = {
             ...prod,
             totalUnits: newTotalUnits,
             cartons: newCartons,
             updatedAt: new Date().toISOString(),
           };
+          setDoc(doc(db, 'inventory', prod.id), updated, { merge: true }).catch((err) =>
+            console.warn('Firestore rollback inventory error:', err)
+          );
+          return updated;
         })
       );
     }
 
-    // Remove all sales of this customer
-    setSales((prev) => prev.filter((s) => s.customerName.trim() !== trimmed));
+    // Remove all sales of this customer from Firestore
+    customerSales.forEach((s) => {
+      deleteDoc(doc(db, 'sales', s.id)).catch(() => {});
+    });
 
-    // Remove all payment vouchers of this customer
+    // Remove all payment vouchers of this customer from Firestore
+    payments
+      .filter((p) => p.customerName.trim() === trimmed)
+      .forEach((p) => {
+        deleteDoc(doc(db, 'debts', p.id)).catch(() => {});
+      });
+
+    // Remove from local state
+    setSales((prev) => prev.filter((s) => s.customerName.trim() !== trimmed));
     setPayments((prev) => prev.filter((p) => p.customerName.trim() !== trimmed));
 
     // Close statement modal if open for this customer
@@ -640,19 +720,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
   };
 
-  // Reset to sample data
+  // Reset to sample data (syncs to Firestore)
   const resetToSampleData = () => {
     setProducts(INITIAL_PRODUCTS);
     setSales(INITIAL_SALES);
     setPayments(INITIAL_PAYMENTS);
+    INITIAL_PRODUCTS.forEach((p) => setDoc(doc(db, 'inventory', p.id), p).catch(() => {}));
+    INITIAL_SALES.forEach((s) => setDoc(doc(db, 'sales', s.id), s).catch(() => {}));
+    INITIAL_PAYMENTS.forEach((p) => setDoc(doc(db, 'debts', p.id), p).catch(() => {}));
     playSound('success');
   };
 
-  // Load exact screenshot template sample data (A, B, C & Haval)
+  // Load exact screenshot template sample data (A, B, C & Haval) (syncs to Firestore)
   const loadScreenshotSampleData = () => {
     setProducts(SCREENSHOT_PRODUCTS);
     setSales(SCREENSHOT_SALES);
     setPayments(SCREENSHOT_PAYMENTS);
+    SCREENSHOT_PRODUCTS.forEach((p) => setDoc(doc(db, 'inventory', p.id), p).catch(() => {}));
+    SCREENSHOT_SALES.forEach((s) => setDoc(doc(db, 'sales', s.id), s).catch(() => {}));
+    SCREENSHOT_PAYMENTS.forEach((p) => setDoc(doc(db, 'debts', p.id), p).catch(() => {}));
     playSound('success');
   };
 
@@ -677,15 +763,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     playSound('success');
   };
 
-  // JSON Backup Import
+  // JSON Backup Import (syncs to Firestore)
   const importJSONBackup = (jsonData: string): boolean => {
     try {
       const parsed = JSON.parse(jsonData);
       if (Array.isArray(parsed.products) && Array.isArray(parsed.sales)) {
         setProducts(parsed.products);
         setSales(parsed.sales);
+        parsed.products.forEach((p: Product) => setDoc(doc(db, 'inventory', p.id), p).catch(() => {}));
+        parsed.sales.forEach((s: Sale) => setDoc(doc(db, 'sales', s.id), s).catch(() => {}));
         if (Array.isArray(parsed.payments)) {
           setPayments(parsed.payments);
+          parsed.payments.forEach((p: PaymentVoucher) => setDoc(doc(db, 'debts', p.id), p).catch(() => {}));
         }
         playSound('success');
         return true;
