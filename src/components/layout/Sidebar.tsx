@@ -24,7 +24,6 @@ export const Sidebar: React.FC = () => {
     setIsSidebarOpen,
     logout,
     adminUser,
-    setIsCloudSyncOpen,
     metrics,
   } = useApp();
 
@@ -57,17 +56,6 @@ export const Sidebar: React.FC = () => {
       icon: FileSpreadsheet,
       badge: null,
     },
-    {
-      id: 'cloud_sync',
-      label: 'هاوکاتکردنی هەور (Firebase)',
-      sublabel: 'بەستنەوەی مۆبایل و لاپتۆپ بە یەکەوە',
-      icon: Cloud,
-      badge: (
-        <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">
-          نوێ
-        </span>
-      ),
-    },
   ];
 
   // Secondary quick navigation
@@ -90,11 +78,6 @@ export const Sidebar: React.FC = () => {
   ];
 
   const handleNavClick = (id: string) => {
-    if (id === 'cloud_sync') {
-      setIsCloudSyncOpen(true);
-      setIsSidebarOpen(false);
-      return;
-    }
     setActiveTab(id);
     setIsSidebarOpen(false);
   };
@@ -231,22 +214,14 @@ export const Sidebar: React.FC = () => {
                     );
                   })}
 
-                  {/* Cloud Sync Button */}
-                  <button
-                    onClick={() => {
-                      setIsCloudSyncOpen(true);
-                      setIsSidebarOpen(false);
-                    }}
-                    className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs transition-all cursor-pointer text-right bg-gradient-to-r from-amber-500/10 to-yellow-500/5 hover:from-amber-500/20 hover:to-yellow-500/10 border border-amber-500/20 hover:border-amber-500/40 text-amber-300 group"
-                  >
+                  {/* Automatic Cloud Status Indicator */}
+                  <div className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-xs bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 select-none">
                     <div className="flex items-center gap-2">
-                      <Cloud className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
-                      <span className="font-semibold">هاوکاتکردنی هەور (Firebase)</span>
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      <span className="font-semibold text-[11px]">پاڵپشتی خۆکاری هەور چالاکە</span>
                     </div>
-                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-300 font-mono">
-                      Cloud
-                    </span>
-                  </button>
+                    <Cloud className="w-3.5 h-3.5 text-emerald-400" />
+                  </div>
                 </div>
               </div>
             </div>

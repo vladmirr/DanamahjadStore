@@ -253,6 +253,41 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [adminUser]);
 
+  // 3. Automatic Cloud Backup in Background (runs every 60s & when online)
+  useEffect(() => {
+    const autoBackupToCloud = async () => {
+      try {
+        if (products.length > 0) {
+          for (const p of products) {
+            setDoc(doc(db, 'inventory', p.id), p, { merge: true }).catch(() => {});
+          }
+        }
+        if (sales.length > 0) {
+          for (const s of sales) {
+            setDoc(doc(db, 'sales', s.id), s, { merge: true }).catch(() => {});
+          }
+        }
+        if (payments.length > 0) {
+          for (const pay of payments) {
+            setDoc(doc(db, 'debts', pay.id), pay, { merge: true }).catch(() => {});
+          }
+        }
+      } catch (err) {
+        console.warn('Auto cloud backup error:', err);
+      }
+    };
+
+    const timer = setTimeout(autoBackupToCloud, 2000);
+    const interval = setInterval(autoBackupToCloud, 60000);
+    window.addEventListener('online', autoBackupToCloud);
+
+    return () => {
+      clearTimeout(timer);
+      clearInterval(interval);
+      window.removeEventListener('online', autoBackupToCloud);
+    };
+  }, [products.length, sales.length, payments.length]);
+
   // Login handler
   const login = (usernameInput: string, passwordInput: string): boolean => {
     const savedPass = localStorage.getItem(STORAGE_KEYS.PASS);

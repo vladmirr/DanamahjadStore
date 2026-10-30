@@ -13,10 +13,9 @@ import { TransactionHistory } from './components/reports/TransactionHistory';
 import { BackupManager } from './components/backup/BackupManager';
 import { InvoiceModal } from './components/modals/InvoiceModal';
 import { StatementModal } from './components/modals/StatementModal';
-import { CloudSyncModal } from './components/modals/CloudSyncModal';
 
 const MainLayout: React.FC = () => {
-  const { adminUser, activeTab, setIsSidebarOpen, isCloudSyncOpen, setIsCloudSyncOpen } = useApp();
+  const { adminUser, activeTab, setIsSidebarOpen } = useApp();
 
   // Shared modal states triggered across components/header
   const [isAddProductModalOpen, setIsAddProductModalOpen] = useState(false);
@@ -31,18 +30,12 @@ const MainLayout: React.FC = () => {
     <div className="min-h-screen bg-[#08090d] text-slate-100 flex flex-col antialiased selection:bg-amber-500/30 selection:text-amber-200 relative">
       {/* Top Right Floating Action Buttons */}
       <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-40 flex items-center gap-2">
-        {/* Direct Cloud Sync Button */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onClick={() => setIsCloudSyncOpen(true)}
-          className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#0e111a]/95 hover:bg-[#151926] border border-amber-500/35 hover:border-amber-500/60 text-amber-300 shadow-xl shadow-black/80 backdrop-blur-md transition-all cursor-pointer group select-none text-xs font-bold"
-          title="هاوکاتکردنی هەور"
-        >
-          <Cloud className="w-4 h-4 text-amber-400 group-hover:scale-110 transition-transform" />
-          <span className="hidden sm:inline">هاوکاتکردنی هەور</span>
-          <span className="sm:hidden">هەور</span>
-        </motion.button>
+        {/* Automatic Cloud Backup Status Pill */}
+        <div className="flex items-center gap-1.5 px-3 py-2 rounded-2xl bg-[#0e111a]/95 border border-emerald-500/30 text-emerald-400 shadow-xl shadow-black/80 backdrop-blur-md select-none text-xs font-bold">
+          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <Cloud className="w-3.5 h-3.5 text-emerald-400" />
+          <span className="hidden sm:inline">پاڵپشتی هەور</span>
+        </div>
 
         {/* Menu Button */}
         <motion.button
@@ -106,10 +99,6 @@ const MainLayout: React.FC = () => {
       {/* Global Modals */}
       <InvoiceModal />
       <StatementModal />
-      <CloudSyncModal
-        isOpen={isCloudSyncOpen}
-        onClose={() => setIsCloudSyncOpen(false)}
-      />
     </div>
   );
 };
