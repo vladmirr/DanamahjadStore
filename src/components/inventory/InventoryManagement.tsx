@@ -46,7 +46,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     cartons: '',
     unitsPerCarton: '',
     sellingPricePerUnit: '',
-    minStockThreshold: '24',
+    minStockThreshold: '',
   });
 
   // Filtered Products
@@ -95,10 +95,10 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
       barcode: '',
       category: 'گشتی',
       costPricePerUnit: '',
-      cartons: '10',
-      unitsPerCarton: '12',
+      cartons: '',
+      unitsPerCarton: '',
       sellingPricePerUnit: '',
-      minStockThreshold: '20',
+      minStockThreshold: '',
     });
     setIsAddModalOpen(true);
   };
@@ -160,7 +160,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
   // Calculated preview in modal
   const calcCartons = Number(formData.cartons) || 0;
-  const calcUnitsPerCarton = Number(formData.unitsPerCarton) || 1;
+  const calcUnitsPerCarton = Number(formData.unitsPerCarton) || 0;
   const calcTotalUnits = calcCartons * calcUnitsPerCarton;
   const calcCostUnit = Number(formData.costPricePerUnit) || 0;
 
@@ -424,8 +424,10 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                         min="0"
                         value={formData.cartons}
                         onChange={(e) => setFormData({ ...formData, cartons: e.target.value })}
-                        placeholder="10"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 font-numeric"
+                        onFocus={(e) => e.target.select()}
+                        onClick={(e) => (e.target as HTMLInputElement).select()}
+                        placeholder="0"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-numeric"
                       />
                     </div>
                     <div>
@@ -439,8 +441,10 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                         onChange={(e) =>
                           setFormData({ ...formData, unitsPerCarton: e.target.value })
                         }
-                        placeholder="12"
-                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-emerald-500 font-numeric"
+                        onFocus={(e) => e.target.select()}
+                        onClick={(e) => (e.target as HTMLInputElement).select()}
+                        placeholder="0"
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-1 focus:ring-emerald-500 font-numeric"
                       />
                     </div>
                     <div>
@@ -470,8 +474,10 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     onChange={(e) =>
                       setFormData({ ...formData, costPricePerUnit: e.target.value })
                     }
-                    placeholder="4500"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-numeric"
+                    onFocus={(e) => e.target.select()}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                    placeholder="0"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-numeric"
                   />
                   <span className="text-[10px] text-slate-500 mt-1 block">
                     تێچووی هەر کارتۆنێک: {formatIQD(calcCostUnit * calcUnitsPerCarton)}
@@ -490,8 +496,10 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     onChange={(e) =>
                       setFormData({ ...formData, minStockThreshold: e.target.value })
                     }
-                    placeholder="20"
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-numeric"
+                    onFocus={(e) => e.target.select()}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
+                    placeholder="0"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-numeric"
                   />
                   <span className="text-[10px] text-slate-500 mt-1 block">
                     کاتێک دانەکان کەمتر بوون لەم بڕە، سیستەم هۆشداری پێ دەدات
