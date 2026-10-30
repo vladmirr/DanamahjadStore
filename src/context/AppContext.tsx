@@ -425,7 +425,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const quantityInUnits =
         item.unitType === 'carton' ? item.quantity * unitsPerCarton : item.quantity;
       const costPricePerUnit = prod?.costPricePerUnit || 0;
-      const total = item.quantity * item.unitPrice;
+      const total =
+        item.unitType === 'carton'
+          ? item.quantity * unitsPerCarton * item.unitPrice
+          : item.quantity * item.unitPrice;
       const totalCost = quantityInUnits * costPricePerUnit;
 
       return {

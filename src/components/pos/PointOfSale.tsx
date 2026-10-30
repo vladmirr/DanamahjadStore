@@ -53,14 +53,11 @@ export const PointOfSale: React.FC = () => {
     [products, selectedProductId]
   );
 
-  // Suggest default price when unit or product changes
+  // Suggest default price per piece
   const defaultPrice = useMemo(() => {
     if (!currentProduct) return 0;
-    if (selectedUnitType === 'carton') {
-      return currentProduct.sellingPricePerUnit * currentProduct.unitsPerCarton;
-    }
     return currentProduct.sellingPricePerUnit;
-  }, [currentProduct, selectedUnitType]);
+  }, [currentProduct]);
 
   // Handle product selection
   const handleSelectProduct = (prod: Product) => {
@@ -87,8 +84,9 @@ export const PointOfSale: React.FC = () => {
     }
 
     const unitPrice = Number(customPrice) || defaultPrice;
+    const piecesPerCarton = currentProduct.unitsPerCarton || 1;
     const requiredUnits =
-      selectedUnitType === 'carton' ? qty * currentProduct.unitsPerCarton : qty;
+      selectedUnitType === 'carton' ? qty * piecesPerCarton : qty;
 
     if (requiredUnits > currentProduct.totalUnits) {
       alert(`ببورە! لە کۆگادا تەنها ${currentProduct.totalUnits} دانە بەردەستە.`);
@@ -105,7 +103,7 @@ export const PointOfSale: React.FC = () => {
       const newQty = updated[existingIndex].quantity + qty;
       const newRequiredUnits =
         selectedUnitType === 'carton'
-          ? newQty * currentProduct.unitsPerCarton
+          ? newQty * piecesPerCarton
           : newQty;
 
       if (newRequiredUnits > currentProduct.totalUnits) {
@@ -125,7 +123,7 @@ export const PointOfSale: React.FC = () => {
           unitType: selectedUnitType,
           quantity: qty,
           unitPrice,
-          unitsPerCarton: currentProduct.unitsPerCarton,
+          unitsPerCarton: piecesPerCarton,
           availableUnits: currentProduct.totalUnits,
         },
       ]);
@@ -164,9 +162,15 @@ export const PointOfSale: React.FC = () => {
     setCart(updated);
   };
 
-  // Cart calculations
+  // Cart calculations taking piecesPerCarton into account for cartons
   const totalGrossAmount = useMemo(() => {
-    return cart.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
+    return cart.reduce((acc, item) => {
+      const lineTotal =
+        item.unitType === 'carton'
+          ? item.quantity * (item.unitsPerCarton || 1) * item.unitPrice
+          : item.quantity * item.unitPrice;
+      return acc + lineTotal;
+    }, 0);
   }, [cart]);
 
   // Down payment calculations
@@ -399,7 +403,11 @@ export const PointOfSale: React.FC = () => {
                   <div className="text-xs">
                     <span className="text-slate-400">کۆی ئەم کاڵایە: </span>
                     <span className="text-sm font-bold text-amber-300 font-numeric">
-                      {formatIQD((parseInt(selectedQuantity) || 0) * (Number(customPrice) || defaultPrice))}
+                      {formatIQD(
+                        selectedUnitType === 'carton'
+                          ? (parseInt(selectedQuantity) || 0) * (currentProduct.unitsPerCarton || 1) * (Number(customPrice) || defaultPrice)
+                          : (parseInt(selectedQuantity) || 0) * (Number(customPrice) || defaultPrice)
+                      )}
                     </span>
                     <span className="text-[11px] text-slate-500 block">
                       کۆی دانەی کەمکراوە: {selectedUnitType === 'carton' ? (parseInt(selectedQuantity) || 0) * currentProduct.unitsPerCarton : (parseInt(selectedQuantity) || 0)} دانە
@@ -578,7 +586,12 @@ export const PointOfSale: React.FC = () => {
                           {item.productName}
                         </p>
                         <p className="text-[11px] text-slate-400 font-numeric">
-                          {item.quantity} {item.unitType === 'carton' ? 'کارتۆن' : 'دانە'} × {formatIQD(item.unitPrice)}
+                          {item.quantity} {item.unitType === 'carton' ? 'کارتۆن' : 'دانە'}
+                          {item.unitType === 'carton' && (
+                            <span className="text-[10px] text-slate-500 mr-1">
+                              ({item.quantity * (item.unitsPerCarton || 1)} دانە)
+                            </span>
+                          )} × {formatIQD(item.unitPrice)}
                         </p>
                       </div>
 
@@ -605,8 +618,12 @@ export const PointOfSale: React.FC = () => {
                         </div>
 
                         {/* Line total */}
-                        <span className="font-bold text-white font-numeric w-20 text-left">
-                          {formatIQD(item.quantity * item.unitPrice)}
+                        <span className="font-bold text-white font-numeric w-24 text-left">
+                          {formatIQD(
+                            item.unitType === 'carton'
+                              ? item.quantity * (item.unitsPerCarton || 1) * item.unitPrice
+                              : item.quantity * item.unitPrice
+                          )}
                         </span>
 
                         {/* Remove */}
