@@ -10,6 +10,7 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 
+// Direct Firebase configuration (works on all devices and builds without env vars)
 export const firebaseConfig = {
   apiKey: "AIzaSyC6zc2Eg5wwNb2RKFUszfnvQ5Z8kzaOUyM",
   authDomain: "mystore-51968.firebaseapp.com",
@@ -17,10 +18,10 @@ export const firebaseConfig = {
   storageBucket: "mystore-51968.firebasestorage.app",
   messagingSenderId: "919200170408",
   appId: "1:919200170408:web:5819fc14502b7fcd489d9d",
-  measurementId: "G-0B8566TBCX",
+  measurementId: "G-0B8566TBCX"
 };
 
-// Initialize Firebase App & Firestore Database
+// Initialize Firebase App & export Cloud Firestore instance
 export const app = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 export const db = getFirestore(app);
 
