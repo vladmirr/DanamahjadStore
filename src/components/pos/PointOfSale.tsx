@@ -43,7 +43,7 @@ export const PointOfSale: React.FC = () => {
   // Selected item adder controls
   const [selectedProductId, setSelectedProductId] = useState<string>('');
   const [selectedUnitType, setSelectedUnitType] = useState<'carton' | 'unit'>('unit');
-  const [selectedQuantity, setSelectedQuantity] = useState<number>(1);
+  const [selectedQuantity, setSelectedQuantity] = useState<string>('1');
   const [customPrice, setCustomPrice] = useState<string>('');
   const [productSearch, setProductSearch] = useState('');
 
@@ -66,7 +66,7 @@ export const PointOfSale: React.FC = () => {
   const handleSelectProduct = (prod: Product) => {
     setSelectedProductId(prod.id);
     setSelectedUnitType('unit');
-    setSelectedQuantity(1);
+    setSelectedQuantity('1');
     setCustomPrice(prod.sellingPricePerUnit.toString());
   };
 
@@ -89,7 +89,7 @@ export const PointOfSale: React.FC = () => {
     if (!currentProduct) return;
 
     const unitPrice = Number(customPrice) || defaultPrice;
-    const qty = Math.max(1, selectedQuantity);
+    const qty = Math.max(1, parseInt(selectedQuantity) || 1);
     const requiredUnits =
       selectedUnitType === 'carton' ? qty * currentProduct.unitsPerCarton : qty;
 
@@ -135,7 +135,7 @@ export const PointOfSale: React.FC = () => {
     }
 
     // Reset adder
-    setSelectedQuantity(1);
+    setSelectedQuantity('1');
   };
 
   // Remove item from cart
@@ -371,7 +371,14 @@ export const PointOfSale: React.FC = () => {
                       type="number"
                       min="1"
                       value={selectedQuantity}
-                      onChange={(e) => setSelectedQuantity(Math.max(1, parseInt(e.target.value) || 1))}
+                      onChange={(e) => setSelectedQuantity(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
+                      onBlur={() => {
+                        if (!selectedQuantity || parseInt(selectedQuantity) < 1) {
+                          setSelectedQuantity('1');
+                        }
+                      }}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:ring-1 focus:ring-amber-500 font-numeric font-bold"
                     />
                   </div>
@@ -385,6 +392,8 @@ export const PointOfSale: React.FC = () => {
                       type="number"
                       value={customPrice}
                       onChange={(e) => setCustomPrice(e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      onClick={(e) => (e.target as HTMLInputElement).select()}
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-amber-400 focus:outline-none focus:ring-1 focus:ring-amber-500 font-numeric font-bold"
                     />
                   </div>
@@ -395,10 +404,10 @@ export const PointOfSale: React.FC = () => {
                   <div className="text-xs">
                     <span className="text-slate-400">کۆی ئەم کاڵایە: </span>
                     <span className="text-sm font-bold text-amber-300 font-numeric">
-                      {formatIQD(selectedQuantity * (Number(customPrice) || defaultPrice))}
+                      {formatIQD((parseInt(selectedQuantity) || 0) * (Number(customPrice) || defaultPrice))}
                     </span>
                     <span className="text-[11px] text-slate-500 block">
-                      کۆی دانەی کەمکراوە: {selectedUnitType === 'carton' ? selectedQuantity * currentProduct.unitsPerCarton : selectedQuantity} دانە
+                      کۆی دانەی کەمکراوە: {selectedUnitType === 'carton' ? (parseInt(selectedQuantity) || 0) * currentProduct.unitsPerCarton : (parseInt(selectedQuantity) || 0)} دانە
                     </span>
                   </div>
 
