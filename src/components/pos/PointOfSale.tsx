@@ -484,9 +484,8 @@ export const PointOfSale: React.FC = () => {
                     />
 
                     {/* Card Content */}
-                    <div className="relative z-10">
-                      <p className="text-white font-bold group-hover:text-amber-200 transition-colors duration-200 line-clamp-1">{p.name}</p>
-                      <p className="text-xs text-amber-200/70 group-hover:text-amber-100 transition-colors duration-200 font-mono mt-1">{p.barcode || p.id}</p>
+                    <div className="relative z-10 w-full">
+                      <p className="text-white font-bold group-hover:text-amber-200 transition-colors duration-200 line-clamp-2 text-sm">{p.name}</p>
                     </div>
                   </button>
                 );
