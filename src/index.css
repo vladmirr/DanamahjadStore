@@ -80,9 +80,41 @@
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 .btn-gold:hover {
-  background: linear-gradient(135deg, #fef08a 0%, #fbbf24 50%, #f59e0b 100%);
-  box-shadow: 0 6px 25px -2px rgba(245, 158, 11, 0.5);
-  transform: translateY(-1px);
+  background: linear-gradient(135deg, #fef08a 0%, #fbbf24 50%, #f59e0b 100%) !important;
+  box-shadow: 0 8px 30px -2px rgba(245, 158, 11, 0.55), 0 0 20px rgba(245, 158, 11, 0.3) !important;
+  transform: translateY(-2px) !important;
+}
+
+/* ========================================================
+   Universal Luxury Gold Hover System for All Buttons
+   ======================================================== */
+button {
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Micro-lift on hover for interactive buttons */
+button:not(:disabled):hover {
+  transform: translateY(-1.5px);
+}
+
+/* Gold glow, border, and text highlight on hover for all non-danger buttons */
+button:not(:disabled):not(.no-gold-hover):not(.btn-gold):not([class*="text-slate-950"]):not([class*="text-black"]):not([class*="rose"]):not([class*="red"]):hover {
+  border-color: rgba(251, 191, 36, 0.8) !important;
+  box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.28), 0 0 14px rgba(245, 158, 11, 0.16) !important;
+  color: #fef08a !important;
+}
+
+/* Gold ambient background on hover for transparent/dark buttons */
+button:not(:disabled):not(.no-gold-hover):not(.btn-gold):not([class*="text-slate-950"]):not([class*="text-black"]):not([class*="rose"]):not([class*="red"]):not([class*="bg-amber-400"]):hover {
+  background-color: rgba(245, 158, 11, 0.14) !important;
+}
+
+/* SVG icons inside hovered buttons turn gold with soft glow */
+button:not(:disabled):not(.no-gold-hover):not(.btn-gold):not([class*="text-slate-950"]):not([class*="text-black"]):not([class*="rose"]):not([class*="red"]):hover svg {
+  color: #fef08a !important;
+  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.4));
+  transition: all 0.2s ease;
 }
 
 /* Number display font */
