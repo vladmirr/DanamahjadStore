@@ -448,7 +448,7 @@ export const PointOfSale: React.FC = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 max-h-72 overflow-y-auto p-1">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 max-h-72 overflow-y-auto p-2">
               {filteredProducts.map((p) => {
                 const isSelected = selectedProductId === p.id;
                 return (
@@ -456,21 +456,21 @@ export const PointOfSale: React.FC = () => {
                     key={p.id}
                     type="button"
                     onClick={() => handleSelectProduct(p)}
-                    className={`p-3 rounded-xl border text-right transition-all cursor-pointer flex flex-col justify-between ${
+                    className={`group relative bg-slate-900/80 border border-slate-700/60 rounded-2xl p-4 backdrop-blur-md transition-all duration-300 ease-out cursor-pointer hover:-translate-y-1.5 hover:shadow-xl hover:shadow-cyan-500/10 hover:border-cyan-400/80 hover:bg-slate-800/90 text-right flex flex-col justify-between ${
                       isSelected
-                        ? 'bg-emerald-500/15 border-emerald-500 text-emerald-300'
-                        : 'bg-slate-900/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-800/60'
+                        ? '!border-cyan-400 !bg-slate-800/95 ring-2 ring-cyan-400/50 shadow-lg shadow-cyan-500/20'
+                        : ''
                     }`}
                   >
                     <div>
-                      <p className="text-xs font-semibold line-clamp-1">{p.name}</p>
-                      <p className="text-[10px] text-slate-500 font-mono mt-0.5">{p.barcode || p.id}</p>
+                      <p className="text-white font-bold group-hover:text-cyan-300 transition-colors line-clamp-1">{p.name}</p>
+                      <p className="text-xs text-slate-400 group-hover:text-slate-300 font-mono mt-0.5">{p.barcode || p.id}</p>
                     </div>
-                    <div className="mt-3 pt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px]">
-                      <span className="text-[11px] text-slate-400 font-numeric">
+                    <div className="mt-3 pt-2.5 border-t border-slate-700/60 flex items-center justify-between text-sm font-semibold text-emerald-400">
+                      <span className="text-sm font-semibold text-emerald-400 font-numeric">
                         مەوجوود: {p.cartons} CTN
                       </span>
-                      <span className="text-[10px] text-slate-500 font-numeric">
+                      <span className="text-xs font-semibold text-emerald-400/80 font-numeric">
                         ({p.totalUnits} دانە)
                       </span>
                     </div>
