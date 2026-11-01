@@ -456,42 +456,44 @@ export const PointOfSale: React.FC = () => {
                     key={p.id}
                     type="button"
                     onClick={() => handleSelectProduct(p)}
-                    className={`group relative overflow-hidden bg-slate-900/80 border border-slate-700/60 rounded-2xl p-4 backdrop-blur-md transition-all duration-300 ease-out cursor-pointer hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-amber-500/20 hover:border-amber-400/90 hover:bg-slate-900/95 text-right flex flex-col justify-between ${
+                    className={`group relative overflow-hidden bg-gradient-to-br from-amber-950/30 via-slate-900/90 to-slate-950/95 border border-amber-500/30 rounded-2xl p-4 backdrop-blur-md transition-all duration-300 ease-out cursor-pointer hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-amber-500/30 hover:border-amber-400 text-right flex flex-col justify-between ${
                       isSelected
-                        ? '!border-amber-400 !bg-slate-900/95 ring-2 ring-amber-400/50 shadow-xl shadow-amber-500/25'
+                        ? '!border-amber-400 ring-2 ring-amber-400/60 shadow-xl shadow-amber-500/35 from-amber-950/60 via-slate-900/95 to-amber-950/40'
                         : ''
                     }`}
                   >
                     {/* Top Gold Shimmer Beam */}
                     <div
-                      className={`absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent transition-opacity duration-300 ${
+                      className={`absolute top-0 inset-x-0 h-[2.5px] bg-gradient-to-r from-transparent via-amber-300 to-transparent transition-opacity duration-300 z-10 ${
                         isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}
                     />
 
-                    {/* Soft Radial Gold Ambient Glow */}
+                    {/* Rich Gold Background Fill inside the box */}
                     <div
-                      className={`absolute -top-12 -right-12 w-28 h-28 bg-amber-400/15 rounded-full blur-2xl transition-opacity duration-500 pointer-events-none ${
+                      className={`absolute inset-0 bg-gradient-to-br from-amber-600/30 via-amber-500/20 to-yellow-500/25 transition-opacity duration-300 pointer-events-none ${
                         isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}
                     />
+
+                    {/* Warm Gold Corner Flare */}
                     <div
-                      className={`absolute inset-0 bg-gradient-to-br from-amber-500/10 via-transparent to-amber-600/5 transition-opacity duration-300 pointer-events-none ${
+                      className={`absolute -top-10 -right-10 w-36 h-36 bg-amber-400/25 rounded-full blur-2xl transition-opacity duration-500 pointer-events-none ${
                         isSelected ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                       }`}
                     />
 
                     {/* Card Content */}
                     <div className="relative z-10">
-                      <p className="text-white font-bold group-hover:text-amber-300 transition-colors duration-200 line-clamp-1">{p.name}</p>
-                      <p className="text-xs text-slate-400 group-hover:text-amber-200/90 transition-colors duration-200 font-mono mt-0.5">{p.barcode || p.id}</p>
+                      <p className="text-white font-bold group-hover:text-amber-200 transition-colors duration-200 line-clamp-1">{p.name}</p>
+                      <p className="text-xs text-amber-200/70 group-hover:text-amber-100 transition-colors duration-200 font-mono mt-0.5">{p.barcode || p.id}</p>
                     </div>
 
-                    <div className="relative z-10 mt-3 pt-2.5 border-t border-slate-700/60 group-hover:border-amber-500/30 transition-colors duration-300 flex items-center justify-between text-sm font-semibold">
-                      <span className="text-sm font-semibold text-emerald-400 group-hover:text-amber-300 transition-colors duration-200 font-numeric">
+                    <div className="relative z-10 mt-3 pt-2.5 border-t border-amber-500/20 group-hover:border-amber-400/40 transition-colors duration-300 flex items-center justify-between text-sm font-semibold">
+                      <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors duration-200 font-numeric">
                         مەوجوود: {p.cartons} CTN
                       </span>
-                      <span className="text-xs font-semibold text-emerald-400/80 group-hover:text-amber-200/90 transition-colors duration-200 font-numeric">
+                      <span className="text-xs font-semibold text-amber-300/80 group-hover:text-amber-200 transition-colors duration-200 font-numeric">
                         ({p.totalUnits} دانە)
                       </span>
                     </div>
