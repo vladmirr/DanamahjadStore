@@ -486,16 +486,7 @@ export const PointOfSale: React.FC = () => {
                     {/* Card Content */}
                     <div className="relative z-10">
                       <p className="text-white font-bold group-hover:text-amber-200 transition-colors duration-200 line-clamp-1">{p.name}</p>
-                      <p className="text-xs text-amber-200/70 group-hover:text-amber-100 transition-colors duration-200 font-mono mt-0.5">{p.barcode || p.id}</p>
-                    </div>
-
-                    <div className="relative z-10 mt-3 pt-2.5 border-t border-amber-500/20 group-hover:border-amber-400/40 transition-colors duration-300 flex items-center justify-between text-sm font-semibold">
-                      <span className="text-sm font-bold text-amber-400 group-hover:text-amber-300 transition-colors duration-200 font-numeric">
-                        مەوجوود: {p.cartons} CTN
-                      </span>
-                      <span className="text-xs font-semibold text-amber-300/80 group-hover:text-amber-200 transition-colors duration-200 font-numeric">
-                        ({p.totalUnits} دانە)
-                      </span>
+                      <p className="text-xs text-amber-200/70 group-hover:text-amber-100 transition-colors duration-200 font-mono mt-1">{p.barcode || p.id}</p>
                     </div>
                   </button>
                 );
