@@ -623,20 +623,11 @@ ${
           ==================================================== */}
       <div className="rounded-2xl bg-[#0f1115] border border-white/[0.08] p-5 md:p-6 shadow-lg">
         <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
-          {/* Left: Transaction Brand & Logistics Subtext */}
-          <div className="space-y-1">
+          {/* Left: Transaction Brand */}
+          <div>
             <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
               {activeTransaction.name}
             </h1>
-            <p className="text-xs text-neutral-400 flex items-center gap-2 flex-wrap font-numeric">
-              <span className="text-neutral-200 font-medium">{totalCargoTons} تۆن دەنکە گەنمەشامی</span>
-              <span className="text-neutral-600">•</span>
-              <span>کڕین: {formatUSD(buyPricePerTon)}/تۆن</span>
-              <span className="text-neutral-600">•</span>
-              <span>{sellPricePerTon > 0 ? `فرۆشتن: ${formatUSD(sellPricePerTon)}/تۆن` : 'فرۆشتن: دیارینەکراوە'}</span>
-              <span className="text-neutral-600">•</span>
-              <span className="text-neutral-300 font-semibold">{trucks.length} بارهەڵگر تۆمارکراوە ({totalTonsCarried} تۆن)</span>
-            </p>
           </div>
 
           {/* Right: Modern Command Toolbar */}
