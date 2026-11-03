@@ -904,7 +904,6 @@ function renderSinglePopcornWorksheet(
   const expHeaders = [
     'لق / وڵات',
     'ناونیشانی مەسروف / خەرجی',
-    'پۆلێن / بەش',
     'بڕ بە دۆلار ($ USD)',
     'بڕ بە دراوی ناوخۆ',
     'بەروار',
@@ -914,7 +913,7 @@ function renderSinglePopcornWorksheet(
   const expHeadRow = ws.addRow(expHeaders);
   expHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   expHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
-  for (let c = 1; c <= 8; c++) {
+  for (let c = 1; c <= 7; c++) {
     expHeadRow.getCell(c).border = thinBorder;
   }
 
@@ -924,7 +923,6 @@ function renderSinglePopcornWorksheet(
     const r = ws.addRow([
       regText,
       e.title,
-      e.category,
       Number(e.amountUSD) || 0,
       e.amountLocal ? Number(e.amountLocal).toLocaleString() : '—',
       e.date,
@@ -932,7 +930,7 @@ function renderSinglePopcornWorksheet(
       e.notes || '',
     ]);
     r.font = { size: 10 };
-    for (let c = 1; c <= 8; c++) {
+    for (let c = 1; c <= 7; c++) {
       r.getCell(c).border = thinBorder;
     }
   });
@@ -941,7 +939,6 @@ function renderSinglePopcornWorksheet(
   const expTotalRow = ws.addRow([
     `کۆی گشتی خەرجییەکان (${expenses.length} خەرجی)`,
     `ئێران: $${totalIranSpending.toLocaleString()} | عێراق: $${totalIraqSpending.toLocaleString()}`,
-    '—',
     totalOperatingExpenses,
     '—',
     '—',
@@ -950,7 +947,7 @@ function renderSinglePopcornWorksheet(
   ]);
   expTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
   expTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
-  for (let c = 1; c <= 8; c++) {
+  for (let c = 1; c <= 7; c++) {
     expTotalRow.getCell(c).border = thinBorder;
   }
 

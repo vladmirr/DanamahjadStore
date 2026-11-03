@@ -1199,7 +1199,6 @@ ${
                 <thead>
                   <tr className="bg-slate-900/90 border-b border-slate-800 text-slate-400">
                     <th className="py-3 px-4 font-semibold">ناونیشانی خەرجی</th>
-                    <th className="py-3 px-4 font-semibold">پۆلێن / بەش</th>
                     <th className="py-3 px-4 font-semibold">بڕ بە دۆلار ($)</th>
                     <th className="py-3 px-4 font-semibold">بەروار</th>
                     <th className="py-3 px-4 font-semibold">دراوە لەلایەن</th>
@@ -1209,7 +1208,7 @@ ${
                 <tbody className="divide-y divide-slate-800/60">
                   {filteredExpenses.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="py-10 text-center text-slate-500">
+                      <td colSpan={5} className="py-10 text-center text-slate-500">
                         هیچ خەرجییەک بۆ ئەم بەشە تۆمار نەکراوە!
                       </td>
                     </tr>
@@ -1227,11 +1226,6 @@ ${
                                 {expense.notes}
                               </div>
                             )}
-                          </td>
-                          <td className="py-3 px-4 text-slate-400">
-                            <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800 text-[11px]">
-                              {expense.category}
-                            </span>
                           </td>
                           <td className="py-3 px-4 font-bold text-rose-300 font-numeric text-sm">
                             {formatUSD(expense.amountUSD)}
@@ -2019,41 +2013,19 @@ ${
               </div>
 
               <form onSubmit={handleSaveExpense} className="space-y-4 text-xs">
-                {/* Title & Category */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      ناونیشانی مەسروف / خەرجی <span className="text-rose-400">*</span>
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      placeholder="نموونە: کرێی داگرتنی ٢ بارهەڵگر لە عەلوە"
-                      value={expenseForm.title}
-                      onChange={(e) => setExpenseForm({ ...expenseForm, title: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">پۆلێن / بەش</label>
-                    <input
-                      type="text"
-                      list="categories-list"
-                      value={expenseForm.category}
-                      onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
-                      placeholder="کرێی بارهەڵگر، گومرگ..."
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                    <datalist id="categories-list">
-                      <option value="کرێی بارهەڵگر (Truck Freight)" />
-                      <option value="گومرگ و تەخلیس (Border Customs)" />
-                      <option value="گومرگی عێراق (Iraq Customs)" />
-                      <option value="داگرتن و کرێکار (Labor & Offloading)" />
-                      <option value="عەمبار و کۆگا (Storage)" />
-                      <option value="پشکنین و تاقیگە (Quality Inspection)" />
-                    </datalist>
-                  </div>
+                {/* Title */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    ناونیشانی مەسروف / خەرجی <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="نموونە: کرێی داگرتنی ٢ بارهەڵگر لە عەلوە، گومرگ، کرێی ترانزێت..."
+                    value={expenseForm.title}
+                    onChange={(e) => setExpenseForm({ ...expenseForm, title: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                  />
                 </div>
 
                 {/* Amount USD & Local */}
