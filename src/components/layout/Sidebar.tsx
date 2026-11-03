@@ -32,7 +32,7 @@ export const Sidebar: React.FC = () => {
     {
       id: 'popcorn',
       label: 'مامەڵەکردنی کاڵا',
-      sublabel: 'هاوردەکردن لە ڕووسیا، بارهەڵگرەکانی ئێران و شەراکەت',
+      sublabel: '',
       icon: Truck,
       badge: (
         <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-neutral-300 border border-white/15">
@@ -180,9 +180,11 @@ export const Sidebar: React.FC = () => {
                         </div>
                         <div>
                           <div className="text-sm font-semibold">{item.label}</div>
-                          <div className="text-[11px] text-neutral-400">
-                            {item.sublabel}
-                          </div>
+                          {item.sublabel ? (
+                            <div className="text-[11px] text-neutral-400">
+                              {item.sublabel}
+                            </div>
+                          ) : null}
                         </div>
                       </div>
 
