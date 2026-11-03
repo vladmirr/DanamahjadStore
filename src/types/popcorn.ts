@@ -31,8 +31,8 @@ export interface PopcornTruck {
 export interface PopcornExpense {
   id: string;
   region: 'iran' | 'iraq'; // مەسروفی ئێران یان عێراق
-  title: string; // ناونیشانی خەرجی
-  category: string; // پۆلێن (کرێی بارهەڵگر، گومرگ، داگرتن، عەمبار، شارەوانی، هتد)
+  title?: string; // ناونیشانی خەرجی (ئارەزوومەندانە)
+  category?: string; // پۆلێن (ئارەزوومەندانە)
   amountUSD: number; // بڕ بە دۆلار ($)
   amountLocal?: number; // بڕ بە دراوی ناوخۆ (تمەن یان دینار)
   date: string; // بەروار

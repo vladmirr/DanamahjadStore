@@ -903,7 +903,6 @@ function renderSinglePopcornWorksheet(
 
   const expHeaders = [
     'لق / وڵات',
-    'ناونیشانی مەسروف / خەرجی',
     'بڕ بە دۆلار ($ USD)',
     'بڕ بە دراوی ناوخۆ',
     'بەروار',
@@ -913,7 +912,7 @@ function renderSinglePopcornWorksheet(
   const expHeadRow = ws.addRow(expHeaders);
   expHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   expHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
-  for (let c = 1; c <= 7; c++) {
+  for (let c = 1; c <= 6; c++) {
     expHeadRow.getCell(c).border = thinBorder;
   }
 
@@ -922,7 +921,6 @@ function renderSinglePopcornWorksheet(
     const payerText = e.paidBy === 'partner' ? 'شەریک / هاوبەش' : e.paidBy === 'me' ? 'لەلایەن منەوە' : 'هاوبەش';
     const r = ws.addRow([
       regText,
-      e.title,
       Number(e.amountUSD) || 0,
       e.amountLocal ? Number(e.amountLocal).toLocaleString() : '—',
       e.date,
@@ -930,7 +928,7 @@ function renderSinglePopcornWorksheet(
       e.notes || '',
     ]);
     r.font = { size: 10 };
-    for (let c = 1; c <= 7; c++) {
+    for (let c = 1; c <= 6; c++) {
       r.getCell(c).border = thinBorder;
     }
   });
@@ -938,7 +936,6 @@ function renderSinglePopcornWorksheet(
   // Expenses Total Row
   const expTotalRow = ws.addRow([
     `کۆی گشتی خەرجییەکان (${expenses.length} خەرجی)`,
-    `ئێران: $${totalIranSpending.toLocaleString()} | عێراق: $${totalIraqSpending.toLocaleString()}`,
     totalOperatingExpenses,
     '—',
     '—',
@@ -947,7 +944,7 @@ function renderSinglePopcornWorksheet(
   ]);
   expTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
   expTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
-  for (let c = 1; c <= 7; c++) {
+  for (let c = 1; c <= 6; c++) {
     expTotalRow.getCell(c).border = thinBorder;
   }
 

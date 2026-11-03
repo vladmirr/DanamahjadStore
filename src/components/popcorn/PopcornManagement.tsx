@@ -483,8 +483,8 @@ export const PopcornManagement: React.FC = () => {
     setEditingExpense(expense);
     setExpenseForm({
       region: expense.region,
-      title: expense.title,
-      category: expense.category,
+      title: expense.title || '',
+      category: expense.category || '',
       amountUSD: String(expense.amountUSD),
       amountLocal: expense.amountLocal ? String(expense.amountLocal) : '',
       date: expense.date,
@@ -496,7 +496,7 @@ export const PopcornManagement: React.FC = () => {
 
   const handleSaveExpense = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!expenseForm.title.trim() || !expenseForm.amountUSD) {
+    if (!expenseForm.amountUSD) {
       playSound('error');
       return;
     }
@@ -512,8 +512,8 @@ export const PopcornManagement: React.FC = () => {
             ? {
                 ...ex,
                 region: expenseForm.region,
-                title: expenseForm.title.trim(),
-                category: expenseForm.category.trim(),
+                title: expenseForm.title?.trim() || (expenseForm.region === 'iran' ? 'خەرجی ئێران' : 'خەرجی عێراق'),
+                category: expenseForm.category?.trim() || '',
                 amountUSD: usd,
                 amountLocal: local,
                 date: expenseForm.date,
@@ -526,8 +526,8 @@ export const PopcornManagement: React.FC = () => {
         const newExpense: PopcornExpense = {
           id: `exp-${Date.now()}`,
           region: expenseForm.region,
-          title: expenseForm.title.trim(),
-          category: expenseForm.category.trim(),
+          title: expenseForm.title?.trim() || (expenseForm.region === 'iran' ? 'خەرجی ئێران' : 'خەرجی عێراق'),
+          category: expenseForm.category?.trim() || '',
           amountUSD: usd,
           amountLocal: local,
           date: expenseForm.date,
@@ -1198,7 +1198,7 @@ ${
               <table className="w-full text-right text-xs">
                 <thead>
                   <tr className="bg-slate-900/90 border-b border-slate-800 text-slate-400">
-                    <th className="py-3 px-4 font-semibold">ناونیشانی خەرجی</th>
+                    <th className="py-3 px-4 font-semibold">خەرجی (لق)</th>
                     <th className="py-3 px-4 font-semibold">بڕ بە دۆلار ($)</th>
                     <th className="py-3 px-4 font-semibold">بەروار</th>
                     <th className="py-3 px-4 font-semibold">دراوە لەلایەن</th>
@@ -1219,10 +1219,10 @@ ${
                           <td className="py-3 px-4">
                             <div className="font-semibold text-white flex items-center gap-1.5">
                               <span className="text-base">{expense.region === 'iran' ? '🇮🇷' : '🇮🇶'}</span>
-                              <span>{expense.title}</span>
+                              <span>{expense.title || (expense.region === 'iran' ? 'خەرجی ئێران' : 'خەرجی عێراق')}</span>
                             </div>
                             {expense.notes && (
-                              <div className="text-[10px] text-slate-500 mt-0.5">
+                              <div className="text-[10px] text-slate-400 mt-0.5">
                                 {expense.notes}
                               </div>
                             )}
@@ -2013,21 +2013,6 @@ ${
               </div>
 
               <form onSubmit={handleSaveExpense} className="space-y-4 text-xs">
-                {/* Title */}
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    ناونیشانی مەسروف / خەرجی <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="نموونە: کرێی داگرتنی ٢ بارهەڵگر لە عەلوە، گومرگ، کرێی ترانزێت..."
-                    value={expenseForm.title}
-                    onChange={(e) => setExpenseForm({ ...expenseForm, title: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                  />
-                </div>
-
                 {/* Amount USD & Local */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
