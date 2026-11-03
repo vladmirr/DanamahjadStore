@@ -1,6 +1,17 @@
 // Currency and formatting utilities for Kurdish Sorani and Iraqi Dinar (IQD)
 
 /**
+ * Format number into US Dollar string (e.g. $25,000)
+ */
+export function formatUSD(amount: number | null | undefined): string {
+  const val = Number(amount) || 0;
+  return '$' + new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  }).format(val);
+}
+
+/**
  * Format number into Iraqi Dinar string (e.g. 25,000 د.ع)
  */
 export function formatIQD(amount: number | null | undefined): string {

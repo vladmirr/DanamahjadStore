@@ -12,6 +12,7 @@ import {
   Shield,
   AlertTriangle,
   ChevronLeft,
+  Truck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
@@ -26,8 +27,19 @@ export const Sidebar: React.FC = () => {
     metrics,
   } = useApp();
 
-  // The 3 main options requested for this menu
+  // The main options for this menu
   const primaryMenuItems = [
+    {
+      id: 'popcorn',
+      label: 'پۆپکورن (Popcorn Import & Partnership)',
+      sublabel: 'هاوردەکردن لە ڕووسیا، بارهەڵگرەکانی ئێران و شەراکەت',
+      icon: Truck,
+      badge: (
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/25 text-amber-300 border border-amber-500/40">
+          نوێ / NEW
+        </span>
+      ),
+    },
     {
       id: 'inventory',
       label: 'کۆگا و کاڵاکان',

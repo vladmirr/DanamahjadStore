@@ -1,6 +1,7 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Product, Sale, PaymentVoucher, CustomerDebtSummary } from '../types';
+import { PopcornProjectData } from '../types/popcorn';
 import { formatShortDate } from './formatters';
 
 interface ExportOptions {
@@ -678,5 +679,163 @@ export async function exportAllDataToExcel(
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
     `DanaMahjadStore_Report_${dateStr}.xlsx`
+  );
+}
+
+/**
+ * Export Popcorn Shipment, Trucks, Expenses, and Partner Accounting to Excel
+ */
+export async function exportPopcornToExcel(data: PopcornProjectData) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'DanaMahjadStore';
+  workbook.created = new Date();
+
+  const { config, trucks, expenses } = data;
+
+  const totalCargoTons = Number(config.totalTons) || 200;
+  const buyPricePerTon = Number(config.buyPricePerTonUSD) || 220;
+  const sellPricePerTon = Number(config.sellingPricePerTonUSD) || 302;
+  const exchangeRate = Number(config.exchangeRateIQD) || 1530;
+
+  const totalBuyingCost = totalCargoTons * buyPricePerTon;
+  const expectedTotalRevenue = totalCargoTons * sellPricePerTon;
+
+  const iranExpenses = expenses.filter((e) => e.region === 'iran');
+  const iraqExpenses = expenses.filter((e) => e.region === 'iraq');
+  const totalIranSpending = iranExpenses.reduce((acc, e) => acc + (Number(e.amountUSD) || 0), 0);
+  const totalIraqSpending = iraqExpenses.reduce((acc, e) => acc + (Number(e.amountUSD) || 0), 0);
+  const totalOperatingExpenses = totalIranSpending + totalIraqSpending;
+  const totalOverallCost = totalBuyingCost + totalOperatingExpenses;
+  const finalNetProfit = expectedTotalRevenue - totalOverallCost;
+
+  const partnerPercent = Number(config.partnerSharePercent) || 50;
+  const myPercent = 100 - partnerPercent;
+  const partnerProfitShare = (finalNetProfit * partnerPercent) / 100;
+  const myProfitShare = (finalNetProfit * myPercent) / 100;
+
+  // SHEET 1: Summary & Partner Settlement
+  const ws1 = workbook.addWorksheet('پوختەی پڕۆژە و شەراکەت', {
+    views: [{ rightToLeft: true }],
+  });
+
+  ws1.columns = [
+    { width: 35 },
+    { width: 22 },
+    { width: 25 },
+    { width: 35 },
+  ];
+
+  ws1.addRow(['پڕۆژەی هاوردەکردنی پۆپکورن (Popcorn Import & Partnership)']);
+  ws1.mergeCells('A1:D1');
+  const titleCell = ws1.getCell('A1');
+  titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD97706' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws1.getRow(1).height = 35;
+
+  ws1.addRow([]);
+  ws1.addRow(['بڕگە', 'بڕ / نرخ بە دۆلار ($)', 'بە دیناری عێراقی (IQD)', 'تێبینی']);
+  const headRow = ws1.getRow(3);
+  headRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+
+  const summaryData = [
+    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', `وڵاتی کڕین: ${config.originCountry}`],
+    ['نرخی کڕینی ١ تۆن', `$${buyPricePerTon}`, `${(buyPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی گرێبەست لە ڕووسیا'],
+    ['کۆی تێچووی کڕینی دانەوێڵە', `$${totalBuyingCost.toLocaleString()}`, `${(totalBuyingCost * exchangeRate).toLocaleString()} د.ع`, '٢٠٠ تۆن × $٢٢٠'],
+    ['نرخی پێشبینیکراوی فرۆشتنی ١ تۆن', `$${sellPricePerTon}`, `${(sellPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی فرۆش لە بازاڕی سلێمانی'],
+    ['کۆی داهاتی فرۆش', `$${expectedTotalRevenue.toLocaleString()}`, `${(expectedTotalRevenue * exchangeRate).toLocaleString()} د.ع`, '٢٠٠ تۆن × $٣٠٢'],
+    ['خەرجییەکانی ئێران و ترانزێت', `$${totalIranSpending.toLocaleString()}`, `${(totalIranSpending * exchangeRate).toLocaleString()} د.ع`, 'کرێی بارهەڵگر، گومرگ و پشکنین'],
+    ['خەرجییەکانی ناوخۆی عێراق', `$${totalIraqSpending.toLocaleString()}`, `${(totalIraqSpending * exchangeRate).toLocaleString()} د.ع`, 'گومرگی باشماخ، داگرتن و کۆگا'],
+    ['کۆی گشتی هەموو خەرجییەکان', `$${totalOverallCost.toLocaleString()}`, `${(totalOverallCost * exchangeRate).toLocaleString()} د.ع`, 'کڕین + خەرجی ئێران + خەرجی عێراق'],
+    ['قازانجی پوختەی گشتی (Net Profit)', `$${finalNetProfit.toLocaleString()}`, `${(finalNetProfit * exchangeRate).toLocaleString()} د.ع`, 'داهاتی فرۆش - هەموو خەرجییەکان'],
+    [`پشکی هاوبەش (${config.partnerName} - %${partnerPercent})`, `$${partnerProfitShare.toLocaleString()}`, `${(partnerProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی شەراکەت'],
+    [`پشکی من (%${myPercent})`, `$${myProfitShare.toLocaleString()}`, `${(myProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی من'],
+  ];
+
+  summaryData.forEach((row) => {
+    ws1.addRow(row);
+  });
+
+  // SHEET 2: Trucks (لقی بارهەڵگرەکان)
+  const ws2 = workbook.addWorksheet('لقی بارهەڵگرەکان (Trucks)', {
+    views: [{ rightToLeft: true }],
+  });
+
+  ws2.columns = [
+    { header: 'ژمارەی تابلۆ', key: 'plate', width: 22 },
+    { header: 'ناوی شۆفێر', key: 'driver', width: 20 },
+    { header: 'مۆبایلی شۆفێر', key: 'phone', width: 16 },
+    { header: 'بڕی بار (تۆن)', key: 'tons', width: 15 },
+    { header: 'شوێنی گەیندن / مەبەست', key: 'destination', width: 30 },
+    { header: 'بەرواری بارکردن', key: 'dispatchDate', width: 15 },
+    { header: 'بەرواری گەیشتن', key: 'arrivalDate', width: 15 },
+    { header: 'کرێی ترانزێت ($)', key: 'cost', width: 16 },
+    { header: 'دۆخ', key: 'status', width: 16 },
+    { header: 'تێبینی', key: 'notes', width: 30 },
+  ];
+
+  const truckHead = ws2.getRow(1);
+  truckHead.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  truckHead.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD97706' } };
+
+  trucks.forEach((t) => {
+    const statusText = t.status === 'delivered' ? 'گەیشتووە' : t.status === 'in_transit' ? 'لە ڕێگایە' : 'لە گومرگە';
+    ws2.addRow({
+      plate: t.plateNumber,
+      driver: t.driverName,
+      phone: t.driverPhone || '—',
+      tons: t.tonsCarried,
+      destination: t.destination,
+      dispatchDate: t.dispatchDate,
+      arrivalDate: t.arrivalDate || '—',
+      cost: t.transitCostUSD || 0,
+      status: statusText,
+      notes: t.notes || '',
+    });
+  });
+
+  // SHEET 3: Expenses (خەرجییەکان)
+  const ws3 = workbook.addWorksheet('خەرجییەکان (Expenses)', {
+    views: [{ rightToLeft: true }],
+  });
+
+  ws3.columns = [
+    { header: 'لق / وڵات', key: 'region', width: 16 },
+    { header: 'ناونیشانی خەرجی', key: 'title', width: 35 },
+    { header: 'پۆلێن', key: 'category', width: 25 },
+    { header: 'بڕ بە دۆلار ($)', key: 'amountUSD', width: 18 },
+    { header: 'بڕ بە دراوی ناوخۆ', key: 'amountLocal', width: 20 },
+    { header: 'بەروار', key: 'date', width: 15 },
+    { header: 'دراوە لەلایەن', key: 'paidBy', width: 18 },
+    { header: 'تێبینی', key: 'notes', width: 30 },
+  ];
+
+  const expHead = ws3.getRow(1);
+  expHead.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  expHead.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+
+  expenses.forEach((e) => {
+    const regText = e.region === 'iran' ? 'ئێران' : 'عێراق';
+    const payerText = e.paidBy === 'partner' ? 'هاوبەش' : e.paidBy === 'me' ? 'من' : 'هاوبەش';
+    ws3.addRow({
+      region: regText,
+      title: e.title,
+      category: e.category,
+      amountUSD: e.amountUSD,
+      amountLocal: e.amountLocal ? e.amountLocal.toLocaleString() : '—',
+      date: e.date,
+      paidBy: payerText,
+      notes: e.notes || '',
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const dateStr = new Date().toISOString().split('T')[0];
+  saveAs(
+    new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+    `Popcorn_Import_Partnership_${dateStr}.xlsx`
   );
 }

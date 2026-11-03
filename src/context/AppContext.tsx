@@ -29,6 +29,7 @@ import {
   playSound,
 } from '../utils/formatters';
 import { exportAllDataToExcel } from '../utils/excelExport';
+import { loadLocalPopcornData, saveLocalPopcornData, syncPopcornDataToCloud } from '../services/popcornStorage';
 
 export interface Item {
   id: string;
@@ -743,6 +744,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       inventory,
       sales,
       debts,
+      popcorn: loadLocalPopcornData(),
     };
     const blob = new Blob([JSON.stringify(backup, null, 2)], {
       type: 'application/json',
@@ -769,6 +771,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const debtList = parsed.debts || parsed.payments;
       if (Array.isArray(debtList)) {
         debtList.forEach((d: any) => addDebt(d));
+      }
+      if (parsed.popcorn && parsed.popcorn.config) {
+        saveLocalPopcornData(parsed.popcorn);
+        syncPopcornDataToCloud(parsed.popcorn);
       }
       playSound('success');
       return true;
