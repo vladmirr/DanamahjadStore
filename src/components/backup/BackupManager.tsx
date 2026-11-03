@@ -7,8 +7,10 @@ import {
   Key,
   Check,
   Database,
+  Truck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+import { exportPopcornToExcel } from '../../utils/excelExport';
 
 export const BackupManager: React.FC = () => {
   const {
@@ -65,26 +67,40 @@ export const BackupManager: React.FC = () => {
               داگرتنی داتاکان بە شێوەی ئێکسڵ (Excel Export)
             </h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              بە یەک کلیک، فایلی XLSX بە فۆرماتی ڕاستەوخۆ (RTL) دادەبەزێت کە چوار پەڕەی سەرەکی
-              لەخۆدەگرێت:
+              بە یەک کلیک، فایلی XLSX بە فۆرماتی ڕاستەوخۆ (RTL) دادەبەزێت کە بەشە سەرەکییەکان و پەڕەی نوێی پۆپکورن لەخۆدەگرێت:
             </p>
             <ul className="text-xs text-slate-300 space-y-1.5 mt-3 pr-4 list-disc list-inside">
               <li>کۆگای کاڵاکان (Inventory / کۆگا) - {products.length} کاڵا</li>
               <li>مێژووی فرۆشتنەکان (Sales Logs / فرۆشتن) - {sales.length} وەسڵ</li>
               <li>مێژووی پارەدانەکان (Payments / پارەدان) - {payments.length} پسوولە</li>
               <li>حسابی کڕیاران و قەرزەکان (Customer Balances) - {customers.length} کڕیار</li>
+              <li className="text-amber-300 font-bold">
+                پەڕەی نوێ: پۆپکورن و شەراکەت (Popcorn & Partnership)
+              </li>
             </ul>
           </div>
 
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => exportExcel()}
-            className="w-full py-3 px-4 rounded-xl font-bold text-xs btn-gold flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Download className="w-4 h-4" />
-            <span>داگرتنی فایلی تەواوی ئێکسڵ (.xlsx)</span>
-          </motion.button>
+          <div className="space-y-2 pt-2">
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => exportExcel()}
+              className="w-full py-3 px-4 rounded-xl font-bold text-xs btn-gold flex items-center justify-center gap-2 cursor-pointer shadow-lg"
+            >
+              <Download className="w-4 h-4" />
+              <span>داگرتنی فایلی تەواوی ئێکسڵ (.xlsx) [کۆگا + پۆپکورن]</span>
+            </motion.button>
+
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => exportPopcornToExcel()}
+              className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 hover:border-amber-500/50 flex items-center justify-center gap-2 cursor-pointer transition-all"
+            >
+              <Truck className="w-4 h-4 text-amber-400" />
+              <span>داگرتنی تەنها فایلی ئێکسڵی پۆپکورن (Popcorn Only)</span>
+            </motion.button>
+          </div>
         </div>
 
         {/* 2. Admin Security & Password Change */}

@@ -2,6 +2,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Product, Sale, PaymentVoucher, CustomerDebtSummary } from '../types';
 import { PopcornProjectData } from '../types/popcorn';
+import { loadLocalPopcornData } from '../services/popcornStorage';
 import { formatShortDate } from './formatters';
 
 interface ExportOptions {
@@ -671,6 +672,13 @@ export async function exportAllDataToExcel(
   });
   worksheet.getCell(summaryRow, 16).border = thinBorder;
 
+  // Append new dedicated Popcorn page / worksheet to the main Excel file
+  try {
+    appendPopcornSheetToWorkbook(workbook);
+  } catch (err) {
+    console.error('Failed to append Popcorn sheet to main report:', err);
+  }
+
   // Generate buffer and trigger immediate download
   const buffer = await workbook.xlsx.writeBuffer();
   const dateStr = new Date().toISOString().split('T')[0];
@@ -683,13 +691,13 @@ export async function exportAllDataToExcel(
 }
 
 /**
- * Export Popcorn Shipment, Trucks, Expenses, and Partner Accounting to Excel
+ * Append a dedicated Popcorn worksheet to any workbook (RTL, formatted with KPIs, Trucks, Expenses)
  */
-export async function exportPopcornToExcel(data: PopcornProjectData) {
-  const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'DanaMahjadStore';
-  workbook.created = new Date();
-
+export function appendPopcornSheetToWorkbook(
+  workbook: ExcelJS.Workbook,
+  customData?: PopcornProjectData
+) {
+  const data = customData || loadLocalPopcornData();
   const { config, trucks, expenses } = data;
 
   const totalCargoTons = Number(config.totalTons) || 200;
@@ -713,122 +721,245 @@ export async function exportPopcornToExcel(data: PopcornProjectData) {
   const partnerProfitShare = (finalNetProfit * partnerPercent) / 100;
   const myProfitShare = (finalNetProfit * myPercent) / 100;
 
-  // SHEET 1: Summary & Partner Settlement
-  const ws1 = workbook.addWorksheet('پوختەی پڕۆژە و شەراکەت', {
+  const ws = workbook.addWorksheet('پۆپکورن (Popcorn & Partner)', {
     views: [{ rightToLeft: true }],
   });
 
-  ws1.columns = [
-    { width: 35 },
-    { width: 22 },
-    { width: 25 },
-    { width: 35 },
+  ws.columns = [
+    { width: 22 }, // A
+    { width: 25 }, // B
+    { width: 22 }, // C
+    { width: 16 }, // D
+    { width: 30 }, // E
+    { width: 15 }, // F
+    { width: 15 }, // G
+    { width: 16 }, // H
+    { width: 18 }, // I
+    { width: 32 }, // J
   ];
 
-  ws1.addRow(['پڕۆژەی هاوردەکردنی پۆپکورن (Popcorn Import & Partnership)']);
-  ws1.mergeCells('A1:D1');
-  const titleCell = ws1.getCell('A1');
-  titleCell.font = { name: 'Arial', size: 16, bold: true, color: { argb: 'FFFFFFFF' } };
+  const thinBorder: Partial<ExcelJS.Borders> = {
+    top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+  };
+
+  // Title Banner
+  ws.addRow(['پڕۆژەی هاوردەکردنی پۆپکورن و شەراکەت (Popcorn Import & Partnership)']);
+  ws.mergeCells('A1:J1');
+  const titleCell = ws.getCell('A1');
+  titleCell.font = { name: 'Arial', size: 15, bold: true, color: { argb: 'FFFFFFFF' } };
   titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD97706' } };
   titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
-  ws1.getRow(1).height = 35;
+  ws.getRow(1).height = 36;
 
-  ws1.addRow([]);
-  ws1.addRow(['بڕگە', 'بڕ / نرخ بە دۆلار ($)', 'بە دیناری عێراقی (IQD)', 'تێبینی']);
-  const headRow = ws1.getRow(3);
-  headRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  headRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+  // Sub-banner
+  ws.addRow([
+    `کڕینی ${totalCargoTons} تۆن دانەوێڵە لە ${config.originCountry} بە نرخی $${buyPricePerTon} و فرۆشتن بە $${sellPricePerTon} لە ${config.destinationCity} (ڕێژەی هاوبەش: %${partnerPercent})`
+  ]);
+  ws.mergeCells('A2:J2');
+  const subCell = ws.getCell('A2');
+  subCell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFF1F5F9' } };
+  subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+  subCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(2).height = 22;
 
-  const summaryData = [
-    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', `وڵاتی کڕین: ${config.originCountry}`],
+  ws.addRow([]); // Blank row 3
+
+  // SECTION 1: Financial Waterfall
+  ws.addRow(['١. پوختەی دارایی و دابەشکردنی قازانج (Financial Summary & Profit Split)']);
+  ws.mergeCells('A4:D4');
+  const sec1Cell = ws.getCell('A4');
+  sec1Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+  sec1Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF475569' } };
+  sec1Cell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+  ws.addRow(['بڕگە / وەسف', 'بڕ بە دۆلار ($ USD)', 'بە دیناری عێراقی (IQD)', 'تێبینی']);
+  const h1 = ws.getRow(5);
+  h1.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  h1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF334155' } };
+  for (let c = 1; c <= 4; c++) {
+    h1.getCell(c).border = thinBorder;
+  }
+
+  const kpis = [
+    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', `وڵاتی سەرچاوە: ${config.originCountry}`],
     ['نرخی کڕینی ١ تۆن', `$${buyPricePerTon}`, `${(buyPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی گرێبەست لە ڕووسیا'],
-    ['کۆی تێچووی کڕینی دانەوێڵە', `$${totalBuyingCost.toLocaleString()}`, `${(totalBuyingCost * exchangeRate).toLocaleString()} د.ع`, '٢٠٠ تۆن × $٢٢٠'],
-    ['نرخی پێشبینیکراوی فرۆشتنی ١ تۆن', `$${sellPricePerTon}`, `${(sellPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی فرۆش لە بازاڕی سلێمانی'],
-    ['کۆی داهاتی فرۆش', `$${expectedTotalRevenue.toLocaleString()}`, `${(expectedTotalRevenue * exchangeRate).toLocaleString()} د.ع`, '٢٠٠ تۆن × $٣٠٢'],
-    ['خەرجییەکانی ئێران و ترانزێت', `$${totalIranSpending.toLocaleString()}`, `${(totalIranSpending * exchangeRate).toLocaleString()} د.ع`, 'کرێی بارهەڵگر، گومرگ و پشکنین'],
-    ['خەرجییەکانی ناوخۆی عێراق', `$${totalIraqSpending.toLocaleString()}`, `${(totalIraqSpending * exchangeRate).toLocaleString()} د.ع`, 'گومرگی باشماخ، داگرتن و کۆگا'],
+    ['کۆی تێچووی کڕین (سەرمایە)', `$${totalBuyingCost.toLocaleString()}`, `${(totalBuyingCost * exchangeRate).toLocaleString()} د.ع`, `${totalCargoTons} تۆن × $${buyPricePerTon}`],
+    ['نرخی پێشبینیکراوی فرۆشتنی ١ تۆن', `$${sellPricePerTon}`, `${(sellPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'لە بازاڕی سلێمانی'],
+    ['کۆی پێشبینیکراوی داهاتی فرۆش', `$${expectedTotalRevenue.toLocaleString()}`, `${(expectedTotalRevenue * exchangeRate).toLocaleString()} د.ع`, `${totalCargoTons} تۆن × $${sellPricePerTon}`],
+    ['خەرجییەکانی گواستنەوە و ترانزێتی ئێران', `$${totalIranSpending.toLocaleString()}`, `${(totalIranSpending * exchangeRate).toLocaleString()} د.ع`, 'کرێی بارهەڵگر، مەرز و پشکنین'],
+    ['خەرجییەکانی ناوخۆی عێراق و گومرگ', `$${totalIraqSpending.toLocaleString()}`, `${(totalIraqSpending * exchangeRate).toLocaleString()} د.ع`, 'گومرگی باشماخ، داگرتن و کۆگا'],
     ['کۆی گشتی هەموو خەرجییەکان', `$${totalOverallCost.toLocaleString()}`, `${(totalOverallCost * exchangeRate).toLocaleString()} د.ع`, 'کڕین + خەرجی ئێران + خەرجی عێراق'],
-    ['قازانجی پوختەی گشتی (Net Profit)', `$${finalNetProfit.toLocaleString()}`, `${(finalNetProfit * exchangeRate).toLocaleString()} د.ع`, 'داهاتی فرۆش - هەموو خەرجییەکان'],
+    ['قازانجی پوختەی پڕۆژە (Net Profit)', `$${finalNetProfit.toLocaleString()}`, `${(finalNetProfit * exchangeRate).toLocaleString()} د.ع`, 'داهاتی فرۆش - سەرجەم خەرجییەکان'],
     [`پشکی هاوبەش (${config.partnerName} - %${partnerPercent})`, `$${partnerProfitShare.toLocaleString()}`, `${(partnerProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی شەراکەت'],
     [`پشکی من (%${myPercent})`, `$${myProfitShare.toLocaleString()}`, `${(myProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی من'],
   ];
 
-  summaryData.forEach((row) => {
-    ws1.addRow(row);
+  kpis.forEach((row, idx) => {
+    const r = ws.addRow(row);
+    const isHighlight = idx >= 8;
+    r.font = { bold: isHighlight, size: 10 };
+    if (isHighlight) {
+      r.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: idx === 8 ? 'FFDCFCE7' : 'FFFEF3C7' } };
+    }
+    for (let c = 1; c <= 4; c++) {
+      r.getCell(c).border = thinBorder;
+    }
   });
 
-  // SHEET 2: Trucks (لقی بارهەڵگرەکان)
-  const ws2 = workbook.addWorksheet('لقی بارهەڵگرەکان (Trucks)', {
-    views: [{ rightToLeft: true }],
-  });
+  ws.addRow([]); // Blank row
 
-  ws2.columns = [
-    { header: 'ژمارەی تابلۆ', key: 'plate', width: 22 },
-    { header: 'ناوی شۆفێر', key: 'driver', width: 20 },
-    { header: 'مۆبایلی شۆفێر', key: 'phone', width: 16 },
-    { header: 'بڕی بار (تۆن)', key: 'tons', width: 15 },
-    { header: 'شوێنی گەیندن / مەبەست', key: 'destination', width: 30 },
-    { header: 'بەرواری بارکردن', key: 'dispatchDate', width: 15 },
-    { header: 'بەرواری گەیشتن', key: 'arrivalDate', width: 15 },
-    { header: 'کرێی ترانزێت ($)', key: 'cost', width: 16 },
-    { header: 'دۆخ', key: 'status', width: 16 },
-    { header: 'تێبینی', key: 'notes', width: 30 },
+  // SECTION 2: Trucks Table
+  ws.addRow(['٢. لقی بارهەڵگرەکان لە ئێرانەوە بۆ سلێمانی (Trucks & Transport Log)']);
+  ws.mergeCells(`A${ws.rowCount}:J${ws.rowCount}`);
+  const sec2Cell = ws.getCell(`A${ws.rowCount}`);
+  sec2Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+  sec2Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD97706' } };
+  sec2Cell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+  const truckHeaders = [
+    'ژمارەی تابلۆی بارهەڵگر',
+    'ناوی شۆفێر',
+    'مۆبایلی شۆفێر',
+    'بڕ بە تۆن',
+    'شوێنی گەیندن / مەبەست',
+    'بەرواری بارکردن',
+    'بەرواری گەیشتن',
+    'کرێی ترانزێت ($)',
+    'دۆخ',
+    'تێبینی',
   ];
+  const trkHeadRow = ws.addRow(truckHeaders);
+  trkHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  trkHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+  for (let c = 1; c <= 10; c++) {
+    trkHeadRow.getCell(c).border = thinBorder;
+  }
 
-  const truckHead = ws2.getRow(1);
-  truckHead.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  truckHead.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD97706' } };
+  let totalTruckTons = 0;
+  let totalTransitCost = 0;
 
   trucks.forEach((t) => {
-    const statusText = t.status === 'delivered' ? 'گەیشتووە' : t.status === 'in_transit' ? 'لە ڕێگایە' : 'لە گومرگە';
-    ws2.addRow({
-      plate: t.plateNumber,
-      driver: t.driverName,
-      phone: t.driverPhone || '—',
-      tons: t.tonsCarried,
-      destination: t.destination,
-      dispatchDate: t.dispatchDate,
-      arrivalDate: t.arrivalDate || '—',
-      cost: t.transitCostUSD || 0,
-      status: statusText,
-      notes: t.notes || '',
-    });
+    const tons = Number(t.tonsCarried) || 0;
+    const cost = Number(t.transitCostUSD) || 0;
+    totalTruckTons += tons;
+    totalTransitCost += cost;
+
+    const statusText = t.status === 'delivered' ? 'گەیشتووە (Delivered)' : t.status === 'in_transit' ? 'لە ڕێگایە (In Transit)' : 'لە گومرگە (At Border)';
+    const r = ws.addRow([
+      t.plateNumber,
+      t.driverName,
+      t.driverPhone || '—',
+      tons,
+      t.destination,
+      t.dispatchDate,
+      t.arrivalDate || '—',
+      cost,
+      statusText,
+      t.notes || '',
+    ]);
+    r.font = { size: 10 };
+    for (let c = 1; c <= 10; c++) {
+      r.getCell(c).border = thinBorder;
+    }
   });
 
-  // SHEET 3: Expenses (خەرجییەکان)
-  const ws3 = workbook.addWorksheet('خەرجییەکان (Expenses)', {
-    views: [{ rightToLeft: true }],
-  });
+  // Trucks Total Row
+  const trkTotalRow = ws.addRow([
+    `کۆی گشتی (${trucks.length} بارهەڵگر)`,
+    '—',
+    '—',
+    totalTruckTons,
+    '—',
+    '—',
+    '—',
+    totalTransitCost,
+    '—',
+    `ماوە بۆ ٢٠٠ تۆن: ${Math.max(0, totalCargoTons - totalTruckTons)} تۆن`,
+  ]);
+  trkTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
+  trkTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE68A' } };
+  for (let c = 1; c <= 10; c++) {
+    trkTotalRow.getCell(c).border = thinBorder;
+  }
 
-  ws3.columns = [
-    { header: 'لق / وڵات', key: 'region', width: 16 },
-    { header: 'ناونیشانی خەرجی', key: 'title', width: 35 },
-    { header: 'پۆلێن', key: 'category', width: 25 },
-    { header: 'بڕ بە دۆلار ($)', key: 'amountUSD', width: 18 },
-    { header: 'بڕ بە دراوی ناوخۆ', key: 'amountLocal', width: 20 },
-    { header: 'بەروار', key: 'date', width: 15 },
-    { header: 'دراوە لەلایەن', key: 'paidBy', width: 18 },
-    { header: 'تێبینی', key: 'notes', width: 30 },
+  ws.addRow([]); // Blank row
+
+  // SECTION 3: Expenses Table
+  ws.addRow(['٣. خشتەی خەرجییەکانی پڕۆژە (Project Expenses - Iran & Iraq)']);
+  ws.mergeCells(`A${ws.rowCount}:H${ws.rowCount}`);
+  const sec3Cell = ws.getCell(`A${ws.rowCount}`);
+  sec3Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+  sec3Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } };
+  sec3Cell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+  const expHeaders = [
+    'لق / وڵات',
+    'ناونیشانی مەسروف / خەرجی',
+    'پۆلێن / بەش',
+    'بڕ بە دۆلار ($ USD)',
+    'بڕ بە دراوی ناوخۆ',
+    'بەروار',
+    'دراوە لەلایەن',
+    'تێبینی و پسوولە',
   ];
-
-  const expHead = ws3.getRow(1);
-  expHead.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  expHead.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+  const expHeadRow = ws.addRow(expHeaders);
+  expHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  expHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+  for (let c = 1; c <= 8; c++) {
+    expHeadRow.getCell(c).border = thinBorder;
+  }
 
   expenses.forEach((e) => {
-    const regText = e.region === 'iran' ? 'ئێران' : 'عێراق';
-    const payerText = e.paidBy === 'partner' ? 'هاوبەش' : e.paidBy === 'me' ? 'من' : 'هاوبەش';
-    ws3.addRow({
-      region: regText,
-      title: e.title,
-      category: e.category,
-      amountUSD: e.amountUSD,
-      amountLocal: e.amountLocal ? e.amountLocal.toLocaleString() : '—',
-      date: e.date,
-      paidBy: payerText,
-      notes: e.notes || '',
-    });
+    const regText = e.region === 'iran' ? '🇮🇷 ئێران' : '🇮🇶 عێراق';
+    const payerText = e.paidBy === 'partner' ? 'شەریک / هاوبەش' : e.paidBy === 'me' ? 'لەلایەن منەوە' : 'هاوبەش';
+    const r = ws.addRow([
+      regText,
+      e.title,
+      e.category,
+      Number(e.amountUSD) || 0,
+      e.amountLocal ? Number(e.amountLocal).toLocaleString() : '—',
+      e.date,
+      payerText,
+      e.notes || '',
+    ]);
+    r.font = { size: 10 };
+    for (let c = 1; c <= 8; c++) {
+      r.getCell(c).border = thinBorder;
+    }
   });
+
+  // Expenses Total Row
+  const expTotalRow = ws.addRow([
+    `کۆی گشتی خەرجییەکان (${expenses.length} خەرجی)`,
+    `ئێران: $${totalIranSpending.toLocaleString()} | عێراق: $${totalIraqSpending.toLocaleString()}`,
+    '—',
+    totalOperatingExpenses,
+    '—',
+    '—',
+    '—',
+    '—',
+  ]);
+  expTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
+  expTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
+  for (let c = 1; c <= 8; c++) {
+    expTotalRow.getCell(c).border = thinBorder;
+  }
+
+  return ws;
+}
+
+/**
+ * Export standalone Popcorn Excel report
+ */
+export async function exportPopcornToExcel(data?: PopcornProjectData) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'DanaMahjadStore';
+  workbook.created = new Date();
+
+  appendPopcornSheetToWorkbook(workbook, data);
 
   const buffer = await workbook.xlsx.writeBuffer();
   const dateStr = new Date().toISOString().split('T')[0];
