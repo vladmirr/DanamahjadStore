@@ -87,15 +87,15 @@ export const PopcornManagement: React.FC = () => {
   // Form: Create New Transaction
   const [newTransactionForm, setNewTransactionForm] = useState({
     name: '',
-    totalTons: '200',
-    buyPricePerTonUSD: '220',
-    sellingPricePerTonUSD: '302',
-    originCountry: 'ڕووسیا (Russia)',
-    destinationCity: 'سلێمانی، هەرێمی کوردستان (Sulaimani)',
-    hasPartner: true,
-    partnerName: 'هاوبەشی پڕۆژە (Partner)',
+    totalTons: '',
+    buyPricePerTonUSD: '',
+    sellingPricePerTonUSD: '',
+    originCountry: '',
+    destinationCity: '',
+    hasPartner: false,
+    partnerName: '',
     partnerSharePercent: '50',
-    exchangeRateIQD: '1530',
+    exchangeRateIQD: '',
     notes: '',
   });
 
@@ -117,9 +117,9 @@ export const PopcornManagement: React.FC = () => {
     tonsCarried: '',
     driverName: '',
     driverPhone: '',
-    destination: 'سلێمانی - کۆگای سەرەکی عەلوە',
+    destination: '',
     status: 'in_transit' as 'in_transit' | 'at_border' | 'delivered',
-    transitCostUSD: '650',
+    transitCostUSD: '',
     dispatchDate: new Date().toISOString().split('T')[0],
     arrivalDate: '',
     notes: '',
@@ -129,7 +129,7 @@ export const PopcornManagement: React.FC = () => {
   const [expenseForm, setExpenseForm] = useState({
     region: 'iran' as 'iran' | 'iraq',
     title: '',
-    category: 'کرێی بارهەڵگر (Truck Freight)',
+    category: '',
     amountUSD: '',
     amountLocal: '',
     date: new Date().toISOString().split('T')[0],
@@ -177,9 +177,9 @@ export const PopcornManagement: React.FC = () => {
   const { config, trucks, expenses } = activeTransaction;
 
   // 1. Buying & Selling details
-  const totalCargoTons = Number(config.totalTons) || 200;
-  const buyPricePerTon = Number(config.buyPricePerTonUSD) || 220;
-  const sellPricePerTon = Number(config.sellingPricePerTonUSD) || 302;
+  const totalCargoTons = Number(config.totalTons) || 0;
+  const buyPricePerTon = Number(config.buyPricePerTonUSD) || 0;
+  const sellPricePerTon = Number(config.sellingPricePerTonUSD) || 0;
   const exchangeRate = Number(config.exchangeRateIQD) || 1530;
 
   const totalBuyingCost = totalCargoTons * buyPricePerTon; // e.g. 200 * $220 = $44,000
@@ -270,16 +270,16 @@ export const PopcornManagement: React.FC = () => {
   // ----------------------------------------------------
   const handleOpenCreateTransaction = () => {
     setNewTransactionForm({
-      name: `وەجبەی ${store.transactions.length + 1}`,
-      totalTons: '200',
-      buyPricePerTonUSD: '220',
-      sellingPricePerTonUSD: '302',
-      originCountry: 'ڕووسیا (Russia)',
-      destinationCity: 'سلێمانی، هەرێمی کوردستان (Sulaimani)',
-      hasPartner: true,
-      partnerName: 'هاوبەشی پڕۆژە (Partner)',
+      name: '',
+      totalTons: '',
+      buyPricePerTonUSD: '',
+      sellingPricePerTonUSD: '',
+      originCountry: '',
+      destinationCity: '',
+      hasPartner: false,
+      partnerName: '',
       partnerSharePercent: '50',
-      exchangeRateIQD: '1530',
+      exchangeRateIQD: '',
       notes: '',
     });
     setIsNewTransactionModalOpen(true);
@@ -299,11 +299,11 @@ export const PopcornManagement: React.FC = () => {
       title: cleanName,
       originCountry: newTransactionForm.originCountry.trim() || 'ڕووسیا (Russia)',
       destinationCity: newTransactionForm.destinationCity.trim() || 'سلێمانی',
-      totalTons: Number(newTransactionForm.totalTons) || 200,
-      buyPricePerTonUSD: Number(newTransactionForm.buyPricePerTonUSD) || 220,
-      sellingPricePerTonUSD: Number(newTransactionForm.sellingPricePerTonUSD) || 302,
+      totalTons: Number(newTransactionForm.totalTons) || 0,
+      buyPricePerTonUSD: Number(newTransactionForm.buyPricePerTonUSD) || 0,
+      sellingPricePerTonUSD: Number(newTransactionForm.sellingPricePerTonUSD) || 0,
       hasPartner: newTransactionForm.hasPartner,
-      partnerName: newTransactionForm.partnerName.trim() || 'هاوبەش',
+      partnerName: newTransactionForm.partnerName.trim() || '',
       partnerSharePercent: Number(newTransactionForm.partnerSharePercent) || 50,
       exchangeRateIQD: Number(newTransactionForm.exchangeRateIQD) || 1530,
       notes: newTransactionForm.notes.trim() || undefined,
@@ -349,9 +349,9 @@ export const PopcornManagement: React.FC = () => {
       config: {
         ...editTransactionForm,
         title: editTransactionName.trim(),
-        totalTons: Number(editTransactionForm.totalTons) || 200,
-        buyPricePerTonUSD: Number(editTransactionForm.buyPricePerTonUSD) || 220,
-        sellingPricePerTonUSD: Number(editTransactionForm.sellingPricePerTonUSD) || 302,
+        totalTons: Number(editTransactionForm.totalTons) || 0,
+        buyPricePerTonUSD: Number(editTransactionForm.buyPricePerTonUSD) || 0,
+        sellingPricePerTonUSD: Number(editTransactionForm.sellingPricePerTonUSD) || 0,
         partnerSharePercent: Number(editTransactionForm.partnerSharePercent) || 50,
         exchangeRateIQD: Number(editTransactionForm.exchangeRateIQD) || 1530,
         updatedAt: new Date().toISOString(),
@@ -391,9 +391,9 @@ export const PopcornManagement: React.FC = () => {
       tonsCarried: '',
       driverName: '',
       driverPhone: '',
-      destination: 'سلێمانی - کۆگای سەرەکی عەلوە',
+      destination: '',
       status: 'in_transit',
-      transitCostUSD: '650',
+      transitCostUSD: '',
       dispatchDate: new Date().toISOString().split('T')[0],
       arrivalDate: '',
       notes: '',
@@ -491,10 +491,7 @@ export const PopcornManagement: React.FC = () => {
     setExpenseForm({
       region: defaultRegion || (activeExpenseTab === 'iraq' ? 'iraq' : 'iran'),
       title: '',
-      category:
-        defaultRegion === 'iraq' || activeExpenseTab === 'iraq'
-          ? 'گومرگی عێراق (Iraq Customs)'
-          : 'کرێی بارهەڵگر (Truck Freight)',
+      category: '',
       amountUSD: '',
       amountLocal: '',
       date: new Date().toISOString().split('T')[0],
@@ -1477,7 +1474,7 @@ ${
                     type="text"
                     required
                     autoFocus
-                    placeholder="نموونە: وەجبەی دووەم - ١٥٠ تۆن ڕووسیا"
+                    placeholder="ناوی مامەڵە بنووسە (نموونە: وەجبەی دووەم)"
                     value={newTransactionForm.name}
                     onChange={(e) =>
                       setNewTransactionForm({ ...newTransactionForm, name: e.target.value })
@@ -1494,19 +1491,21 @@ ${
                       <label className="block text-slate-300 font-medium mb-1">بڕی بار بە تۆن</label>
                       <input
                         type="number"
-                        required
+                        step="any"
+                        placeholder="نموونە: 200"
                         value={newTransactionForm.totalTons}
                         onChange={(e) =>
                           setNewTransactionForm({ ...newTransactionForm, totalTons: e.target.value })
                         }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                       />
                     </div>
                     <div>
                       <label className="block text-slate-300 font-medium mb-1">نرخی کڕین ($/تۆن)</label>
                       <input
                         type="number"
-                        required
+                        step="any"
+                        placeholder="نموونە: 220"
                         value={newTransactionForm.buyPricePerTonUSD}
                         onChange={(e) =>
                           setNewTransactionForm({
@@ -1514,7 +1513,7 @@ ${
                             buyPricePerTonUSD: e.target.value,
                           })
                         }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                       />
                     </div>
                   </div>
@@ -1528,7 +1527,8 @@ ${
                       <label className="block text-slate-300 font-medium mb-1">نرخی فرۆشتن ($/تۆن)</label>
                       <input
                         type="number"
-                        required
+                        step="any"
+                        placeholder="نموونە: 302"
                         value={newTransactionForm.sellingPricePerTonUSD}
                         onChange={(e) =>
                           setNewTransactionForm({
@@ -1536,13 +1536,15 @@ ${
                             sellingPricePerTonUSD: e.target.value,
                           })
                         }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                       />
                     </div>
                     <div>
                       <label className="block text-slate-300 font-medium mb-1">نرخی دۆلار بە دینار (IQD)</label>
                       <input
                         type="number"
+                        step="any"
+                        placeholder="نموونە: 1530"
                         value={newTransactionForm.exchangeRateIQD}
                         onChange={(e) =>
                           setNewTransactionForm({
@@ -1550,7 +1552,7 @@ ${
                             exchangeRateIQD: e.target.value,
                           })
                         }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                       />
                     </div>
                   </div>
@@ -1572,7 +1574,7 @@ ${
                         }
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 cursor-pointer" />
                     </label>
                   </div>
 
@@ -1582,6 +1584,7 @@ ${
                         <label className="block text-slate-300 font-medium mb-1">ناوی هاوبەش / شەریک</label>
                         <input
                           type="text"
+                          placeholder="ناوی هاوبەش بنووسە..."
                           value={newTransactionForm.partnerName}
                           onChange={(e) =>
                             setNewTransactionForm({
@@ -1589,18 +1592,18 @@ ${
                               partnerName: e.target.value,
                             })
                           }
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                         />
                       </div>
                       <div>
                         <label className="block text-slate-300 font-medium mb-1">
-                          ڕێژەی پشکی هاوبەش (%): {newTransactionForm.partnerSharePercent}%
+                          ڕێژەی پشکی هاوبەش (%): {newTransactionForm.partnerSharePercent || 50}%
                         </label>
                         <input
                           type="range"
                           min="1"
                           max="99"
-                          value={newTransactionForm.partnerSharePercent}
+                          value={newTransactionForm.partnerSharePercent || '50'}
                           onChange={(e) =>
                             setNewTransactionForm({
                               ...newTransactionForm,
@@ -1984,7 +1987,7 @@ ${
                     </label>
                     <input
                       type="number"
-                      placeholder="650"
+                      placeholder="نموونە: 650"
                       value={truckForm.transitCostUSD}
                       onChange={(e) => setTruckForm({ ...truckForm, transitCostUSD: e.target.value })}
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
@@ -2154,7 +2157,7 @@ ${
                       type="number"
                       step="any"
                       required
-                      placeholder="650"
+                      placeholder="نموونە: 650"
                       value={expenseForm.amountUSD}
                       onChange={(e) => setExpenseForm({ ...expenseForm, amountUSD: e.target.value })}
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
@@ -2167,7 +2170,7 @@ ${
                     </label>
                     <input
                       type="number"
-                      placeholder="918000"
+                      placeholder="نموونە: 918000"
                       value={expenseForm.amountLocal}
                       onChange={(e) => setExpenseForm({ ...expenseForm, amountLocal: e.target.value })}
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
