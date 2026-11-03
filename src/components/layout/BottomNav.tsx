@@ -10,6 +10,26 @@ import { useApp } from '../../context/AppContext';
 export const BottomNav: React.FC = () => {
   const { activeTab, setActiveTab, metrics } = useApp();
 
+  // When on the Popcorn page, show ONLY "داشبۆردی سەرەکی"
+  if (activeTab === 'popcorn') {
+    return (
+      <nav
+        aria-label="خوارەوەی پەڕە - گەڕانەوە بۆ داشبۆرد"
+        className="fixed bottom-0 inset-x-0 z-40 bg-[#090b10]/95 backdrop-blur-xl border-t border-amber-500/20 shadow-[0_-8px_32px_rgba(0,0,0,0.7)] py-2 select-none"
+      >
+        <div className="w-full max-w-md mx-auto px-4 flex items-center justify-center">
+          <button
+            onClick={() => setActiveTab('dashboard')}
+            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-500/20 text-amber-300 border border-amber-500/40 shadow-lg shadow-amber-500/10 font-bold hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+          >
+            <LayoutDashboard className="w-4 h-4 text-amber-400" />
+            <span className="text-xs sm:text-sm font-bold">داشبۆردی سەرەکی</span>
+          </button>
+        </div>
+      </nav>
+    );
+  }
+
   // The 3 daily primary options in the bottom bar
   const navItems = [
     {

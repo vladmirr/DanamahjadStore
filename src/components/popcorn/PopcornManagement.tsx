@@ -2154,35 +2154,20 @@ ${
                     </div>
                   </div>
                 ) : (
-                  /* IRAQ EXPENSE: Amount USD & IQD */
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-slate-300 font-semibold mb-1">
-                        بڕ بە دۆلار ($ USD) <span className="text-rose-400">*</span>
-                      </label>
-                      <input
-                        type="number"
-                        step="any"
-                        required
-                        placeholder="نموونە: 650"
-                        value={expenseForm.amountUSD}
-                        onChange={(e) => setExpenseForm({ ...expenseForm, amountUSD: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-slate-300 font-semibold mb-1">
-                        بڕ بە دیناری عێراقی (IQD)
-                      </label>
-                      <input
-                        type="number"
-                        placeholder="نموونە: 918000"
-                        value={expenseForm.amountLocal}
-                        onChange={(e) => setExpenseForm({ ...expenseForm, amountLocal: e.target.value })}
-                        className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                      />
-                    </div>
+                  /* IRAQ EXPENSE: Amount USD */
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">
+                      بڕ بە دۆلار ($ USD) <span className="text-rose-400">*</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      required
+                      placeholder="نموونە: 650"
+                      value={expenseForm.amountUSD}
+                      onChange={(e) => setExpenseForm({ ...expenseForm, amountUSD: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    />
                   </div>
                 )}
 
