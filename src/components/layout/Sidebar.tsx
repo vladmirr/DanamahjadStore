@@ -31,7 +31,7 @@ export const Sidebar: React.FC = () => {
   const primaryMenuItems = [
     {
       id: 'popcorn',
-      label: 'پۆپکورن (Popcorn Import & Partnership)',
+      label: 'مامەڵەکردنی کاڵا',
       sublabel: 'هاوردەکردن لە ڕووسیا، بارهەڵگرەکانی ئێران و شەراکەت',
       icon: Truck,
       badge: (
