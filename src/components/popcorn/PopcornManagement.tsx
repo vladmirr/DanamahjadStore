@@ -1996,8 +1996,15 @@ ${
                     <Scale className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-base font-bold text-white">
-                      {editingExpense ? 'دەستکاریکردنی مەسروف' : 'تۆمارکردنی خەرجی نوێ'}
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
+                      <span>{editingExpense ? 'دەستکاریکردنی مەسروف' : 'تۆمارکردنی خەرجی نوێ'}</span>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                        expenseForm.region === 'iran'
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                      }`}>
+                        {expenseForm.region === 'iran' ? '🇮🇷 لقی ئێران' : '🇮🇶 لقی عێراق'}
+                      </span>
                     </h3>
                     <p className="text-xs text-slate-400">بۆ مامەڵەی: {activeTransaction.name}</p>
                   </div>
@@ -2012,22 +2019,20 @@ ${
               </div>
 
               <form onSubmit={handleSaveExpense} className="space-y-4 text-xs">
-                {/* Region & Category */}
+                {/* Title & Category */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">
-                      لقی خەرجی (Region) <span className="text-rose-400">*</span>
+                      ناونیشانی مەسروف / خەرجی <span className="text-rose-400">*</span>
                     </label>
-                    <select
-                      value={expenseForm.region}
-                      onChange={(e) =>
-                        setExpenseForm({ ...expenseForm, region: e.target.value as 'iran' | 'iraq' })
-                      }
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
-                    >
-                      <option value="iran">🇮🇷 لقی ئێران (گواستنەوە و ترانزێت)</option>
-                      <option value="iraq">🇮🇶 لقی عێراق (گومرگ و ناوخۆ)</option>
-                    </select>
+                    <input
+                      type="text"
+                      required
+                      placeholder="نموونە: کرێی داگرتنی ٢ بارهەڵگر لە عەلوە"
+                      value={expenseForm.title}
+                      onChange={(e) => setExpenseForm({ ...expenseForm, title: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    />
                   </div>
 
                   <div>
@@ -2049,21 +2054,6 @@ ${
                       <option value="پشکنین و تاقیگە (Quality Inspection)" />
                     </datalist>
                   </div>
-                </div>
-
-                {/* Title */}
-                <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    ناونیشانی مەسروف / خەرجی <span className="text-rose-400">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="نموونە: کرێی داگرتنی ٢ بارهەڵگر لە عەلوە"
-                    value={expenseForm.title}
-                    onChange={(e) => setExpenseForm({ ...expenseForm, title: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                  />
                 </div>
 
                 {/* Amount USD & Local */}
