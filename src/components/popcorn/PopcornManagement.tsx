@@ -630,24 +630,19 @@ ${
           {/* Left: Transaction Brand & Route Hierarchy */}
           <div className="space-y-3">
             {/* Main Title & Logistics Subtext */}
-            <div className="flex items-center gap-3.5">
-              <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-500/25 via-yellow-400/20 to-amber-600/30 border border-amber-500/40 p-2.5 flex items-center justify-center shadow-xl shadow-amber-500/15 text-3xl shrink-0">
-                🍿
-              </div>
-              <div>
-                <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
-                  <span>{activeTransaction.name}</span>
-                </h1>
-                <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap font-numeric">
-                  <span className="text-slate-300 font-semibold">{totalCargoTons} تۆن دەنکە گەنمەشامی</span>
-                  <span className="text-slate-600">•</span>
-                  <span>کڕین: {formatUSD(buyPricePerTon)}/تۆن</span>
-                  <span className="text-slate-600">•</span>
-                  <span>{sellPricePerTon > 0 ? `فرۆشتن: ${formatUSD(sellPricePerTon)}/تۆن` : 'فرۆشتن: دیارینەکراوە'}</span>
-                  <span className="text-slate-600">•</span>
-                  <span className="text-amber-400 font-bold">{trucks.length} بارهەڵگر تۆمارکراوە ({totalTonsCarried} تۆن)</span>
-                </p>
-              </div>
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
+                <span>{activeTransaction.name}</span>
+              </h1>
+              <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap font-numeric">
+                <span className="text-slate-300 font-semibold">{totalCargoTons} تۆن دەنکە گەنمەشامی</span>
+                <span className="text-slate-600">•</span>
+                <span>کڕین: {formatUSD(buyPricePerTon)}/تۆن</span>
+                <span className="text-slate-600">•</span>
+                <span>{sellPricePerTon > 0 ? `فرۆشتن: ${formatUSD(sellPricePerTon)}/تۆن` : 'فرۆشتن: دیارینەکراوە'}</span>
+                <span className="text-slate-600">•</span>
+                <span className="text-amber-400 font-bold">{trucks.length} بارهەڵگر تۆمارکراوە ({totalTonsCarried} تۆن)</span>
+              </p>
             </div>
           </div>
 
