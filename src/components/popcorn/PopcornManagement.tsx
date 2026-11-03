@@ -18,29 +18,33 @@ import {
   Phone,
   Settings,
   Coins,
-  Building2,
   Globe2,
   Copy,
   Check,
-  AlertCircle,
   X,
   FileSpreadsheet,
   Split,
-  ChevronRight,
   ShieldCheck,
+  ChevronDown,
+  Sparkles,
+  Layers,
+  ArrowRightLeft,
+  UserCheck,
+  UserX,
 } from 'lucide-react';
 import {
-  PopcornProjectData,
+  PopcornStoreState,
+  PopcornTransaction,
   PopcornTruck,
   PopcornExpense,
   PopcornShipmentConfig,
 } from '../../types/popcorn';
 import {
-  loadLocalPopcornData,
-  saveLocalPopcornData,
-  syncPopcornDataToCloud,
-  subscribeToCloudPopcornData,
-  DEFAULT_POPCORN_DATA,
+  loadLocalPopcornStore,
+  saveLocalPopcornStore,
+  syncPopcornStoreToCloud,
+  subscribeToCloudPopcornStore,
+  DEFAULT_TRANSACTION,
 } from '../../services/popcornStorage';
 import { formatUSD, formatIQD, formatNumber, playSound } from '../../utils/formatters';
 import { exportPopcornToExcel } from '../../utils/excelExport';
@@ -48,18 +52,30 @@ import { TiltCard } from '../common/TiltCard';
 import confetti from 'canvas-confetti';
 
 export const PopcornManagement: React.FC = () => {
-  // Main Project State
-  const [data, setData] = useState<PopcornProjectData>(() => loadLocalPopcornData());
+  // Multi-Transaction Store State
+  const [store, setStore] = useState<PopcornStoreState>(() => loadLocalPopcornStore());
   const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
   const [copiedSummary, setCopiedSummary] = useState<boolean>(false);
 
-  // Filters & Tabs
+  // Active Transaction Resolver
+  const activeTransaction: PopcornTransaction = useMemo(() => {
+    return (
+      store.transactions.find((t) => t.id === store.activeTransactionId) ||
+      store.transactions[0] ||
+      DEFAULT_TRANSACTION
+    );
+  }, [store]);
+
+  // Filters & Tabs for Active Transaction
   const [truckSearch, setTruckSearch] = useState<string>('');
   const [truckStatusFilter, setTruckStatusFilter] = useState<'all' | 'delivered' | 'in_transit' | 'at_border'>('all');
   const [activeExpenseTab, setActiveExpenseTab] = useState<'all' | 'iran' | 'iraq'>('all');
 
-  // Modals
-  const [isSettingsModalOpen, setIsSettingsModalOpen] = useState<boolean>(false);
+  // Modals State
+  const [isNewTransactionModalOpen, setIsNewTransactionModalOpen] = useState<boolean>(false);
+  const [isEditTransactionModalOpen, setIsEditTransactionModalOpen] = useState<boolean>(false);
+  const [transactionToDelete, setTransactionToDelete] = useState<PopcornTransaction | null>(null);
+
   const [isTruckModalOpen, setIsTruckModalOpen] = useState<boolean>(false);
   const [editingTruck, setEditingTruck] = useState<PopcornTruck | null>(null);
   const [truckToDelete, setTruckToDelete] = useState<PopcornTruck | null>(null);
@@ -68,7 +84,34 @@ export const PopcornManagement: React.FC = () => {
   const [editingExpense, setEditingExpense] = useState<PopcornExpense | null>(null);
   const [expenseToDelete, setExpenseToDelete] = useState<PopcornExpense | null>(null);
 
-  // Form states
+  // Form: Create New Transaction
+  const [newTransactionForm, setNewTransactionForm] = useState({
+    name: '',
+    totalTons: '200',
+    buyPricePerTonUSD: '220',
+    sellingPricePerTonUSD: '302',
+    originCountry: 'ڕووسیا (Russia)',
+    destinationCity: 'سلێمانی، هەرێمی کوردستان (Sulaimani)',
+    hasPartner: true,
+    partnerName: 'هاوبەشی پڕۆژە (Partner)',
+    partnerSharePercent: '50',
+    exchangeRateIQD: '1530',
+    notes: '',
+  });
+
+  // Form: Edit Current Transaction
+  const [editTransactionForm, setEditTransactionForm] = useState<PopcornShipmentConfig>(
+    activeTransaction.config
+  );
+  const [editTransactionName, setEditTransactionName] = useState<string>(activeTransaction.name);
+
+  // Sync edit form whenever active transaction switches
+  useEffect(() => {
+    setEditTransactionForm(activeTransaction.config);
+    setEditTransactionName(activeTransaction.name);
+  }, [activeTransaction.id, activeTransaction.name]);
+
+  // Form: Truck
   const [truckForm, setTruckForm] = useState({
     plateNumber: '',
     tonsCarried: '',
@@ -82,6 +125,7 @@ export const PopcornManagement: React.FC = () => {
     notes: '',
   });
 
+  // Form: Expense
   const [expenseForm, setExpenseForm] = useState({
     region: 'iran' as 'iran' | 'iraq',
     title: '',
@@ -93,32 +137,46 @@ export const PopcornManagement: React.FC = () => {
     notes: '',
   });
 
-  const [configForm, setConfigForm] = useState<PopcornShipmentConfig>(data.config);
-
   // Real-time Cloud Synchronization
   useEffect(() => {
-    const unsubscribe = subscribeToCloudPopcornData((cloudData) => {
-      setData(cloudData);
-      setConfigForm(cloudData.config);
+    const unsubscribe = subscribeToCloudPopcornStore((cloudStore) => {
+      setStore(cloudStore);
     });
     return () => unsubscribe();
   }, []);
 
-  // Save changes locally and attempt sync to cloud
-  const persistChanges = (updatedData: PopcornProjectData) => {
-    setData(updatedData);
-    saveLocalPopcornData(updatedData);
+  // Save changes locally and sync with Firestore
+  const persistStore = (updatedStore: PopcornStoreState) => {
+    setStore(updatedStore);
+    saveLocalPopcornStore(updatedStore);
     setIsCloudSyncing(true);
-    syncPopcornDataToCloud(updatedData)
-      .finally(() => setIsCloudSyncing(false));
+    syncPopcornStoreToCloud(updatedStore).finally(() => setIsCloudSyncing(false));
+  };
+
+  // Helper to mutate the active transaction inside the store
+  const updateActiveTransaction = (updater: (current: PopcornTransaction) => PopcornTransaction) => {
+    const updatedTransactions = store.transactions.map((t) => {
+      if (t.id === activeTransaction.id) {
+        return {
+          ...updater(t),
+          updatedAt: new Date().toISOString(),
+        };
+      }
+      return t;
+    });
+
+    persistStore({
+      ...store,
+      transactions: updatedTransactions,
+    });
   };
 
   // ----------------------------------------------------
-  // CALCULATIONS & KPIS
+  // ACTIVE TRANSACTION CALCULATIONS & KPIS
   // ----------------------------------------------------
-  const { config, trucks, expenses } = data;
+  const { config, trucks, expenses } = activeTransaction;
 
-  // 1. Cargo & Purchasing
+  // 1. Buying & Selling details
   const totalCargoTons = Number(config.totalTons) || 200;
   const buyPricePerTon = Number(config.buyPricePerTonUSD) || 220;
   const sellPricePerTon = Number(config.sellingPricePerTonUSD) || 302;
@@ -140,9 +198,8 @@ export const PopcornManagement: React.FC = () => {
   }, [trucks]);
 
   const remainingTonsToTransport = Math.max(0, totalCargoTons - totalTonsCarried);
-  const transportProgressPercent = Math.min(100, Math.round((totalTonsCarried / (totalCargoTons || 1)) * 100));
 
-  // 3. Expenses
+  // 3. Cost Iran Side & Cost Iraq Side
   const iranExpenses = useMemo(() => {
     return expenses.filter((e) => e.region === 'iran');
   }, [expenses]);
@@ -162,13 +219,14 @@ export const PopcornManagement: React.FC = () => {
   const totalOperatingExpenses = totalIranSpending + totalIraqSpending;
   const totalOverallProjectCost = totalBuyingCost + totalOperatingExpenses;
 
-  // 4. Net Profit & Partner Split
+  // 4. Net Profit & Partner Split (if any)
   const finalNetProfit = expectedTotalRevenue - totalOverallProjectCost;
-  const partnerPercent = Number(config.partnerSharePercent) || 50;
+  const hasPartner = config.hasPartner !== false;
+  const partnerPercent = hasPartner ? Number(config.partnerSharePercent) || 50 : 0;
   const myPercent = 100 - partnerPercent;
 
-  const partnerProfitShare = (finalNetProfit * partnerPercent) / 100;
-  const myProfitShare = (finalNetProfit * myPercent) / 100;
+  const partnerProfitShare = hasPartner ? (finalNetProfit * partnerPercent) / 100 : 0;
+  const myProfitShare = hasPartner ? (finalNetProfit * myPercent) / 100 : finalNetProfit;
 
   // Track who paid what
   const expensesPaidByPartner = useMemo(() => {
@@ -183,10 +241,7 @@ export const PopcornManagement: React.FC = () => {
       .reduce((acc, e) => acc + (Number(e.amountUSD) || 0), 0);
   }, [expenses]);
 
-  // Final Settlement Due
-  // If partner spent money on expenses, they get: PartnerProfitShare + expensesPaidByPartner
   const netDueToPartner = partnerProfitShare + expensesPaidByPartner;
-  const netDueToMe = myProfitShare + expensesPaidByMe;
 
   // ----------------------------------------------------
   // FILTERED TRUCKS & EXPENSES
@@ -211,7 +266,123 @@ export const PopcornManagement: React.FC = () => {
   }, [expenses, activeExpenseTab]);
 
   // ----------------------------------------------------
-  // HANDLERS FOR TRUCKS
+  // TRANSACTION HANDLERS
+  // ----------------------------------------------------
+  const handleOpenCreateTransaction = () => {
+    setNewTransactionForm({
+      name: `وەجبەی ${store.transactions.length + 1}`,
+      totalTons: '200',
+      buyPricePerTonUSD: '220',
+      sellingPricePerTonUSD: '302',
+      originCountry: 'ڕووسیا (Russia)',
+      destinationCity: 'سلێمانی، هەرێمی کوردستان (Sulaimani)',
+      hasPartner: true,
+      partnerName: 'هاوبەشی پڕۆژە (Partner)',
+      partnerSharePercent: '50',
+      exchangeRateIQD: '1530',
+      notes: '',
+    });
+    setIsNewTransactionModalOpen(true);
+  };
+
+  const handleCreateTransaction = (e: React.FormEvent) => {
+    e.preventDefault();
+    const cleanName = newTransactionForm.name.trim();
+    if (!cleanName) {
+      playSound('error');
+      return;
+    }
+
+    const newId = `trans-${Date.now()}`;
+    const newConfig: PopcornShipmentConfig = {
+      id: `config-${Date.now()}`,
+      title: cleanName,
+      originCountry: newTransactionForm.originCountry.trim() || 'ڕووسیا (Russia)',
+      destinationCity: newTransactionForm.destinationCity.trim() || 'سلێمانی',
+      totalTons: Number(newTransactionForm.totalTons) || 200,
+      buyPricePerTonUSD: Number(newTransactionForm.buyPricePerTonUSD) || 220,
+      sellingPricePerTonUSD: Number(newTransactionForm.sellingPricePerTonUSD) || 302,
+      hasPartner: newTransactionForm.hasPartner,
+      partnerName: newTransactionForm.partnerName.trim() || 'هاوبەش',
+      partnerSharePercent: Number(newTransactionForm.partnerSharePercent) || 50,
+      exchangeRateIQD: Number(newTransactionForm.exchangeRateIQD) || 1530,
+      notes: newTransactionForm.notes.trim() || undefined,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const newTrans: PopcornTransaction = {
+      id: newId,
+      name: cleanName,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'active',
+      config: newConfig,
+      trucks: [],
+      expenses: [],
+    };
+
+    persistStore({
+      ...store,
+      activeTransactionId: newId,
+      transactions: [newTrans, ...store.transactions],
+    });
+
+    setIsNewTransactionModalOpen(false);
+    confetti({
+      particleCount: 70,
+      spread: 70,
+      origin: { y: 0.6 },
+    });
+    playSound('success');
+  };
+
+  const handleSaveEditTransaction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editTransactionName.trim()) {
+      playSound('error');
+      return;
+    }
+
+    updateActiveTransaction((current) => ({
+      ...current,
+      name: editTransactionName.trim(),
+      config: {
+        ...editTransactionForm,
+        title: editTransactionName.trim(),
+        totalTons: Number(editTransactionForm.totalTons) || 200,
+        buyPricePerTonUSD: Number(editTransactionForm.buyPricePerTonUSD) || 220,
+        sellingPricePerTonUSD: Number(editTransactionForm.sellingPricePerTonUSD) || 302,
+        partnerSharePercent: Number(editTransactionForm.partnerSharePercent) || 50,
+        exchangeRateIQD: Number(editTransactionForm.exchangeRateIQD) || 1530,
+        updatedAt: new Date().toISOString(),
+      },
+    }));
+
+    setIsEditTransactionModalOpen(false);
+    playSound('success');
+  };
+
+  const handleDeleteTransaction = (id: string) => {
+    if (store.transactions.length <= 1) {
+      alert('ناتوانیت تەنها مامەڵەی ماوە بسڕیتەوە!');
+      return;
+    }
+
+    const remaining = store.transactions.filter((t) => t.id !== id);
+    const nextActiveId = remaining[0].id;
+
+    persistStore({
+      ...store,
+      activeTransactionId: nextActiveId,
+      transactions: remaining,
+    });
+
+    setTransactionToDelete(null);
+    playSound('delete');
+  };
+
+  // ----------------------------------------------------
+  // TRUCK HANDLERS
   // ----------------------------------------------------
   const handleOpenAddTruck = () => {
     setEditingTruck(null);
@@ -257,45 +428,46 @@ export const PopcornManagement: React.FC = () => {
     const tons = Number(truckForm.tonsCarried) || 0;
     const cost = Number(truckForm.transitCostUSD) || 0;
 
-    let updatedTrucks: PopcornTruck[];
-    if (editingTruck) {
-      updatedTrucks = trucks.map((t) =>
-        t.id === editingTruck.id
-          ? {
-              ...t,
-              plateNumber: truckForm.plateNumber.trim(),
-              tonsCarried: tons,
-              driverName: truckForm.driverName.trim(),
-              driverPhone: truckForm.driverPhone.trim(),
-              destination: truckForm.destination.trim(),
-              status: truckForm.status,
-              transitCostUSD: cost,
-              dispatchDate: truckForm.dispatchDate,
-              arrivalDate: truckForm.arrivalDate || undefined,
-              notes: truckForm.notes.trim() || undefined,
-            }
-          : t
-      );
-    } else {
-      const newTruck: PopcornTruck = {
-        id: `truck-${Date.now()}`,
-        plateNumber: truckForm.plateNumber.trim(),
-        tonsCarried: tons,
-        driverName: truckForm.driverName.trim(),
-        driverPhone: truckForm.driverPhone.trim(),
-        destination: truckForm.destination.trim(),
-        status: truckForm.status,
-        transitCostUSD: cost,
-        dispatchDate: truckForm.dispatchDate,
-        arrivalDate: truckForm.arrivalDate || undefined,
-        notes: truckForm.notes.trim() || undefined,
+    updateActiveTransaction((current) => {
+      let updatedTrucks: PopcornTruck[];
+      if (editingTruck) {
+        updatedTrucks = current.trucks.map((t) =>
+          t.id === editingTruck.id
+            ? {
+                ...t,
+                plateNumber: truckForm.plateNumber.trim(),
+                tonsCarried: tons,
+                driverName: truckForm.driverName.trim(),
+                driverPhone: truckForm.driverPhone.trim(),
+                destination: truckForm.destination.trim(),
+                status: truckForm.status,
+                transitCostUSD: cost,
+                dispatchDate: truckForm.dispatchDate,
+                arrivalDate: truckForm.arrivalDate || undefined,
+                notes: truckForm.notes.trim() || undefined,
+              }
+            : t
+        );
+      } else {
+        const newTruck: PopcornTruck = {
+          id: `truck-${Date.now()}`,
+          plateNumber: truckForm.plateNumber.trim(),
+          tonsCarried: tons,
+          driverName: truckForm.driverName.trim(),
+          driverPhone: truckForm.driverPhone.trim(),
+          destination: truckForm.destination.trim(),
+          status: truckForm.status,
+          transitCostUSD: cost,
+          dispatchDate: truckForm.dispatchDate,
+          arrivalDate: truckForm.arrivalDate || undefined,
+          notes: truckForm.notes.trim() || undefined,
+        };
+        updatedTrucks = [newTruck, ...current.trucks];
+      }
+      return {
+        ...current,
+        trucks: updatedTrucks,
       };
-      updatedTrucks = [newTruck, ...trucks];
-    }
-
-    persistChanges({
-      ...data,
-      trucks: updatedTrucks,
     });
 
     setIsTruckModalOpen(false);
@@ -303,24 +475,26 @@ export const PopcornManagement: React.FC = () => {
   };
 
   const handleDeleteTruck = (id: string) => {
-    const updatedTrucks = trucks.filter((t) => t.id !== id);
-    persistChanges({
-      ...data,
-      trucks: updatedTrucks,
-    });
+    updateActiveTransaction((current) => ({
+      ...current,
+      trucks: current.trucks.filter((t) => t.id !== id),
+    }));
     setTruckToDelete(null);
     playSound('delete');
   };
 
   // ----------------------------------------------------
-  // HANDLERS FOR EXPENSES
+  // EXPENSE HANDLERS
   // ----------------------------------------------------
   const handleOpenAddExpense = (defaultRegion?: 'iran' | 'iraq') => {
     setEditingExpense(null);
     setExpenseForm({
       region: defaultRegion || (activeExpenseTab === 'iraq' ? 'iraq' : 'iran'),
       title: '',
-      category: defaultRegion === 'iraq' || activeExpenseTab === 'iraq' ? 'گومرگی عێراق (Iraq Customs)' : 'کرێی بارهەڵگر (Truck Freight)',
+      category:
+        defaultRegion === 'iraq' || activeExpenseTab === 'iraq'
+          ? 'گومرگی عێراق (Iraq Customs)'
+          : 'کرێی بارهەڵگر (Truck Freight)',
       amountUSD: '',
       amountLocal: '',
       date: new Date().toISOString().split('T')[0],
@@ -355,41 +529,42 @@ export const PopcornManagement: React.FC = () => {
     const usd = Number(expenseForm.amountUSD) || 0;
     const local = expenseForm.amountLocal ? Number(expenseForm.amountLocal) : undefined;
 
-    let updatedExpenses: PopcornExpense[];
-    if (editingExpense) {
-      updatedExpenses = expenses.map((ex) =>
-        ex.id === editingExpense.id
-          ? {
-              ...ex,
-              region: expenseForm.region,
-              title: expenseForm.title.trim(),
-              category: expenseForm.category.trim(),
-              amountUSD: usd,
-              amountLocal: local,
-              date: expenseForm.date,
-              paidBy: expenseForm.paidBy,
-              notes: expenseForm.notes.trim() || undefined,
-            }
-          : ex
-      );
-    } else {
-      const newExpense: PopcornExpense = {
-        id: `exp-${Date.now()}`,
-        region: expenseForm.region,
-        title: expenseForm.title.trim(),
-        category: expenseForm.category.trim(),
-        amountUSD: usd,
-        amountLocal: local,
-        date: expenseForm.date,
-        paidBy: expenseForm.paidBy,
-        notes: expenseForm.notes.trim() || undefined,
+    updateActiveTransaction((current) => {
+      let updatedExpenses: PopcornExpense[];
+      if (editingExpense) {
+        updatedExpenses = current.expenses.map((ex) =>
+          ex.id === editingExpense.id
+            ? {
+                ...ex,
+                region: expenseForm.region,
+                title: expenseForm.title.trim(),
+                category: expenseForm.category.trim(),
+                amountUSD: usd,
+                amountLocal: local,
+                date: expenseForm.date,
+                paidBy: expenseForm.paidBy,
+                notes: expenseForm.notes.trim() || undefined,
+              }
+            : ex
+        );
+      } else {
+        const newExpense: PopcornExpense = {
+          id: `exp-${Date.now()}`,
+          region: expenseForm.region,
+          title: expenseForm.title.trim(),
+          category: expenseForm.category.trim(),
+          amountUSD: usd,
+          amountLocal: local,
+          date: expenseForm.date,
+          paidBy: expenseForm.paidBy,
+          notes: expenseForm.notes.trim() || undefined,
+        };
+        updatedExpenses = [newExpense, ...current.expenses];
+      }
+      return {
+        ...current,
+        expenses: updatedExpenses,
       };
-      updatedExpenses = [newExpense, ...expenses];
-    }
-
-    persistChanges({
-      ...data,
-      expenses: updatedExpenses,
     });
 
     setIsExpenseModalOpen(false);
@@ -397,80 +572,40 @@ export const PopcornManagement: React.FC = () => {
   };
 
   const handleDeleteExpense = (id: string) => {
-    const updatedExpenses = expenses.filter((e) => e.id !== id);
-    persistChanges({
-      ...data,
-      expenses: updatedExpenses,
-    });
+    updateActiveTransaction((current) => ({
+      ...current,
+      expenses: current.expenses.filter((e) => e.id !== id),
+    }));
     setExpenseToDelete(null);
     playSound('delete');
   };
 
-  // ----------------------------------------------------
-  // CONFIG HANDLER
-  // ----------------------------------------------------
-  const handleSaveConfig = (e: React.FormEvent) => {
-    e.preventDefault();
-    const updatedConfig: PopcornShipmentConfig = {
-      ...configForm,
-      totalTons: Number(configForm.totalTons) || 200,
-      buyPricePerTonUSD: Number(configForm.buyPricePerTonUSD) || 220,
-      sellingPricePerTonUSD: Number(configForm.sellingPricePerTonUSD) || 302,
-      partnerSharePercent: Number(configForm.partnerSharePercent) || 50,
-      exchangeRateIQD: Number(configForm.exchangeRateIQD) || 1530,
-      updatedAt: new Date().toISOString(),
-    };
-
-    persistChanges({
-      ...data,
-      config: updatedConfig,
-    });
-
-    setIsSettingsModalOpen(false);
-    confetti({
-      particleCount: 50,
-      spread: 60,
-      origin: { y: 0.6 },
-    });
-    playSound('success');
-  };
-
-  // ----------------------------------------------------
-  // RESET / REVERT TO DEFAULT
-  // ----------------------------------------------------
-  const handleResetToDefaults = () => {
-    if (window.confirm('ئایا دڵنیایت لە گەڕاندنەوەی سەرجەم داتاکانی پۆپکورن بۆ دۆخی سەرەتایی بنەڕەت؟')) {
-      persistChanges(DEFAULT_POPCORN_DATA);
-      setConfigForm(DEFAULT_POPCORN_DATA.config);
-      playSound('success');
-    }
-  };
-
   // Copy Summary to Clipboard
   const handleCopySummary = () => {
-    const text = `📊 پڕۆژەی هاوردەکردنی پۆپکورن (Popcorn Import & Partnership)
+    const text = `📊 مامەڵەی: ${activeTransaction.name}
 ----------------------------------------
-📍 وڵاتی سەرچاوە: ${config.originCountry}
-🎯 مەبەست: ${config.destinationCity}
-⚖️ بڕی گشتی بار: ${totalCargoTons} تۆن
-💵 نرخی کڕین (بۆ هەر تۆنێک): $${buyPricePerTon}
-💰 کۆی پارەی کڕین: ${formatUSD(totalBuyingCost)}
-📈 نرخی پێشبینیکراوی فرۆشتن: $${sellPricePerTon}
-💵 کۆی داهاتی پێشبینیکراو: ${formatUSD(expectedTotalRevenue)}
+📍 سەرچاوە: ${config.originCountry} | 🎯 مەبەست: ${config.destinationCity}
+⚖️ بڕی بار: ${totalCargoTons} تۆن
+💵 نرخی کڕین: $${buyPricePerTon}/تۆن | کۆی کڕین: ${formatUSD(totalBuyingCost)}
+📈 نرخی فرۆشتن: $${sellPricePerTon}/تۆن | کۆی داهات: ${formatUSD(expectedTotalRevenue)}
 ----------------------------------------
-🚚 بارهەڵگرەکان (Iran to Sulaimani):
+🚚 بارهەڵگرەکانی ئێران:
 - بڕی باری هاتووی تۆمارکراو: ${totalTonsCarried} تۆن (${trucks.length} بارهەڵگر)
-- بڕی ماوە بۆ هێنان: ${remainingTonsToTransport} تۆن
+- بڕی ماوە: ${remainingTonsToTransport} تۆن
 ----------------------------------------
 📉 خەرجییەکان:
-- خەرجییەکانی ئێران و گواستنەوە: ${formatUSD(totalIranSpending)}
+- خەرجییەکانی ئێران و ترانزێت: ${formatUSD(totalIranSpending)}
 - خەرجییەکانی ناوخۆی عێراق و گومرگ: ${formatUSD(totalIraqSpending)}
-- کۆی گشتی هەموو خەرجییەکان: ${formatUSD(totalOverallProjectCost)}
+- کۆی گشتی تێچووی هەموو مامەڵەکە: ${formatUSD(totalOverallProjectCost)}
 ----------------------------------------
-💎 قازانجی پوختەی گشتی: ${formatUSD(finalNetProfit)} (${formatIQD(finalNetProfit * exchangeRate)})
-🤝 دابەشکردنی شەراکەت (${config.partnerName}):
-- پشکی من (${myPercent}%): ${formatUSD(myProfitShare)}
-- پشکی هاوبەش (${partnerPercent}%): ${formatUSD(partnerProfitShare)}
+💎 قازانجی پوختەی گشتی (Net): ${formatUSD(finalNetProfit)} (${formatIQD(finalNetProfit * exchangeRate)})
+${
+  hasPartner
+    ? `🤝 حیساباتی شەراکەت (${config.partnerName}):
+- پشکی من (%${myPercent}): ${formatUSD(myProfitShare)}
+- پشکی هاوبەش (%${partnerPercent}): ${formatUSD(partnerProfitShare)}`
+    : `👤 مامەڵەی تەواو تایبەت (بێ هاوبەش - ١٠٠٪ قازانج بۆ خۆت)`
+}
 ----------------------------------------
 تۆمارکراوە لە سیستەمی DanaMahjadStore`;
 
@@ -480,107 +615,146 @@ export const PopcornManagement: React.FC = () => {
     setTimeout(() => setCopiedSummary(false), 2500);
   };
 
-  const handlePrint = () => {
-    window.print();
-  };
-
   return (
     <div className="space-y-8 animate-fadeIn pb-16">
       {/* ====================================================
-          HEADER BAR & HERO
+          TOP HERO & TRANSACTION SWITCHER BAR
           ==================================================== */}
-      <div className="relative overflow-hidden rounded-3xl glass-card border border-amber-500/25 p-6 md:p-8 shadow-2xl">
+      <div className="relative overflow-hidden rounded-3xl glass-card border border-amber-500/25 p-5 md:p-7 shadow-2xl">
         <div className="absolute top-0 right-0 w-96 h-96 bg-gradient-to-bl from-amber-500/10 via-yellow-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-96 h-96 bg-gradient-to-tr from-amber-600/10 via-yellow-600/5 to-transparent rounded-full blur-3xl pointer-events-none" />
 
-        <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
+        <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+          {/* Transaction Header Info */}
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-gradient-to-tr from-amber-500/25 via-yellow-400/20 to-amber-600/30 border border-amber-500/40 p-2 flex items-center justify-center shadow-lg shadow-amber-500/20 text-3xl shrink-0">
+              <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500/25 via-yellow-400/20 to-amber-600/30 border border-amber-500/40 p-2 flex items-center justify-center shadow-lg shadow-amber-500/20 text-2xl shrink-0">
                 🍿
               </div>
               <div>
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-xl md:text-2xl font-black text-white tracking-wide">
-                    پۆپکورن <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500">(Popcorn Import & Partnership)</span>
+                    {activeTransaction.name}
                   </h1>
                   <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1">
                     <Globe2 className="w-3.5 h-3.5" />
-                    هاوردەکردن لە {config.originCountry}
+                    {config.originCountry} ➔ {config.destinationCity}
                   </span>
+                  {hasPartner ? (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                      <UserCheck className="w-3 h-3" />
+                      شەراکەت (%{partnerPercent})
+                    </span>
+                  ) : (
+                    <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 flex items-center gap-1">
+                      <UserX className="w-3 h-3" />
+                      بێ هاوبەش (تایبەت)
+                    </span>
+                  )}
                 </div>
-                <p className="text-xs md:text-sm text-slate-400 mt-1">
-                  بەڕێوەبردنی کڕینی {totalCargoTons} تۆن دانەوێڵە، گواستنەوەی بارهەڵگرەکانی ئێران بۆ سلێمانی و حیساباتی هاوبەشی
+                <p className="text-xs text-slate-400 mt-1">
+                  کڕین: {totalCargoTons} تۆن بە {formatUSD(buyPricePerTon)} | فرۆشتن بە {formatUSD(sellPricePerTon)} | {trucks.length} بارهەڵگر تۆمارکراوە
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
-            {/* Cloud Status indicator */}
-            <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/90 border border-slate-700/80 text-[11px] text-slate-300">
-              <span className={`w-2 h-2 rounded-full ${isCloudSyncing ? 'bg-amber-400 animate-ping' : 'bg-emerald-400'}`} />
-              <span>{isCloudSyncing ? 'هاوکات دەکرێت...' : 'کڵاود و ئۆفلاین ئامادەیە'}</span>
+          {/* Transaction Switcher & Actions */}
+          <div className="flex items-center gap-2 flex-wrap w-full lg:w-auto">
+            {/* Transaction Dropdown Switcher */}
+            <div className="relative flex items-center bg-slate-900 border border-amber-500/35 rounded-xl px-2.5 py-1.5 shadow-md">
+              <Layers className="w-4 h-4 text-amber-400 ml-2 shrink-0" />
+              <select
+                value={store.activeTransactionId}
+                onChange={(e) => {
+                  persistStore({
+                    ...store,
+                    activeTransactionId: e.target.value,
+                  });
+                  playSound('click');
+                }}
+                className="bg-transparent text-xs font-bold text-white pr-2 pl-4 focus:outline-none cursor-pointer"
+              >
+                {store.transactions.map((trans) => (
+                  <option key={trans.id} value={trans.id} className="bg-slate-900 text-white">
+                    {trans.name} ({trans.config.totalTons} تۆن)
+                  </option>
+                ))}
+              </select>
             </div>
+
+            {/* CREATE NEW TRANSACTION BUTTON */}
+            <motion.button
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
+              onClick={handleOpenCreateTransaction}
+              className="flex items-center gap-1.5 px-4 py-2 rounded-xl btn-gold text-xs font-black text-slate-950 shadow-lg cursor-pointer"
+              title="دروستکردنی مامەڵەی نوێ بۆ پۆپکورن"
+            >
+              <Plus className="w-4 h-4" />
+              <span>+ مامەڵەی نوێ (New Transaction)</span>
+            </motion.button>
+
+            {/* Edit Active Transaction Settings */}
+            <button
+              onClick={() => {
+                setEditTransactionForm(config);
+                setEditTransactionName(activeTransaction.name);
+                setIsEditTransactionModalOpen(true);
+              }}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/40 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              title="دەستکاریکردنی ناوی مامەڵە، نرخەکان و شەراکەت"
+            >
+              <Settings className="w-4 h-4 text-amber-400" />
+            </button>
+
+            {/* Export Excel for this transaction */}
+            <button
+              onClick={() => {
+                exportPopcornToExcel({
+                  config,
+                  trucks,
+                  expenses,
+                });
+                playSound('success');
+              }}
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500/40 text-slate-300 hover:text-emerald-300 transition-colors cursor-pointer"
+              title="داگرتنی ئێکسڵی ئەم مامەڵەیە"
+            >
+              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+            </button>
 
             {/* Copy Summary */}
             <button
               onClick={handleCopySummary}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/40 text-xs font-semibold text-slate-200 transition-all cursor-pointer"
-              title="کۆپیکردنی پوختەی پڕۆژە بۆ واتساپ"
+              className="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-amber-500/40 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer"
+              title="کۆپیکردنی پوختەی ئەم مامەڵەیە بۆ واتساپ"
             >
               {copiedSummary ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
-              <span>{copiedSummary ? 'کۆپیکرا!' : 'کۆپیکردنی پوختە'}</span>
             </button>
 
-            {/* Excel Export Button */}
-            <button
-              onClick={() => {
-                exportPopcornToExcel(data);
-                playSound('success');
-              }}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-emerald-500/40 text-xs font-semibold text-slate-200 transition-all cursor-pointer"
-              title="داگرتنی داتای پۆپکورن بە شێوەی ئێکسڵ"
-            >
-              <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
-              <span className="hidden sm:inline">داگرتنی ئێکسڵ</span>
-            </button>
-
-            {/* Print Button */}
-            <button
-              onClick={handlePrint}
-              className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/90 hover:bg-slate-800 border border-slate-700/80 hover:border-amber-500/40 text-xs font-semibold text-slate-200 transition-all cursor-pointer"
-              title="چاپکردنی ڕاپۆرت"
-            >
-              <Printer className="w-4 h-4 text-amber-400" />
-              <span className="hidden sm:inline">چاپکردن</span>
-            </button>
-
-            {/* Settings Button */}
-            <button
-              onClick={() => {
-                setConfigForm(config);
-                setIsSettingsModalOpen(true);
-              }}
-              className="flex items-center gap-2 px-4 py-2 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-lg cursor-pointer"
-            >
-              <Settings className="w-4 h-4" />
-              <span>ڕێکخستنی نرخ و پلان</span>
-            </button>
+            {/* Delete Transaction (if more than 1) */}
+            {store.transactions.length > 1 && (
+              <button
+                onClick={() => setTransactionToDelete(activeTransaction)}
+                className="p-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 text-rose-400 transition-colors cursor-pointer"
+                title="سڕینەوەی ئەم مامەڵەیە"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       {/* ====================================================
-          1. SHIPMENT SUMMARY & 5 KPI CARDS
+          1. BUYING DETAILS, SELLING INFORMATIONS & FINANCIAL KPIS
           ==================================================== */}
       <div>
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
             <Coins className="w-4 h-4 text-amber-400" />
             <h2 className="text-sm font-bold text-white uppercase tracking-wider">
-              پوختەی دارایی و کڕینی دانەوێڵە (Shipment Financial KPIs)
+              وردەکاری دارایی مامەڵە (Buying & Selling Financials)
             </h2>
           </div>
           <span className="text-xs text-slate-400 font-numeric">
@@ -589,11 +763,11 @@ export const PopcornManagement: React.FC = () => {
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
-          {/* Card 1: Purchase Total Cost */}
+          {/* 1. Buying Details */}
           <TiltCard glowColor="gold">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium text-slate-400">کۆی تێچووی کڕین (ڕووسیا)</p>
+                <p className="text-xs font-medium text-slate-400">وردەکاری کڕین (Buying Cost)</p>
                 <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 mt-1.5 font-numeric">
                   {formatUSD(totalBuyingCost)}
                 </h3>
@@ -610,11 +784,11 @@ export const PopcornManagement: React.FC = () => {
             </div>
           </TiltCard>
 
-          {/* Card 2: Expected Selling Revenue */}
+          {/* 2. Selling Informations */}
           <TiltCard glowColor="amber">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium text-slate-400">کۆی داهاتی فرۆش (سلێمانی)</p>
+                <p className="text-xs font-medium text-slate-400">داهاتی فرۆش (Selling Revenue)</p>
                 <h3 className="text-xl font-black text-slate-100 mt-1.5 font-numeric">
                   {formatUSD(expectedTotalRevenue)}
                 </h3>
@@ -631,7 +805,7 @@ export const PopcornManagement: React.FC = () => {
             </div>
           </TiltCard>
 
-          {/* Card 3: Combined Transport & Local Expenses */}
+          {/* 3. Cost Iran Side + Cost Iraq Side */}
           <TiltCard glowColor="rose">
             <div className="flex items-start justify-between">
               <div>
@@ -652,12 +826,16 @@ export const PopcornManagement: React.FC = () => {
             </div>
           </TiltCard>
 
-          {/* Card 4: Final Net Profit */}
+          {/* 4. Net Profit */}
           <TiltCard glowColor="emerald">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium text-slate-400">قازانجی پوختەی گشتی (Net)</p>
-                <h3 className={`text-xl font-black mt-1.5 font-numeric ${finalNetProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+                <p className="text-xs font-medium text-slate-400">قازانجی پوختەی مامەڵە (Net)</p>
+                <h3
+                  className={`text-xl font-black mt-1.5 font-numeric ${
+                    finalNetProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                  }`}
+                >
                   {formatUSD(finalNetProfit)}
                 </h3>
               </div>
@@ -666,28 +844,30 @@ export const PopcornManagement: React.FC = () => {
               </div>
             </div>
             <div className="mt-3 pt-2.5 border-t border-emerald-500/10 flex items-center justify-between text-[11px] text-slate-400">
-              <span>بە دیناری عێراقی</span>
+              <span>بە دیناری عێراقی:</span>
               <span className="text-emerald-400 font-bold font-numeric">
                 {formatIQD(finalNetProfit * exchangeRate)}
               </span>
             </div>
           </TiltCard>
 
-          {/* Card 5: Partner Split 50/50 */}
+          {/* 5. Calculate with Partner if there is any */}
           <TiltCard glowColor="gold">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-xs font-medium text-slate-400">پشکی هاوبەش ({partnerPercent}%)</p>
+                <p className="text-xs font-medium text-slate-400">
+                  {hasPartner ? `پشکی هاوبەش (%${partnerPercent})` : 'پشکی من (بێ هاوبەش)'}
+                </p>
                 <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 mt-1.5 font-numeric">
-                  {formatUSD(partnerProfitShare)}
+                  {hasPartner ? formatUSD(partnerProfitShare) : formatUSD(myProfitShare)}
                 </h3>
               </div>
               <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400">
-                <Split className="w-5 h-5" />
+                {hasPartner ? <Split className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
               </div>
             </div>
             <div className="mt-3 pt-2.5 border-t border-amber-500/10 flex items-center justify-between text-[11px] text-slate-400">
-              <span>پشکی من ({myPercent}%):</span>
+              <span>{hasPartner ? `پشکی من (%${myPercent}):` : '١٠٠٪ بۆ خۆت:'}</span>
               <span className="text-amber-400 font-bold font-numeric">
                 {formatUSD(myProfitShare)}
               </span>
@@ -697,7 +877,7 @@ export const PopcornManagement: React.FC = () => {
       </div>
 
       {/* ====================================================
-          2. TRUCK & TRANSPORT MANAGEMENT TABLE (لقی بارهەڵگرەکان)
+          2. TRUCK & TRANSPORT INFORMATION TABLE (لقی بارهەڵگرەکان)
           ==================================================== */}
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -708,13 +888,13 @@ export const PopcornManagement: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span>لقی بارهەڵگرەکان (Iran to Sulaimani Transport)</span>
+                  <span>زانیاری بارهەڵگرەکان (Truck Information)</span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-slate-700 font-numeric">
-                    {trucks.length} بارهەڵگر
+                    {trucks.length} بارهەڵگر ({totalTonsCarried} لە {totalCargoTons} تۆن)
                   </span>
                 </h3>
                 <p className="text-xs text-slate-400">
-                  تۆمارکردن و بەدواداچوونی وردی بارهەڵگرە ئێرانییەکان و بارە گەیشتووەکان بۆ سلێمانی
+                  تۆمارکردن و بەدواداچوونی وردی بارهەڵگرەکانی ئەم مامەڵەیە لە ئێرانەوە بۆ سلێمانی
                 </p>
               </div>
             </div>
@@ -725,7 +905,7 @@ export const PopcornManagement: React.FC = () => {
             className="flex items-center gap-2 px-4 py-2 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-md cursor-pointer shrink-0"
           >
             <Plus className="w-4 h-4" />
-            <span>زیادکردنی بارهەڵگر (Add Truck)</span>
+            <span>زیادکردنی بارهەڵگر بۆ ئەم مامەڵەیە</span>
           </button>
         </div>
 
@@ -806,7 +986,7 @@ export const PopcornManagement: React.FC = () => {
                 {filteredTrucks.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="py-12 text-center text-slate-500">
-                      هیچ بارهەڵگرێک نەدۆزرایەوە بەم مەرجانە!
+                      هیچ بارهەڵگرێک بۆ ئەم مامەڵەیە تۆمار نەکراوە!
                     </td>
                   </tr>
                 ) : (
@@ -832,11 +1012,7 @@ export const PopcornManagement: React.FC = () => {
                     const StatusIcon = statusConfig.icon;
 
                     return (
-                      <tr
-                        key={truck.id}
-                        className="hover:bg-slate-800/40 transition-colors group"
-                      >
-                        {/* Plate */}
+                      <tr key={truck.id} className="hover:bg-slate-800/40 transition-colors group">
                         <td className="py-3.5 px-4">
                           <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 font-mono font-bold text-amber-300 text-xs shadow-inner">
                             <Truck className="w-3.5 h-3.5 text-amber-400" />
@@ -849,7 +1025,6 @@ export const PopcornManagement: React.FC = () => {
                           )}
                         </td>
 
-                        {/* Driver */}
                         <td className="py-3.5 px-4">
                           <div className="font-semibold text-white flex items-center gap-1.5">
                             <User className="w-3.5 h-3.5 text-slate-400" />
@@ -863,12 +1038,10 @@ export const PopcornManagement: React.FC = () => {
                           )}
                         </td>
 
-                        {/* Tons */}
                         <td className="py-3.5 px-4 font-bold text-amber-300 font-numeric text-sm">
                           {formatNumber(truck.tonsCarried)} تۆن
                         </td>
 
-                        {/* Destination */}
                         <td className="py-3.5 px-4 text-slate-300">
                           <div className="flex items-center gap-1.5">
                             <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
@@ -876,17 +1049,14 @@ export const PopcornManagement: React.FC = () => {
                           </div>
                         </td>
 
-                        {/* Date */}
                         <td className="py-3.5 px-4 text-slate-400 font-numeric">
                           {truck.dispatchDate}
                         </td>
 
-                        {/* Cost */}
                         <td className="py-3.5 px-4 font-medium text-slate-300 font-numeric">
                           {truck.transitCostUSD > 0 ? formatUSD(truck.transitCostUSD) : '—'}
                         </td>
 
-                        {/* Status */}
                         <td className="py-3.5 px-4">
                           <span
                             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusConfig.className}`}
@@ -896,7 +1066,6 @@ export const PopcornManagement: React.FC = () => {
                           </span>
                         </td>
 
-                        {/* Actions */}
                         <td className="py-3.5 px-4 text-center">
                           <div className="flex items-center justify-center gap-1.5">
                             <button
@@ -920,7 +1089,6 @@ export const PopcornManagement: React.FC = () => {
                   })
                 )}
               </tbody>
-              {/* Summary Footer Row */}
               {filteredTrucks.length > 0 && (
                 <tfoot>
                   <tr className="bg-slate-900/90 font-bold border-t-2 border-amber-500/20 text-slate-200">
@@ -945,21 +1113,21 @@ export const PopcornManagement: React.FC = () => {
       </div>
 
       {/* ====================================================
-          3. EXPENSES & PARTNER ACCOUNTING SECTION
+          3. EXPENSES (COST IRAN SIDE + COST IRAQ SIDE) & PARTNER ACCOUNTING
           ==================================================== */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Expenses List & Tab (2 Cols) */}
+        {/* Cost Iran Side & Cost Iraq Side (2 Cols) */}
         <div className="lg:col-span-2 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
               <div className="flex items-center gap-2">
                 <Scale className="w-5 h-5 text-amber-400" />
                 <h3 className="text-base sm:text-lg font-bold text-white">
-                  خەرجییەکانی پڕۆژە (Project Expenses)
+                  خەرجییەکانی ئێران و عێراق (Iran & Iraq Expenses)
                 </h3>
               </div>
               <p className="text-xs text-slate-400 mt-0.5">
-                تۆماری خەرجییەکانی ئێران (گواستنەوە و ترانزێت) و عێراق (گومرگ، داگرتن، عەمبار)
+                تێچووی گواستنەوەی ئێران و ترانزێت + گومرگ و خەرجی ناوخۆی عێراق بۆ ئەم مامەڵەیە
               </p>
             </div>
 
@@ -1035,16 +1203,13 @@ export const PopcornManagement: React.FC = () => {
                   {filteredExpenses.length === 0 ? (
                     <tr>
                       <td colSpan={6} className="py-10 text-center text-slate-500">
-                        هیچ خەرجییەک لەم بەشەدا تۆمار نەکراوە!
+                        هیچ خەرجییەک بۆ ئەم بەشە تۆمار نەکراوە!
                       </td>
                     </tr>
                   ) : (
                     filteredExpenses.map((expense) => {
                       return (
-                        <tr
-                          key={expense.id}
-                          className="hover:bg-slate-800/40 transition-colors group"
-                        >
+                        <tr key={expense.id} className="hover:bg-slate-800/40 transition-colors group">
                           <td className="py-3 px-4">
                             <div className="font-semibold text-white flex items-center gap-1.5">
                               <span className="text-base">{expense.region === 'iran' ? '🇮🇷' : '🇮🇶'}</span>
@@ -1077,7 +1242,11 @@ export const PopcornManagement: React.FC = () => {
                                   : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
                               }`}
                             >
-                              {expense.paidBy === 'partner' ? 'شەریک / هاوبەش' : expense.paidBy === 'me' ? 'لەلایەن منەوە' : 'هاوبەش'}
+                              {expense.paidBy === 'partner'
+                                ? 'شەریک / هاوبەش'
+                                : expense.paidBy === 'me'
+                                ? 'لەلایەن منەوە'
+                                : 'هاوبەش'}
                             </span>
                           </td>
                           <td className="py-3 px-4 text-center">
@@ -1108,36 +1277,44 @@ export const PopcornManagement: React.FC = () => {
           </div>
         </div>
 
-        {/* ====================================================
-            4. PARTNER PROFIT SHARING & SETTLEMENT CARD (1 Col)
-            ==================================================== */}
+        {/* Calculate with Partner if there is any (1 Col) */}
         <div className="space-y-4">
           <div className="p-6 rounded-3xl glass-card border border-amber-500/30 space-y-5 shadow-2xl relative overflow-hidden">
             <div className="flex items-center justify-between pb-3 border-b border-amber-500/20">
               <div className="flex items-center gap-2.5">
                 <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/35 flex items-center justify-center text-amber-400 shadow-md">
-                  <Split className="w-5 h-5" />
+                  {hasPartner ? <Split className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
                 </div>
                 <div>
-                  <h4 className="text-base font-bold text-white">حیساباتی شەراکەت</h4>
-                  <p className="text-xs text-slate-400">Partner Profit Sharing</p>
+                  <h4 className="text-base font-bold text-white">
+                    {hasPartner ? 'حیساباتی شەراکەت' : 'حیساباتی مامەڵەی سەربەخۆ'}
+                  </h4>
+                  <p className="text-xs text-slate-400">
+                    {hasPartner ? 'Partner Profit Sharing' : 'Solo Transaction (No Partner)'}
+                  </p>
                 </div>
               </div>
 
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/35 font-numeric">
-                %{partnerPercent} / %{myPercent}
-              </span>
+              {hasPartner ? (
+                <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/35 font-numeric">
+                  %{partnerPercent} / %{myPercent}
+                </span>
+              ) : (
+                <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-numeric">
+                  ١٠٠٪ بۆ من
+                </span>
+              )}
             </div>
 
-            {/* Step-by-Step Accounting Waterfall */}
+            {/* Waterfall Breakdown */}
             <div className="space-y-2.5 text-xs">
               <div className="flex justify-between items-center py-1">
-                <span className="text-slate-400">کۆی داهاتی فرۆش (٢٠٠ تۆن):</span>
+                <span className="text-slate-400">کۆی داهاتی فرۆش ({totalCargoTons} تۆن):</span>
                 <span className="font-bold text-white font-numeric">{formatUSD(expectedTotalRevenue)}</span>
               </div>
 
               <div className="flex justify-between items-center py-1 text-rose-400">
-                <span>- تێچووی کڕین لە ڕووسیا:</span>
+                <span>- تێچووی کڕین لە {config.originCountry}:</span>
                 <span className="font-bold font-numeric">-{formatUSD(totalBuyingCost)}</span>
               </div>
 
@@ -1159,81 +1336,506 @@ export const PopcornManagement: React.FC = () => {
               </div>
             </div>
 
-            {/* Split Breakdown */}
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
-              <div className="flex justify-between items-center text-xs">
-                <div>
-                  <div className="font-bold text-white">{config.partnerName}</div>
-                  <div className="text-[11px] text-slate-400 font-numeric">پشکی قازانج (%{partnerPercent})</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-black text-amber-300 font-numeric text-sm">
-                    {formatUSD(partnerProfitShare)}
+            {/* Split Breakdown / Partner details */}
+            {hasPartner ? (
+              <>
+                <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
+                  <div className="flex justify-between items-center text-xs">
+                    <div>
+                      <div className="font-bold text-white">{config.partnerName}</div>
+                      <div className="text-[11px] text-slate-400 font-numeric">پشکی قازانج (%{partnerPercent})</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-black text-amber-300 font-numeric text-sm">
+                        {formatUSD(partnerProfitShare)}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-numeric">
+                        {formatIQD(partnerProfitShare * exchangeRate)}
+                      </div>
+                    </div>
                   </div>
-                  <div className="text-[10px] text-slate-400 font-numeric">
-                    {formatIQD(partnerProfitShare * exchangeRate)}
+
+                  <div className="h-[1px] bg-slate-800" />
+
+                  <div className="flex justify-between items-center text-xs">
+                    <div>
+                      <div className="font-bold text-white">پشکی من (My Share)</div>
+                      <div className="text-[11px] text-slate-400 font-numeric">پشکی قازانج (%{myPercent})</div>
+                    </div>
+                    <div className="text-right">
+                      <div className="font-black text-amber-300 font-numeric text-sm">
+                        {formatUSD(myProfitShare)}
+                      </div>
+                      <div className="text-[10px] text-slate-400 font-numeric">
+                        {formatIQD(myProfitShare * exchangeRate)}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <div className="h-[1px] bg-slate-800" />
-
-              <div className="flex justify-between items-center text-xs">
-                <div>
-                  <div className="font-bold text-white">پشکی من (My Share)</div>
-                  <div className="text-[11px] text-slate-400 font-numeric">پشکی قازانج (%{myPercent})</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-black text-amber-300 font-numeric text-sm">
-                    {formatUSD(myProfitShare)}
+                <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] space-y-2">
+                  <div className="text-slate-400 font-semibold flex items-center justify-between">
+                    <span>خەرجی دراو لەلایەن هاوبەش:</span>
+                    <span className="text-white font-numeric font-bold">{formatUSD(expensesPaidByPartner)}</span>
                   </div>
-                  <div className="text-[10px] text-slate-400 font-numeric">
-                    {formatIQD(myProfitShare * exchangeRate)}
+                  <div className="text-slate-400 font-semibold flex items-center justify-between">
+                    <span>خەرجی دراو لەلایەن من:</span>
+                    <span className="text-white font-numeric font-bold">{formatUSD(expensesPaidByMe)}</span>
+                  </div>
+
+                  <div className="h-[1px] bg-slate-800 my-1" />
+
+                  <div className="flex items-center justify-between font-bold text-xs pt-1">
+                    <span className="text-amber-400">کۆی شایستەی هاوبەش:</span>
+                    <span className="text-emerald-400 font-numeric">{formatUSD(netDueToPartner)}</span>
                   </div>
                 </div>
+              </>
+            ) : (
+              <div className="p-4 rounded-2xl bg-slate-900/80 border border-slate-800 text-center space-y-2">
+                <p className="text-xs text-slate-300">
+                  ئەم مامەڵەیە شەراکەتی تێدانییە و تەواوی قازانجی پوخت بۆ خۆت پاشەکەوت دەبێت.
+                </p>
+                <div className="text-xl font-black text-emerald-400 font-numeric">
+                  {formatUSD(myProfitShare)}
+                </div>
+                <button
+                  onClick={() => {
+                    setEditTransactionForm({
+                      ...config,
+                      hasPartner: true,
+                    });
+                    setIsEditTransactionModalOpen(true);
+                  }}
+                  className="text-xs text-amber-400 hover:underline cursor-pointer pt-1"
+                >
+                  + زیادکردنی شەراکەت بۆ ئەم مامەڵەیە
+                </button>
               </div>
-            </div>
+            )}
 
-            {/* Capital / Expenses Contribution Tracking */}
-            <div className="p-3.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] space-y-2">
-              <div className="text-slate-400 font-semibold flex items-center justify-between">
-                <span>خەرجی دراو لەلایەن هاوبەش:</span>
-                <span className="text-white font-numeric font-bold">{formatUSD(expensesPaidByPartner)}</span>
-              </div>
-              <div className="text-slate-400 font-semibold flex items-center justify-between">
-                <span>خەرجی دراو لەلایەن من:</span>
-                <span className="text-white font-numeric font-bold">{formatUSD(expensesPaidByMe)}</span>
-              </div>
-
-              <div className="h-[1px] bg-slate-800 my-1" />
-
-              <div className="flex items-center justify-between font-bold text-xs pt-1">
-                <span className="text-amber-400">کۆی شایستەی هاوبەش:</span>
-                <span className="text-emerald-400 font-numeric">{formatUSD(netDueToPartner)}</span>
-              </div>
-            </div>
-
-            {/* Quick Share / Settlement Actions */}
+            {/* Quick Actions */}
             <div className="space-y-2 pt-2">
               <button
                 onClick={handleCopySummary}
                 className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-md cursor-pointer"
               >
                 <Copy className="w-4 h-4" />
-                <span>{copiedSummary ? 'کۆپیکرا بۆ کلیپبۆرد!' : 'کۆپیکردنی پسوولەی شەراکەت'}</span>
-              </button>
-
-              <button
-                onClick={handleResetToDefaults}
-                className="w-full flex items-center justify-center gap-1.5 py-2 px-3 rounded-xl text-slate-400 hover:text-rose-400 text-[11px] hover:bg-slate-900 transition-colors cursor-pointer"
-              >
-                <RotateCcw className="w-3 h-3" />
-                <span>گەڕاندنەوە بۆ داتای بنەڕەت</span>
+                <span>{copiedSummary ? 'کۆپیکرا بۆ کلیپبۆرد!' : 'کۆپیکردنی پوختەی ئەم مامەڵەیە'}</span>
               </button>
             </div>
           </div>
         </div>
       </div>
+
+      {/* ====================================================
+          MODAL: CREATE NEW TRANSACTION
+          ==================================================== */}
+      <AnimatePresence>
+        {isNewTransactionModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsNewTransactionModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              className="relative w-full max-w-lg bg-[#0e111a] border border-amber-500/30 rounded-3xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                    <Sparkles className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">دروستکردنی مامەڵەی نوێ</h3>
+                    <p className="text-xs text-slate-400">دیاریکردنی ناو، نرخەکانی کڕین، فرۆشتن و شەراکەت</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsNewTransactionModalOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleCreateTransaction} className="space-y-4 text-xs">
+                {/* 1. Transaction Name (Mandatory) */}
+                <div>
+                  <label className="block text-slate-200 font-bold mb-1">
+                    ناوی مامەڵە (Transaction Name) <span className="text-rose-400">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    autoFocus
+                    placeholder="نموونە: وەجبەی دووەم - ١٥٠ تۆن ڕووسیا"
+                    value={newTransactionForm.name}
+                    onChange={(e) =>
+                      setNewTransactionForm({ ...newTransactionForm, name: e.target.value })
+                    }
+                    className="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-white font-semibold placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                  />
+                </div>
+
+                {/* 2. Buying Details */}
+                <div className="pt-2 border-t border-slate-800">
+                  <span className="font-bold text-amber-300 block mb-2">زانیاری کڕین (Buying Details):</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">بڕی بار بە تۆن</label>
+                      <input
+                        type="number"
+                        required
+                        value={newTransactionForm.totalTons}
+                        onChange={(e) =>
+                          setNewTransactionForm({ ...newTransactionForm, totalTons: e.target.value })
+                        }
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">نرخی کڕین ($/تۆن)</label>
+                      <input
+                        type="number"
+                        required
+                        value={newTransactionForm.buyPricePerTonUSD}
+                        onChange={(e) =>
+                          setNewTransactionForm({
+                            ...newTransactionForm,
+                            buyPricePerTonUSD: e.target.value,
+                          })
+                        }
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. Selling Informations */}
+                <div className="pt-2 border-t border-slate-800">
+                  <span className="font-bold text-emerald-300 block mb-2">زانیاری فرۆشتن (Selling Informations):</span>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">نرخی فرۆشتن ($/تۆن)</label>
+                      <input
+                        type="number"
+                        required
+                        value={newTransactionForm.sellingPricePerTonUSD}
+                        onChange={(e) =>
+                          setNewTransactionForm({
+                            ...newTransactionForm,
+                            sellingPricePerTonUSD: e.target.value,
+                          })
+                        }
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">نرخی دۆلار بە دینار (IQD)</label>
+                      <input
+                        type="number"
+                        value={newTransactionForm.exchangeRateIQD}
+                        onChange={(e) =>
+                          setNewTransactionForm({
+                            ...newTransactionForm,
+                            exchangeRateIQD: e.target.value,
+                          })
+                        }
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4. Partner Calculation if any */}
+                <div className="pt-2 border-t border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <div>
+                      <span className="font-bold text-white block">حیساباتی شەراکەت (Partner Calculation)</span>
+                      <span className="text-[11px] text-slate-400">ئایا ئەم مامەڵەیە شەراکەت/هاوبەشی تێدایە؟</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={newTransactionForm.hasPartner}
+                        onChange={(e) =>
+                          setNewTransactionForm({ ...newTransactionForm, hasPartner: e.target.checked })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+                    </label>
+                  </div>
+
+                  {newTransactionForm.hasPartner && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-900/40 border border-amber-500/20">
+                      <div>
+                        <label className="block text-slate-300 font-medium mb-1">ناوی هاوبەش / شەریک</label>
+                        <input
+                          type="text"
+                          value={newTransactionForm.partnerName}
+                          onChange={(e) =>
+                            setNewTransactionForm({
+                              ...newTransactionForm,
+                              partnerName: e.target.value,
+                            })
+                          }
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-medium mb-1">
+                          ڕێژەی پشکی هاوبەش (%): {newTransactionForm.partnerSharePercent}%
+                        </label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="99"
+                          value={newTransactionForm.partnerSharePercent}
+                          onChange={(e) =>
+                            setNewTransactionForm({
+                              ...newTransactionForm,
+                              partnerSharePercent: e.target.value,
+                            })
+                          }
+                          className="w-full accent-amber-500 cursor-pointer mt-2"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsNewTransactionModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-colors cursor-pointer"
+                  >
+                    پەشیمانبوونەوە
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl btn-gold font-bold text-slate-950 shadow-md cursor-pointer"
+                  >
+                    دروستکردن و تۆمارکردن
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ====================================================
+          MODAL: EDIT CURRENT TRANSACTION SETTINGS
+          ==================================================== */}
+      <AnimatePresence>
+        {isEditTransactionModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsEditTransactionModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+
+            <motion.div
+              initial={{ scale: 0.95, opacity: 0, y: 15 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 15 }}
+              className="relative w-full max-w-lg bg-[#0e111a] border border-amber-500/30 rounded-3xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-5">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
+                    <Settings className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">دەستکاریکردنی ئەم مامەڵەیە</h3>
+                    <p className="text-xs text-slate-400">ناوی مامەڵە، نرخەکان و شەراکەت</p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => setIsEditTransactionModalOpen(false)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              <form onSubmit={handleSaveEditTransaction} className="space-y-4 text-xs">
+                {/* Transaction Name */}
+                <div>
+                  <label className="block text-slate-200 font-bold mb-1">ناوی مامەڵە</label>
+                  <input
+                    type="text"
+                    required
+                    value={editTransactionName}
+                    onChange={(e) => setEditTransactionName(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                  />
+                </div>
+
+                {/* Tons & Buy Price */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">بڕ بە تۆن</label>
+                    <input
+                      type="number"
+                      required
+                      value={editTransactionForm.totalTons}
+                      onChange={(e) =>
+                        setEditTransactionForm({
+                          ...editTransactionForm,
+                          totalTons: Number(e.target.value),
+                        })
+                      }
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">نرخی کڕین ($/تۆن)</label>
+                    <input
+                      type="number"
+                      required
+                      value={editTransactionForm.buyPricePerTonUSD}
+                      onChange={(e) =>
+                        setEditTransactionForm({
+                          ...editTransactionForm,
+                          buyPricePerTonUSD: Number(e.target.value),
+                        })
+                      }
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Sell Price & Exchange Rate */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">نرخی فرۆشتن ($/تۆن)</label>
+                    <input
+                      type="number"
+                      required
+                      value={editTransactionForm.sellingPricePerTonUSD}
+                      onChange={(e) =>
+                        setEditTransactionForm({
+                          ...editTransactionForm,
+                          sellingPricePerTonUSD: Number(e.target.value),
+                        })
+                      }
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-semibold mb-1">نرخی دۆلار بە دینار (IQD)</label>
+                    <input
+                      type="number"
+                      required
+                      value={editTransactionForm.exchangeRateIQD}
+                      onChange={(e) =>
+                        setEditTransactionForm({
+                          ...editTransactionForm,
+                          exchangeRateIQD: Number(e.target.value),
+                        })
+                      }
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    />
+                  </div>
+                </div>
+
+                {/* Partner Settings */}
+                <div className="pt-2 border-t border-slate-800 space-y-3">
+                  <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                    <div>
+                      <span className="font-bold text-white block">حیساباتی شەراکەت</span>
+                      <span className="text-[11px] text-slate-400">ئایا شەراکەتی تێدایە؟</span>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={editTransactionForm.hasPartner !== false}
+                        onChange={(e) =>
+                          setEditTransactionForm({
+                            ...editTransactionForm,
+                            hasPartner: e.target.checked,
+                          })
+                        }
+                        className="sr-only peer"
+                      />
+                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+                    </label>
+                  </div>
+
+                  {editTransactionForm.hasPartner !== false && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-900/40 border border-amber-500/20">
+                      <div>
+                        <label className="block text-slate-300 font-medium mb-1">ناوی هاوبەش</label>
+                        <input
+                          type="text"
+                          value={editTransactionForm.partnerName}
+                          onChange={(e) =>
+                            setEditTransactionForm({
+                              ...editTransactionForm,
+                              partnerName: e.target.value,
+                            })
+                          }
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-slate-300 font-medium mb-1">
+                          ڕێژەی پشکی هاوبەش (%): {editTransactionForm.partnerSharePercent}%
+                        </label>
+                        <input
+                          type="range"
+                          min="1"
+                          max="99"
+                          value={editTransactionForm.partnerSharePercent}
+                          onChange={(e) =>
+                            setEditTransactionForm({
+                              ...editTransactionForm,
+                              partnerSharePercent: Number(e.target.value),
+                            })
+                          }
+                          className="w-full accent-amber-500 cursor-pointer mt-2"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                  <button
+                    type="button"
+                    onClick={() => setIsEditTransactionModalOpen(false)}
+                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-colors cursor-pointer"
+                  >
+                    پەشیمانبوونەوە
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-5 py-2 rounded-xl btn-gold font-bold text-slate-950 shadow-md cursor-pointer"
+                  >
+                    پاشەکەوتکردن
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ====================================================
           MODAL: ADD / EDIT TRUCK
@@ -1264,7 +1866,7 @@ export const PopcornManagement: React.FC = () => {
                     <h3 className="text-base font-bold text-white">
                       {editingTruck ? 'دەستکاریکردنی بارهەڵگر' : 'زیادکردنی بارهەڵگری نوێ'}
                     </h3>
-                    <p className="text-xs text-slate-400">لقی گواستنەوەی ئێران بۆ سلێمانی</p>
+                    <p className="text-xs text-slate-400">بۆ مامەڵەی: {activeTransaction.name}</p>
                   </div>
                 </div>
 
@@ -1403,7 +2005,7 @@ export const PopcornManagement: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">بەرواری گەیشتن (ئەگەر گەیشتبێت)</label>
+                    <label className="block text-slate-300 font-semibold mb-1">بەرواری گەیشتن</label>
                     <input
                       type="date"
                       value={truckForm.arrivalDate}
@@ -1475,7 +2077,7 @@ export const PopcornManagement: React.FC = () => {
                     <h3 className="text-base font-bold text-white">
                       {editingExpense ? 'دەستکاریکردنی مەسروف' : 'تۆمارکردنی خەرجی نوێ'}
                     </h3>
-                    <p className="text-xs text-slate-400">حیساباتی تێچووی ئێران و عێراق</p>
+                    <p className="text-xs text-slate-400">بۆ مامەڵەی: {activeTransaction.name}</p>
                   </div>
                 </div>
 
@@ -1488,7 +2090,7 @@ export const PopcornManagement: React.FC = () => {
               </div>
 
               <form onSubmit={handleSaveExpense} className="space-y-4 text-xs">
-                {/* Region & Title */}
+                {/* Region & Category */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">
@@ -1507,15 +2109,13 @@ export const PopcornManagement: React.FC = () => {
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      پۆلێن / بەش
-                    </label>
+                    <label className="block text-slate-300 font-semibold mb-1">پۆلێن / بەش</label>
                     <input
                       type="text"
                       list="categories-list"
                       value={expenseForm.category}
                       onChange={(e) => setExpenseForm({ ...expenseForm, category: e.target.value })}
-                      placeholder="کرێی بارهەڵگر، گومرگ، داگرتن..."
+                      placeholder="کرێی بارهەڵگر، گومرگ..."
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                     />
                     <datalist id="categories-list">
@@ -1525,7 +2125,6 @@ export const PopcornManagement: React.FC = () => {
                       <option value="داگرتن و کرێکار (Labor & Offloading)" />
                       <option value="عەمبار و کۆگا (Storage)" />
                       <option value="پشکنین و تاقیگە (Quality Inspection)" />
-                      <option value="شارەوانی و ڕسوومات" />
                     </datalist>
                   </div>
                 </div>
@@ -1568,7 +2167,7 @@ export const PopcornManagement: React.FC = () => {
                     </label>
                     <input
                       type="number"
-                      placeholder="نموونە: 918000"
+                      placeholder="918000"
                       value={expenseForm.amountLocal}
                       onChange={(e) => setExpenseForm({ ...expenseForm, amountLocal: e.target.value })}
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
@@ -1579,13 +2178,14 @@ export const PopcornManagement: React.FC = () => {
                 {/* Paid By & Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      دراوە لەلایەن کێ؟ (Paid By)
-                    </label>
+                    <label className="block text-slate-300 font-semibold mb-1">دراوە لەلایەن کێ؟</label>
                     <select
                       value={expenseForm.paidBy}
                       onChange={(e) =>
-                        setExpenseForm({ ...expenseForm, paidBy: e.target.value as 'me' | 'partner' | 'shared' })
+                        setExpenseForm({
+                          ...expenseForm,
+                          paidBy: e.target.value as 'me' | 'partner' | 'shared',
+                        })
                       }
                       className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
                     >
@@ -1611,7 +2211,7 @@ export const PopcornManagement: React.FC = () => {
                   <label className="block text-slate-300 font-semibold mb-1">تێبینی یان ژمارەی وەسڵ</label>
                   <textarea
                     rows={2}
-                    placeholder="ژمارەی پسوولەی فەرمی، ناو و ژمارەی بەردەست..."
+                    placeholder="ژمارەی پسوولەی فەرمی..."
                     value={expenseForm.notes}
                     onChange={(e) => setExpenseForm({ ...expenseForm, notes: e.target.value })}
                     className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
@@ -1640,189 +2240,53 @@ export const PopcornManagement: React.FC = () => {
       </AnimatePresence>
 
       {/* ====================================================
-          MODAL: SHIPMENT CONFIG / SETTINGS
+          CONFIRM DELETE TRANSACTION MODAL
           ==================================================== */}
       <AnimatePresence>
-        {isSettingsModalOpen && (
+        {transactionToDelete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              onClick={() => setIsSettingsModalOpen(false)}
+              onClick={() => setTransactionToDelete(null)}
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
-
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              className="relative w-full max-w-lg bg-[#0e111a] border border-amber-500/30 rounded-3xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.95, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.95, opacity: 0 }}
+              className="relative w-full max-w-sm bg-[#0e111a] border border-rose-500/30 rounded-2xl p-5 shadow-2xl z-10 text-center space-y-4"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-5">
-                <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                    <Settings className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-base font-bold text-white">ڕێکخستنی نرخ، بڕ و شەراکەت</h3>
-                    <p className="text-xs text-slate-400">گۆڕینی نرخی کڕین، فرۆشتن و پشکی هاوبەش</p>
-                  </div>
-                </div>
-
+              <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mx-auto flex items-center justify-center">
+                <Trash2 className="w-6 h-6" />
+              </div>
+              <div>
+                <h4 className="text-base font-bold text-white">سڕینەوەی ئەم مامەڵەیە؟</h4>
+                <p className="text-xs text-slate-400 mt-1">
+                  ئایا دڵنیایت لە سڕینەوەی مامەڵەی <strong className="text-white">{transactionToDelete.name}</strong>؟ سەرجەم بارهەڵگرەکان و خەرجییەکانی ئەم وەجبەیە دەسڕدرێنەوە.
+                </p>
+              </div>
+              <div className="flex items-center justify-center gap-2 pt-2">
                 <button
-                  onClick={() => setIsSettingsModalOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  onClick={() => setTransactionToDelete(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
                 >
-                  <X className="w-5 h-5" />
+                  نەخێر، پەشیمانم
+                </button>
+                <button
+                  onClick={() => handleDeleteTransaction(transactionToDelete.id)}
+                  className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg"
+                >
+                  بەڵێ، بیسڕەوە
                 </button>
               </div>
-
-              <form onSubmit={handleSaveConfig} className="space-y-4 text-xs">
-                {/* Total Tons & Buy Price */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      بڕی بار بە تۆن (Total Tons)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={configForm.totalTons}
-                      onChange={(e) => setConfigForm({ ...configForm, totalTons: Number(e.target.value) })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                    <p className="text-[10px] text-slate-500 mt-0.5">بنەڕەت: ٢٠٠ تۆن</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      نرخی کڕینی ١ تۆن بە دۆلار ($)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={configForm.buyPricePerTonUSD}
-                      onChange={(e) => setConfigForm({ ...configForm, buyPricePerTonUSD: Number(e.target.value) })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                    <p className="text-[10px] text-slate-500 mt-0.5">بنەڕەت: $٢٢٠ (کۆی کڕین: ${totalCargoTons * configForm.buyPricePerTonUSD})</p>
-                  </div>
-                </div>
-
-                {/* Sell Price & Exchange Rate */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      نرخی پێشبینیکراوی فرۆشتن ($/تۆن)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={configForm.sellingPricePerTonUSD}
-                      onChange={(e) => setConfigForm({ ...configForm, sellingPricePerTonUSD: Number(e.target.value) })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                    <p className="text-[10px] text-slate-500 mt-0.5">بنەڕەت: $٣٠٢</p>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      نرخی دۆلار بە دیناری عێراقی (IQD)
-                    </label>
-                    <input
-                      type="number"
-                      required
-                      value={configForm.exchangeRateIQD}
-                      onChange={(e) => setConfigForm({ ...configForm, exchangeRateIQD: Number(e.target.value) })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                    <p className="text-[10px] text-slate-500 mt-0.5">نموونە: 1530 دینار بۆ 1 دۆلار</p>
-                  </div>
-                </div>
-
-                {/* Partner Name & Percent */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      ناوی هاوبەش / شەریک
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={configForm.partnerName}
-                      onChange={(e) => setConfigForm({ ...configForm, partnerName: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      ڕێژەی پشکی هاوبەش (%): {configForm.partnerSharePercent}%
-                    </label>
-                    <input
-                      type="range"
-                      min="1"
-                      max="99"
-                      value={configForm.partnerSharePercent}
-                      onChange={(e) => setConfigForm({ ...configForm, partnerSharePercent: Number(e.target.value) })}
-                      className="w-full accent-amber-500 cursor-pointer"
-                    />
-                    <div className="flex justify-between text-[10px] text-slate-400 font-numeric">
-                      <span>پشکی من: {100 - configForm.partnerSharePercent}%</span>
-                      <span>پشکی هاوبەش: {configForm.partnerSharePercent}%</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Countries / Cities */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">وڵاتی کڕین (سەرچاوە)</label>
-                    <input
-                      type="text"
-                      value={configForm.originCountry}
-                      onChange={(e) => setConfigForm({ ...configForm, originCountry: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">شوێنی فرۆشتن (مەبەست)</label>
-                    <input
-                      type="text"
-                      value={configForm.destinationCity}
-                      onChange={(e) => setConfigForm({ ...configForm, destinationCity: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
-                  <button
-                    type="button"
-                    onClick={() => setIsSettingsModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-colors cursor-pointer"
-                  >
-                    داخستن
-                  </button>
-                  <button
-                    type="submit"
-                    className="px-5 py-2 rounded-xl btn-gold font-bold text-slate-950 shadow-md cursor-pointer"
-                  >
-                    پاشەکەوتکردنی ڕێکخستنەکان
-                  </button>
-                </div>
-              </form>
             </motion.div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* ====================================================
-          CONFIRM DELETE MODALS
-          ==================================================== */}
-      {/* Truck Delete Confirm */}
+      {/* Delete Truck Confirm */}
       <AnimatePresence>
         {truckToDelete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -1853,7 +2317,7 @@ export const PopcornManagement: React.FC = () => {
                   onClick={() => setTruckToDelete(null)}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
                 >
-                  نەخێر، پەشیمانم
+                  نەخێر
                 </button>
                 <button
                   onClick={() => handleDeleteTruck(truckToDelete.id)}
@@ -1867,7 +2331,7 @@ export const PopcornManagement: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Expense Delete Confirm */}
+      {/* Delete Expense Confirm */}
       <AnimatePresence>
         {expenseToDelete && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -1898,7 +2362,7 @@ export const PopcornManagement: React.FC = () => {
                   onClick={() => setExpenseToDelete(null)}
                   className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
                 >
-                  نەخێر، پەشیمانم
+                  نەخێر
                 </button>
                 <button
                   onClick={() => handleDeleteExpense(expenseToDelete.id)}

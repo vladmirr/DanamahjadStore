@@ -1,8 +1,8 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Product, Sale, PaymentVoucher, CustomerDebtSummary } from '../types';
-import { PopcornProjectData } from '../types/popcorn';
-import { loadLocalPopcornData } from '../services/popcornStorage';
+import { PopcornProjectData, PopcornTransaction } from '../types/popcorn';
+import { loadLocalPopcornData, loadLocalPopcornStore, DEFAULT_TRANSACTION } from '../services/popcornStorage';
 import { formatShortDate } from './formatters';
 
 interface ExportOptions {
@@ -693,11 +693,14 @@ export async function exportAllDataToExcel(
 /**
  * Append a dedicated Popcorn worksheet to any workbook (RTL, formatted with KPIs, Trucks, Expenses)
  */
-export function appendPopcornSheetToWorkbook(
+/**
+ * Render a single Popcorn transaction into an RTL worksheet
+ */
+function renderSinglePopcornWorksheet(
   workbook: ExcelJS.Workbook,
-  customData?: PopcornProjectData
+  data: PopcornProjectData | PopcornTransaction,
+  sheetName: string
 ) {
-  const data = customData || loadLocalPopcornData();
   const { config, trucks, expenses } = data;
 
   const totalCargoTons = Number(config.totalTons) || 200;
@@ -716,12 +719,19 @@ export function appendPopcornSheetToWorkbook(
   const totalOverallCost = totalBuyingCost + totalOperatingExpenses;
   const finalNetProfit = expectedTotalRevenue - totalOverallCost;
 
-  const partnerPercent = Number(config.partnerSharePercent) || 50;
+  const hasPartner = config.hasPartner !== false;
+  const partnerPercent = hasPartner ? Number(config.partnerSharePercent) || 50 : 0;
   const myPercent = 100 - partnerPercent;
-  const partnerProfitShare = (finalNetProfit * partnerPercent) / 100;
-  const myProfitShare = (finalNetProfit * myPercent) / 100;
+  const partnerProfitShare = hasPartner ? (finalNetProfit * partnerPercent) / 100 : 0;
+  const myProfitShare = hasPartner ? (finalNetProfit * myPercent) / 100 : finalNetProfit;
 
-  const ws = workbook.addWorksheet('پۆپکورن (Popcorn & Partner)', {
+  // Clean sheet name (Excel max length is 31 chars and no forbidden symbols)
+  const cleanSheetName = (sheetName || 'پۆپکورن')
+    .replace(/[*?:/[\]]/g, '')
+    .trim()
+    .slice(0, 31);
+
+  const ws = workbook.addWorksheet(cleanSheetName, {
     views: [{ rightToLeft: true }],
   });
 
@@ -746,7 +756,10 @@ export function appendPopcornSheetToWorkbook(
   };
 
   // Title Banner
-  ws.addRow(['پڕۆژەی هاوردەکردنی پۆپکورن و شەراکەت (Popcorn Import & Partnership)']);
+  const titleText = (data as PopcornTransaction).name
+    ? `مامەڵەی: ${(data as PopcornTransaction).name} (Popcorn Import)`
+    : 'پڕۆژەی هاوردەکردنی پۆپکورن (Popcorn Import & Partnership)';
+  ws.addRow([titleText]);
   ws.mergeCells('A1:J1');
   const titleCell = ws.getCell('A1');
   titleCell.font = { name: 'Arial', size: 15, bold: true, color: { argb: 'FFFFFFFF' } };
@@ -756,7 +769,9 @@ export function appendPopcornSheetToWorkbook(
 
   // Sub-banner
   ws.addRow([
-    `کڕینی ${totalCargoTons} تۆن دانەوێڵە لە ${config.originCountry} بە نرخی $${buyPricePerTon} و فرۆشتن بە $${sellPricePerTon} لە ${config.destinationCity} (ڕێژەی هاوبەش: %${partnerPercent})`
+    `کڕینی ${totalCargoTons} تۆن دانەوێڵە لە ${config.originCountry} بە نرخی $${buyPricePerTon} و فرۆشتن بە $${sellPricePerTon} لە ${config.destinationCity} ${
+      hasPartner ? `(شەراکەت: %${partnerPercent} - ${config.partnerName})` : '(مامەڵەی تایبەت - بێ هاوبەش)'
+    }`
   ]);
   ws.mergeCells('A2:J2');
   const subCell = ws.getCell('A2');
@@ -768,7 +783,7 @@ export function appendPopcornSheetToWorkbook(
   ws.addRow([]); // Blank row 3
 
   // SECTION 1: Financial Waterfall
-  ws.addRow(['١. پوختەی دارایی و دابەشکردنی قازانج (Financial Summary & Profit Split)']);
+  ws.addRow(['١. پوختەی دارایی مامەڵە (Buying Details & Selling Information)']);
   ws.mergeCells('A4:D4');
   const sec1Cell = ws.getCell('A4');
   sec1Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
@@ -784,17 +799,24 @@ export function appendPopcornSheetToWorkbook(
   }
 
   const kpis = [
-    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', `وڵاتی سەرچاوە: ${config.originCountry}`],
-    ['نرخی کڕینی ١ تۆن', `$${buyPricePerTon}`, `${(buyPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی گرێبەست لە ڕووسیا'],
+    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', `سەرچاوە: ${config.originCountry}`],
+    ['نرخی کڕینی ١ تۆن', `$${buyPricePerTon}`, `${(buyPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی کڕینی گرێبەست'],
     ['کۆی تێچووی کڕین (سەرمایە)', `$${totalBuyingCost.toLocaleString()}`, `${(totalBuyingCost * exchangeRate).toLocaleString()} د.ع`, `${totalCargoTons} تۆن × $${buyPricePerTon}`],
     ['نرخی پێشبینیکراوی فرۆشتنی ١ تۆن', `$${sellPricePerTon}`, `${(sellPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'لە بازاڕی سلێمانی'],
     ['کۆی پێشبینیکراوی داهاتی فرۆش', `$${expectedTotalRevenue.toLocaleString()}`, `${(expectedTotalRevenue * exchangeRate).toLocaleString()} د.ع`, `${totalCargoTons} تۆن × $${sellPricePerTon}`],
-    ['خەرجییەکانی گواستنەوە و ترانزێتی ئێران', `$${totalIranSpending.toLocaleString()}`, `${(totalIranSpending * exchangeRate).toLocaleString()} د.ع`, 'کرێی بارهەڵگر، مەرز و پشکنین'],
-    ['خەرجییەکانی ناوخۆی عێراق و گومرگ', `$${totalIraqSpending.toLocaleString()}`, `${(totalIraqSpending * exchangeRate).toLocaleString()} د.ع`, 'گومرگی باشماخ، داگرتن و کۆگا'],
+    ['خەرجییەکانی گواستنەوەی ئێران', `$${totalIranSpending.toLocaleString()}`, `${(totalIranSpending * exchangeRate).toLocaleString()} د.ع`, 'کرێی بارهەڵگر، مەرز و ترانزێت'],
+    ['خەرجییەکانی ناوخۆی عێراق و گومرگ', `$${totalIraqSpending.toLocaleString()}`, `${(totalIraqSpending * exchangeRate).toLocaleString()} د.ع`, 'گومرگی باشماخ، داگرتن و عەمبار'],
     ['کۆی گشتی هەموو خەرجییەکان', `$${totalOverallCost.toLocaleString()}`, `${(totalOverallCost * exchangeRate).toLocaleString()} د.ع`, 'کڕین + خەرجی ئێران + خەرجی عێراق'],
-    ['قازانجی پوختەی پڕۆژە (Net Profit)', `$${finalNetProfit.toLocaleString()}`, `${(finalNetProfit * exchangeRate).toLocaleString()} د.ع`, 'داهاتی فرۆش - سەرجەم خەرجییەکان'],
-    [`پشکی هاوبەش (${config.partnerName} - %${partnerPercent})`, `$${partnerProfitShare.toLocaleString()}`, `${(partnerProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی شەراکەت'],
-    [`پشکی من (%${myPercent})`, `$${myProfitShare.toLocaleString()}`, `${(myProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی من'],
+    ['قازانجی پوختەی مامەڵە (Net Profit)', `$${finalNetProfit.toLocaleString()}`, `${(finalNetProfit * exchangeRate).toLocaleString()} د.ع`, 'داهاتی فرۆش - سەرجەم خەرجییەکان'],
+    ...(hasPartner
+      ? [
+          [`پشکی هاوبەش (${config.partnerName} - %${partnerPercent})`, `$${partnerProfitShare.toLocaleString()}`, `${(partnerProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی شەراکەت'],
+          [`پشکی من (%${myPercent})`, `$${myProfitShare.toLocaleString()}`, `${(myProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی من'],
+        ]
+      : [
+          ['شەراکەت', 'مامەڵەی تایبەت (بێ هاوبەش)', '—', '١٠٠٪ بۆ خاوەنکار'],
+          ['قازانجی تەواوی من (١٠٠٪)', `$${myProfitShare.toLocaleString()}`, `${(myProfitShare * exchangeRate).toLocaleString()} د.ع`, 'تەواوی قازانجی پوخت'],
+        ]),
   ];
 
   kpis.forEach((row, idx) => {
@@ -812,7 +834,7 @@ export function appendPopcornSheetToWorkbook(
   ws.addRow([]); // Blank row
 
   // SECTION 2: Trucks Table
-  ws.addRow(['٢. لقی بارهەڵگرەکان لە ئێرانەوە بۆ سلێمانی (Trucks & Transport Log)']);
+  ws.addRow(['٢. زانیاری بارهەڵگرەکان (Truck Information Log)']);
   ws.mergeCells(`A${ws.rowCount}:J${ws.rowCount}`);
   const sec2Cell = ws.getCell(`A${ws.rowCount}`);
   sec2Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
@@ -877,7 +899,7 @@ export function appendPopcornSheetToWorkbook(
     '—',
     totalTransitCost,
     '—',
-    `ماوە بۆ ٢٠٠ تۆن: ${Math.max(0, totalCargoTons - totalTruckTons)} تۆن`,
+    `ماوە بۆ ${totalCargoTons} تۆن: ${Math.max(0, totalCargoTons - totalTruckTons)} تۆن`,
   ]);
   trkTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
   trkTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE68A' } };
@@ -888,7 +910,7 @@ export function appendPopcornSheetToWorkbook(
   ws.addRow([]); // Blank row
 
   // SECTION 3: Expenses Table
-  ws.addRow(['٣. خشتەی خەرجییەکانی پڕۆژە (Project Expenses - Iran & Iraq)']);
+  ws.addRow(['٣. خەرجییەکانی ئێران و عێراق (Cost Iran Side & Cost Iraq Side)']);
   ws.mergeCells(`A${ws.rowCount}:H${ws.rowCount}`);
   const sec3Cell = ws.getCell(`A${ws.rowCount}`);
   sec3Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
@@ -952,9 +974,35 @@ export function appendPopcornSheetToWorkbook(
 }
 
 /**
+ * Append dedicated Popcorn worksheet(s) to any workbook
+ */
+export function appendPopcornSheetToWorkbook(
+  workbook: ExcelJS.Workbook,
+  customData?: PopcornProjectData | PopcornTransaction
+) {
+  if (customData) {
+    const name = (customData as PopcornTransaction).name || 'پۆپکورن';
+    renderSinglePopcornWorksheet(workbook, customData, name);
+    return;
+  }
+
+  const store = loadLocalPopcornStore();
+  if (store.transactions.length <= 1) {
+    const single = store.transactions[0] || DEFAULT_TRANSACTION;
+    renderSinglePopcornWorksheet(workbook, single, single.name || 'پۆپکورن');
+  } else {
+    // If there are multiple transactions, create a dedicated worksheet for each!
+    store.transactions.forEach((trans, idx) => {
+      const sheetTitle = `${idx + 1}. ${trans.name}`;
+      renderSinglePopcornWorksheet(workbook, trans, sheetTitle);
+    });
+  }
+}
+
+/**
  * Export standalone Popcorn Excel report
  */
-export async function exportPopcornToExcel(data?: PopcornProjectData) {
+export async function exportPopcornToExcel(data?: PopcornProjectData | PopcornTransaction) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'DanaMahjadStore';
   workbook.created = new Date();
@@ -967,6 +1015,6 @@ export async function exportPopcornToExcel(data?: PopcornProjectData) {
     new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
-    `Popcorn_Import_Partnership_${dateStr}.xlsx`
+    `Popcorn_Shipment_${dateStr}.xlsx`
   );
 }

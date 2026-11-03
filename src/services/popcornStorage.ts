@@ -1,18 +1,31 @@
-import { PopcornProjectData, PopcornShipmentConfig, PopcornTruck, PopcornExpense } from '../types/popcorn';
+import {
+  PopcornStoreState,
+  PopcornTransaction,
+  PopcornProjectData,
+  PopcornShipmentConfig,
+  PopcornTruck,
+  PopcornExpense,
+} from '../types/popcorn';
 import { db } from '../firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
-export const POPCORN_STORAGE_KEY = 'floderm_popcorn_data_v2';
+export const POPCORN_STORAGE_KEY = 'floderm_popcorn_multitrans_v1';
 
-export const DEFAULT_POPCORN_DATA: PopcornProjectData = {
+export const DEFAULT_TRANSACTION: PopcornTransaction = {
+  id: 'trans-russia-200t',
+  name: 'وەجبەی ١: هاوردەی ٢٠٠ تۆن لە ڕووسیا',
+  createdAt: '2026-10-24T10:00:00.000Z',
+  updatedAt: new Date().toISOString(),
+  status: 'active',
   config: {
-    id: 'shipment-russia-200t',
-    title: 'پڕۆژەی هاوردەکردنی پۆپکورن (ڕووسیا - سلێمانی)',
+    id: 'config-russia-200t',
+    title: 'وەجبەی ١: هاوردەی ٢٠٠ تۆن لە ڕووسیا',
     originCountry: 'ڕووسیا (Russia)',
     destinationCity: 'سلێمانی، هەرێمی کوردستان (Sulaimani)',
     totalTons: 200, // 200 Tons
     buyPricePerTonUSD: 220, // $220 per ton
     sellingPricePerTonUSD: 302, // $302 per ton
+    hasPartner: true, // ئایا شەراکەتی تێدایە
     partnerName: 'هاوبەشی پڕۆژە (Partner)',
     partnerSharePercent: 50, // 50%
     exchangeRateIQD: 1530, // 100$ = 153,000 IQD
@@ -151,82 +164,202 @@ export const DEFAULT_POPCORN_DATA: PopcornProjectData = {
       notes: 'پشتڕاستکردنەوەی ستانداردی کوالیتی پۆپکورن',
     },
   ],
+};
+
+export const DEFAULT_STORE_STATE: PopcornStoreState = {
+  activeTransactionId: 'trans-russia-200t',
+  transactions: [DEFAULT_TRANSACTION],
   lastSyncedAt: new Date().toISOString(),
 };
 
+// Backward-compatible single default
+export const DEFAULT_POPCORN_DATA: PopcornProjectData = {
+  config: DEFAULT_TRANSACTION.config,
+  trucks: DEFAULT_TRANSACTION.trucks,
+  expenses: DEFAULT_TRANSACTION.expenses,
+  lastSyncedAt: DEFAULT_STORE_STATE.lastSyncedAt,
+};
+
 /**
- * Load initial data from localStorage if available, or fall back to default specs
+ * Load Multi-Transaction store from localStorage (with auto-migration)
  */
-export function loadLocalPopcornData(): PopcornProjectData {
+export function loadLocalPopcornStore(): PopcornStoreState {
   try {
     const raw = localStorage.getItem(POPCORN_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed && parsed.config && Array.isArray(parsed.trucks) && Array.isArray(parsed.expenses)) {
-        return parsed;
+      if (parsed && Array.isArray(parsed.transactions) && parsed.transactions.length > 0) {
+        return {
+          activeTransactionId: parsed.activeTransactionId || parsed.transactions[0].id,
+          transactions: parsed.transactions,
+          lastSyncedAt: parsed.lastSyncedAt || new Date().toISOString(),
+        };
+      }
+    }
+
+    // Try migrating from older v2 storage key if present
+    const oldRaw = localStorage.getItem('floderm_popcorn_data_v2');
+    if (oldRaw) {
+      const oldParsed = JSON.parse(oldRaw);
+      if (oldParsed && oldParsed.config && Array.isArray(oldParsed.trucks)) {
+        const migratedTrans: PopcornTransaction = {
+          id: oldParsed.config.id || 'trans-russia-200t',
+          name: oldParsed.config.title || 'وەجبەی ١: هاوردەی ٢٠٠ تۆن لە ڕووسیا',
+          createdAt: new Date().toISOString(),
+          updatedAt: oldParsed.config.updatedAt || new Date().toISOString(),
+          status: 'active',
+          config: {
+            ...oldParsed.config,
+            hasPartner: oldParsed.config.hasPartner !== undefined ? oldParsed.config.hasPartner : true,
+          },
+          trucks: oldParsed.trucks || [],
+          expenses: oldParsed.expenses || [],
+        };
+        const migratedState: PopcornStoreState = {
+          activeTransactionId: migratedTrans.id,
+          transactions: [migratedTrans],
+          lastSyncedAt: new Date().toISOString(),
+        };
+        saveLocalPopcornStore(migratedState);
+        return migratedState;
       }
     }
   } catch (err) {
-    console.error('Failed to parse local popcorn data:', err);
+    console.error('Failed to parse local popcorn store:', err);
   }
-  return DEFAULT_POPCORN_DATA;
+  return DEFAULT_STORE_STATE;
 }
 
 /**
- * Save data to localStorage
+ * Save Multi-Transaction store to localStorage
  */
-export function saveLocalPopcornData(data: PopcornProjectData): void {
+export function saveLocalPopcornStore(state: PopcornStoreState): void {
   try {
-    localStorage.setItem(POPCORN_STORAGE_KEY, JSON.stringify(data));
+    localStorage.setItem(POPCORN_STORAGE_KEY, JSON.stringify(state));
   } catch (err) {
-    console.error('Failed to save popcorn data to localStorage:', err);
+    console.error('Failed to save popcorn store to localStorage:', err);
   }
 }
 
 /**
- * Sync Popcorn data to Firestore document 'popcorn/main_shipment'
+ * Sync entire Multi-Transaction store to Cloud Firestore
  */
-export async function syncPopcornDataToCloud(data: PopcornProjectData): Promise<boolean> {
+export async function syncPopcornStoreToCloud(state: PopcornStoreState): Promise<boolean> {
   try {
-    const docRef = doc(db, 'popcorn', 'main_shipment');
-    await setDoc(docRef, {
-      ...data,
-      lastSyncedAt: new Date().toISOString(),
-    }, { merge: true });
+    const docRef = doc(db, 'popcorn', 'multitrans_shipments');
+    await setDoc(
+      docRef,
+      {
+        ...state,
+        lastSyncedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
     return true;
   } catch (error) {
-    console.warn('Firestore popcorn sync skipped (offline or permission):', error);
+    console.warn('Firestore multi-transaction sync skipped (offline or permission):', error);
     return false;
   }
 }
 
 /**
- * Subscribe to Firestore real-time updates for Popcorn data
+ * Real-time listener for Multi-Transaction store
  */
-export function subscribeToCloudPopcornData(
-  onData: (data: PopcornProjectData) => void
+export function subscribeToCloudPopcornStore(
+  onData: (state: PopcornStoreState) => void
 ): () => void {
   try {
-    const docRef = doc(db, 'popcorn', 'main_shipment');
+    const docRef = doc(db, 'popcorn', 'multitrans_shipments');
     const unsubscribe = onSnapshot(
       docRef,
       (docSnap) => {
         if (docSnap.exists()) {
-          const cloudData = docSnap.data() as PopcornProjectData;
-          if (cloudData && cloudData.config && Array.isArray(cloudData.trucks)) {
-            saveLocalPopcornData(cloudData);
+          const cloudData = docSnap.data() as PopcornStoreState;
+          if (cloudData && Array.isArray(cloudData.transactions) && cloudData.transactions.length > 0) {
+            saveLocalPopcornStore(cloudData);
             onData(cloudData);
           }
         }
       },
       (error) => {
-        console.warn('Popcorn Firestore subscription warning:', error);
+        console.warn('Popcorn Firestore multi-transaction subscription warning:', error);
       }
     );
     return unsubscribe;
   } catch (err) {
-    console.warn('Error setting up cloud popcorn subscription:', err);
+    console.warn('Error setting up cloud popcorn multi-transaction subscription:', err);
     return () => {};
   }
 }
 
+// ----------------------------------------------------
+// BACKWARD COMPATIBILITY HELPERS
+// ----------------------------------------------------
+export function loadLocalPopcornData(): PopcornProjectData {
+  const store = loadLocalPopcornStore();
+  const active =
+    store.transactions.find((t) => t.id === store.activeTransactionId) || store.transactions[0];
+  return {
+    config: active.config,
+    trucks: active.trucks,
+    expenses: active.expenses,
+    lastSyncedAt: store.lastSyncedAt,
+  };
+}
+
+export function saveLocalPopcornData(data: PopcornProjectData): void {
+  const store = loadLocalPopcornStore();
+  const updatedTransactions = store.transactions.map((t) =>
+    t.id === store.activeTransactionId
+      ? {
+          ...t,
+          config: data.config,
+          trucks: data.trucks,
+          expenses: data.expenses,
+          updatedAt: new Date().toISOString(),
+        }
+      : t
+  );
+  saveLocalPopcornStore({
+    ...store,
+    transactions: updatedTransactions,
+    lastSyncedAt: new Date().toISOString(),
+  });
+}
+
+export async function syncPopcornDataToCloud(data: PopcornProjectData): Promise<boolean> {
+  const store = loadLocalPopcornStore();
+  const updatedTransactions = store.transactions.map((t) =>
+    t.id === store.activeTransactionId
+      ? {
+          ...t,
+          config: data.config,
+          trucks: data.trucks,
+          expenses: data.expenses,
+          updatedAt: new Date().toISOString(),
+        }
+      : t
+  );
+  return syncPopcornStoreToCloud({
+    ...store,
+    transactions: updatedTransactions,
+    lastSyncedAt: new Date().toISOString(),
+  });
+}
+
+export function subscribeToCloudPopcornData(
+  onData: (data: PopcornProjectData) => void
+): () => void {
+  return subscribeToCloudPopcornStore((store) => {
+    const active =
+      store.transactions.find((t) => t.id === store.activeTransactionId) || store.transactions[0];
+    if (active) {
+      onData({
+        config: active.config,
+        trucks: active.trucks,
+        expenses: active.expenses,
+        lastSyncedAt: store.lastSyncedAt,
+      });
+    }
+  });
+}

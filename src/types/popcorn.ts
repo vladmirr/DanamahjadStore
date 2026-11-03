@@ -6,6 +6,7 @@ export interface PopcornShipmentConfig {
   totalTons: number; // 200 tons
   buyPricePerTonUSD: number; // $220 / ton
   sellingPricePerTonUSD: number; // $302 / ton
+  hasPartner: boolean; // ئایا شەراکەتی تێدایە؟ (True / False)
   partnerName: string; // e.g. هاوبەش (Partner)
   partnerSharePercent: number; // 50%
   exchangeRateIQD: number; // e.g. 1530 IQD per 1 USD
@@ -39,10 +40,27 @@ export interface PopcornExpense {
   notes?: string; // تێبینی
 }
 
+export interface PopcornTransaction {
+  id: string;
+  name: string; // ناوی مامەڵە (Transaction Name)
+  createdAt: string;
+  updatedAt: string;
+  status: 'active' | 'completed' | 'archived'; // دۆخی مامەڵە
+  config: PopcornShipmentConfig;
+  trucks: PopcornTruck[];
+  expenses: PopcornExpense[];
+}
+
+export interface PopcornStoreState {
+  activeTransactionId: string;
+  transactions: PopcornTransaction[];
+  lastSyncedAt?: string;
+}
+
+// Single transaction data compatibility type
 export interface PopcornProjectData {
   config: PopcornShipmentConfig;
   trucks: PopcornTruck[];
   expenses: PopcornExpense[];
   lastSyncedAt?: string;
 }
-
