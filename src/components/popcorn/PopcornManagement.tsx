@@ -891,7 +891,7 @@ ${
               </div>
               <div className="text-right">
                 <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span>بەڕێوەبردنی بارهەڵگرەکان (Trucks & Logistics)</span>
+                  <span>بەڕێوەبردنی بارهەڵگرەکان</span>
                 </h3>
                 <p className="text-xs text-neutral-400 mt-0.5">
                   تۆمارکردن و بەدواداچوونی وردی بارهەڵگرەکانی ئەم مامەڵەیە لە ئێرانەوە بۆ سلێمانی
@@ -937,7 +937,7 @@ ${
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <span>زانیاری بارهەڵگرەکان (Truck Information)</span>
+                      <span>زانیاری بارهەڵگرەکان</span>
                       <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/[0.06] text-neutral-300 border border-white/10 font-numeric font-medium">
                         {trucks.length} بارهەڵگر ({totalTonsCarried} لە {totalCargoTons} تۆن)
                       </span>
@@ -1109,7 +1109,7 @@ ${
               </div>
               <div className="text-right">
                 <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span>خەرجییەکانی ئێران و عێراق و حیساباتی شەراکەت (Expenses & Waterfall)</span>
+                  <span>خەرجییەکانی ئێران و عێراق و حیساباتی شەراکەت</span>
                 </h3>
                 <p className="text-xs text-neutral-400 mt-0.5">
                   تێچووی گواستنەوەی ئێران و ترانزێت + گومرگ و خەرجی ناوخۆی عێراق و دابەشکردنی قازانج
@@ -1156,7 +1156,7 @@ ${
                       </div>
                       <div>
                         <h3 className="text-base font-bold text-white">
-                          خەرجییەکانی ئێران و عێراق (Iran & Iraq Expenses)
+                          خەرجییەکانی ئێران و عێراق
                         </h3>
                         <p className="text-xs text-neutral-400 mt-0.5">
                           تێچووی گواستنەوەی ئێران و ترانزێت + گومرگ و خەرجی ناوخۆی عێراق
