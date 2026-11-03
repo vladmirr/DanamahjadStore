@@ -661,7 +661,7 @@ ${
               title="دروستکردنی مامەڵەی نوێ بۆ پۆپکورن"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
-              <span>+ مامەڵەی نوێ (New Transaction)</span>
+              <span>مامەڵەی نوێ</span>
             </button>
 
             {/* Action Group: Settings, Excel, Copy, Delete */}
@@ -954,7 +954,7 @@ ${
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-colors cursor-pointer shadow-sm"
                   >
                     <Plus className="w-4 h-4 stroke-[2.5]" />
-                    <span>+ فۆڕمی بارهەڵگری نوێ</span>
+                    <span>فۆڕمی بارهەڵگری نوێ</span>
                   </button>
                   <button
                     onClick={() => setIsTruckSectionOpen(false)}
@@ -1170,14 +1170,14 @@ ${
                         className="px-3 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
                       >
                         <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>+ خەرجی ئێران</span>
+                        <span>خەرجی ئێران</span>
                       </button>
                       <button
                         onClick={() => handleOpenAddExpense('iraq')}
                         className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
                       >
                         <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
-                        <span>+ خەرجی عێراق</span>
+                        <span>خەرجی عێراق</span>
                       </button>
                       <button
                         onClick={() => setIsExpenseSectionOpen(false)}
