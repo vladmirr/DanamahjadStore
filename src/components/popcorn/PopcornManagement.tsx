@@ -1081,7 +1081,7 @@ ${
           3. EXPENSES & PARTNER ACCOUNTING (COLLAPSIBLE SECTION)
           ==================================================== */}
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center justify-between">
           <button
             type="button"
             onClick={() => setIsExpenseSectionOpen(!isExpenseSectionOpen)}
@@ -1102,23 +1102,6 @@ ${
               )}
             </div>
           </button>
-
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => handleOpenAddExpense('iran')}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/30 text-amber-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ خەرجی ئێران</span>
-            </button>
-            <button
-              onClick={() => handleOpenAddExpense('iraq')}
-              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-emerald-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
-            >
-              <Plus className="w-3.5 h-3.5" />
-              <span>+ خەرجی عێراق</span>
-            </button>
-          </div>
         </div>
 
         {/* Expandable Section Content */}
