@@ -4,14 +4,13 @@ import {
   LayoutDashboard,
   ShoppingCart,
   Wallet,
-  Truck,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const BottomNav: React.FC = () => {
   const { activeTab, setActiveTab, metrics } = useApp();
 
-  // Primary options in the bottom bar
+  // The 3 daily primary options in the bottom bar
   const navItems = [
     {
       id: 'dashboard',
@@ -28,22 +27,13 @@ export const BottomNav: React.FC = () => {
       badge: null,
     },
     {
-      id: 'popcorn',
-      label: 'پۆپکورن',
-      shortLabel: 'پۆپکورن',
-      icon: Truck,
-      badge: (
-        <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse" />
-      ),
-    },
-    {
       id: 'payments',
       label: 'پارەدان و قەرزەکان',
       shortLabel: 'قەرزەکان',
       icon: Wallet,
       badge:
         metrics.totalOutstandingDebt > 0 ? (
-          <span className="w-2 h-2 rounded-full bg-rose-400" />
+          <span className="w-2 h-2 rounded-full bg-amber-400" />
         ) : null,
     },
   ];
