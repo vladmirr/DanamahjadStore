@@ -649,7 +649,7 @@ ${
                   )}
                 </div>
                 <p className="text-xs text-slate-400 mt-1">
-                  کڕین: {totalCargoTons} تۆن بە {formatUSD(buyPricePerTon)} | فرۆشتن بە {formatUSD(sellPricePerTon)} | {trucks.length} بارهەڵگر تۆمارکراوە
+                  کڕین: {totalCargoTons} تۆن بە {formatUSD(buyPricePerTon)} {sellPricePerTon > 0 ? `| فرۆشتن بە ${formatUSD(sellPricePerTon)}` : '| فرۆشتن: دیارینەکراوە'} | {trucks.length} بارهەڵگر تۆمارکراوە
                 </p>
               </div>
             </div>
@@ -754,9 +754,6 @@ ${
               وردەکاری دارایی مامەڵە (Buying & Selling Financials)
             </h2>
           </div>
-          <span className="text-xs text-slate-400 font-numeric">
-            نرخی هەر دۆلارێک: {formatNumber(exchangeRate)} د.ع
-          </span>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
@@ -776,7 +773,7 @@ ${
             <div className="mt-3 pt-2.5 border-t border-amber-500/10 flex items-center justify-between text-[11px] text-slate-400">
               <span>{totalCargoTons} تۆن × {formatUSD(buyPricePerTon)}</span>
               <span className="text-amber-400 font-medium font-numeric">
-                {formatIQD(totalBuyingCost * exchangeRate)}
+                تێچووی کڕین
               </span>
             </div>
           </TiltCard>
@@ -787,7 +784,7 @@ ${
               <div>
                 <p className="text-xs font-medium text-slate-400">داهاتی فرۆش (Selling Revenue)</p>
                 <h3 className="text-xl font-black text-slate-100 mt-1.5 font-numeric">
-                  {formatUSD(expectedTotalRevenue)}
+                  {sellPricePerTon > 0 ? formatUSD(expectedTotalRevenue) : 'دیارینەکراوە'}
                 </h3>
               </div>
               <div className="p-2.5 rounded-xl bg-slate-800/80 border border-slate-700/80 text-amber-400">
@@ -795,10 +792,16 @@ ${
               </div>
             </div>
             <div className="mt-3 pt-2.5 border-t border-amber-500/10 flex items-center justify-between text-[11px] text-slate-400">
-              <span>نرخی فرۆشتن: {formatUSD(sellPricePerTon)}/تۆن</span>
-              <span className="text-emerald-400 font-semibold font-numeric">
-                +{formatUSD(grossTradeProfit)} جیاوازی
+              <span>
+                {sellPricePerTon > 0
+                  ? `نرخی فرۆشتن: ${formatUSD(sellPricePerTon)}/تۆن`
+                  : 'نرخی فرۆشتن دیارینەکراوە'}
               </span>
+              {sellPricePerTon > 0 && (
+                <span className="text-emerald-400 font-semibold font-numeric">
+                  +{formatUSD(grossTradeProfit)} جیاوازی
+                </span>
+              )}
             </div>
           </TiltCard>
 
@@ -830,10 +833,14 @@ ${
                 <p className="text-xs font-medium text-slate-400">قازانجی پوختەی مامەڵە (Net)</p>
                 <h3
                   className={`text-xl font-black mt-1.5 font-numeric ${
-                    finalNetProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                    sellPricePerTon > 0
+                      ? finalNetProfit >= 0
+                        ? 'text-emerald-400'
+                        : 'text-rose-400'
+                      : 'text-amber-400'
                   }`}
                 >
-                  {formatUSD(finalNetProfit)}
+                  {sellPricePerTon > 0 ? formatUSD(finalNetProfit) : 'چاوەڕوانی فرۆشتن'}
                 </h3>
               </div>
               <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shadow-sm shadow-emerald-500/10">
@@ -841,10 +848,25 @@ ${
               </div>
             </div>
             <div className="mt-3 pt-2.5 border-t border-emerald-500/10 flex items-center justify-between text-[11px] text-slate-400">
-              <span>بە دیناری عێراقی:</span>
-              <span className="text-emerald-400 font-bold font-numeric">
-                {formatIQD(finalNetProfit * exchangeRate)}
-              </span>
+              {sellPricePerTon > 0 ? (
+                <>
+                  <span>قازانجی سەدەهاوردە:</span>
+                  <span
+                    className={`font-bold font-numeric ${
+                      finalNetProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                    }`}
+                  >
+                    {finalNetProfit >= 0 ? '+ قازانج' : '- زیان'}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span>کۆی تێچوو تا ئێستا:</span>
+                  <span className="text-amber-300 font-bold font-numeric">
+                    {formatUSD(totalOverallProjectCost)}
+                  </span>
+                </>
+              )}
             </div>
           </TiltCard>
 
@@ -856,7 +878,11 @@ ${
                   {hasPartner ? `پشکی هاوبەش (%${partnerPercent})` : 'پشکی من (بێ هاوبەش)'}
                 </p>
                 <h3 className="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 to-yellow-400 mt-1.5 font-numeric">
-                  {hasPartner ? formatUSD(partnerProfitShare) : formatUSD(myProfitShare)}
+                  {sellPricePerTon > 0
+                    ? hasPartner
+                      ? formatUSD(partnerProfitShare)
+                      : formatUSD(myProfitShare)
+                    : 'چاوەڕوانی فرۆشتن'}
                 </h3>
               </div>
               <div className="p-2.5 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400">
@@ -866,7 +892,7 @@ ${
             <div className="mt-3 pt-2.5 border-t border-amber-500/10 flex items-center justify-between text-[11px] text-slate-400">
               <span>{hasPartner ? `پشکی من (%${myPercent}):` : '١٠٠٪ بۆ خۆت:'}</span>
               <span className="text-amber-400 font-bold font-numeric">
-                {formatUSD(myProfitShare)}
+                {sellPricePerTon > 0 ? formatUSD(myProfitShare) : 'چاوەڕوانی فرۆشتن'}
               </span>
             </div>
           </TiltCard>
@@ -1329,7 +1355,9 @@ ${
 
               <div className="flex justify-between items-center py-1 text-sm font-black">
                 <span className="text-amber-400">قازانجی پوختەی ماوە:</span>
-                <span className="text-emerald-400 font-numeric">{formatUSD(finalNetProfit)}</span>
+                <span className={`${sellPricePerTon > 0 ? (finalNetProfit >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-amber-400'} font-numeric`}>
+                  {sellPricePerTon > 0 ? formatUSD(finalNetProfit) : 'چاوەڕوانی فرۆشتن'}
+                </span>
               </div>
             </div>
 
@@ -1339,15 +1367,12 @@ ${
                 <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-3">
                   <div className="flex justify-between items-center text-xs">
                     <div>
-                      <div className="font-bold text-white">{config.partnerName}</div>
+                      <div className="font-bold text-white">{config.partnerName || 'هاوبەش'}</div>
                       <div className="text-[11px] text-slate-400 font-numeric">پشکی قازانج (%{partnerPercent})</div>
                     </div>
                     <div className="text-right">
                       <div className="font-black text-amber-300 font-numeric text-sm">
-                        {formatUSD(partnerProfitShare)}
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-numeric">
-                        {formatIQD(partnerProfitShare * exchangeRate)}
+                        {sellPricePerTon > 0 ? formatUSD(partnerProfitShare) : 'چاوەڕوانی فرۆشتن'}
                       </div>
                     </div>
                   </div>
@@ -1361,10 +1386,7 @@ ${
                     </div>
                     <div className="text-right">
                       <div className="font-black text-amber-300 font-numeric text-sm">
-                        {formatUSD(myProfitShare)}
-                      </div>
-                      <div className="text-[10px] text-slate-400 font-numeric">
-                        {formatIQD(myProfitShare * exchangeRate)}
+                        {sellPricePerTon > 0 ? formatUSD(myProfitShare) : 'چاوەڕوانی فرۆشتن'}
                       </div>
                     </div>
                   </div>
@@ -1384,7 +1406,9 @@ ${
 
                   <div className="flex items-center justify-between font-bold text-xs pt-1">
                     <span className="text-amber-400">کۆی شایستەی هاوبەش:</span>
-                    <span className="text-emerald-400 font-numeric">{formatUSD(netDueToPartner)}</span>
+                    <span className="text-emerald-400 font-numeric">
+                      {sellPricePerTon > 0 ? formatUSD(netDueToPartner) : formatUSD(expensesPaidByPartner)}
+                    </span>
                   </div>
                 </div>
               </>
@@ -1522,39 +1546,23 @@ ${
                 {/* 3. Selling Informations */}
                 <div className="pt-2 border-t border-slate-800">
                   <span className="font-bold text-emerald-300 block mb-2">زانیاری فرۆشتن (Selling Informations):</span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-slate-300 font-medium mb-1">نرخی فرۆشتن ($/تۆن)</label>
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="نموونە: 302"
-                        value={newTransactionForm.sellingPricePerTonUSD}
-                        onChange={(e) =>
-                          setNewTransactionForm({
-                            ...newTransactionForm,
-                            sellingPricePerTonUSD: e.target.value,
-                          })
-                        }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-slate-300 font-medium mb-1">نرخی دۆلار بە دینار (IQD)</label>
-                      <input
-                        type="number"
-                        step="any"
-                        placeholder="نموونە: 1530"
-                        value={newTransactionForm.exchangeRateIQD}
-                        onChange={(e) =>
-                          setNewTransactionForm({
-                            ...newTransactionForm,
-                            exchangeRateIQD: e.target.value,
-                          })
-                        }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                      />
-                    </div>
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">
+                      نرخی فرۆشتن ($/تۆن) <span className="text-slate-400 font-normal text-[11px]">(ئارەزوومەندانە / Optional)</span>
+                    </label>
+                    <input
+                      type="number"
+                      step="any"
+                      placeholder="ئارەزوومەندانە (نموونە: 302)"
+                      value={newTransactionForm.sellingPricePerTonUSD}
+                      onChange={(e) =>
+                        setNewTransactionForm({
+                          ...newTransactionForm,
+                          sellingPricePerTonUSD: e.target.value,
+                        })
+                      }
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    />
                   </div>
                 </div>
 
@@ -1724,38 +1732,24 @@ ${
                   </div>
                 </div>
 
-                {/* Sell Price & Exchange Rate */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">نرخی فرۆشتن ($/تۆن)</label>
-                    <input
-                      type="number"
-                      required
-                      value={editTransactionForm.sellingPricePerTonUSD}
-                      onChange={(e) =>
-                        setEditTransactionForm({
-                          ...editTransactionForm,
-                          sellingPricePerTonUSD: Number(e.target.value),
-                        })
-                      }
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">نرخی دۆلار بە دینار (IQD)</label>
-                    <input
-                      type="number"
-                      required
-                      value={editTransactionForm.exchangeRateIQD}
-                      onChange={(e) =>
-                        setEditTransactionForm({
-                          ...editTransactionForm,
-                          exchangeRateIQD: Number(e.target.value),
-                        })
-                      }
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
+                {/* Sell Price (Optional) */}
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">
+                    نرخی فرۆشتن ($/تۆن) <span className="text-slate-400 font-normal text-[11px]">(ئارەزوومەندانە / Optional)</span>
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    placeholder="ئارەزوومەندانە (نموونە: 302)"
+                    value={editTransactionForm.sellingPricePerTonUSD || ''}
+                    onChange={(e) =>
+                      setEditTransactionForm({
+                        ...editTransactionForm,
+                        sellingPricePerTonUSD: Number(e.target.value) || 0,
+                      })
+                    }
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                  />
                 </div>
 
                 {/* Partner Settings */}
