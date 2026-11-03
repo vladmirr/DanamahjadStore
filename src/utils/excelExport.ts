@@ -844,46 +844,34 @@ function renderSinglePopcornWorksheet(
   const truckHeaders = [
     'ژمارەی تابلۆی بارهەڵگر',
     'ناوی شۆفێر',
-    'مۆبایلی شۆفێر',
     'بڕ بە تۆن',
     'شوێنی گەیندن / مەبەست',
     'بەرواری بارکردن',
-    'بەرواری گەیشتن',
-    'کرێی ترانزێت ($)',
-    'دۆخ',
     'تێبینی',
   ];
   const trkHeadRow = ws.addRow(truckHeaders);
   trkHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   trkHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
-  for (let c = 1; c <= 10; c++) {
+  for (let c = 1; c <= 6; c++) {
     trkHeadRow.getCell(c).border = thinBorder;
   }
 
   let totalTruckTons = 0;
-  let totalTransitCost = 0;
 
   trucks.forEach((t) => {
     const tons = Number(t.tonsCarried) || 0;
-    const cost = Number(t.transitCostUSD) || 0;
     totalTruckTons += tons;
-    totalTransitCost += cost;
 
-    const statusText = t.status === 'delivered' ? 'گەیشتووە (Delivered)' : t.status === 'in_transit' ? 'لە ڕێگایە (In Transit)' : 'لە گومرگە (At Border)';
     const r = ws.addRow([
       t.plateNumber,
       t.driverName,
-      t.driverPhone || '—',
       tons,
       t.destination,
       t.dispatchDate,
-      t.arrivalDate || '—',
-      cost,
-      statusText,
       t.notes || '',
     ]);
     r.font = { size: 10 };
-    for (let c = 1; c <= 10; c++) {
+    for (let c = 1; c <= 6; c++) {
       r.getCell(c).border = thinBorder;
     }
   });
@@ -892,18 +880,14 @@ function renderSinglePopcornWorksheet(
   const trkTotalRow = ws.addRow([
     `کۆی گشتی (${trucks.length} بارهەڵگر)`,
     '—',
-    '—',
     totalTruckTons,
     '—',
-    '—',
-    '—',
-    totalTransitCost,
     '—',
     `ماوە بۆ ${totalCargoTons} تۆن: ${Math.max(0, totalCargoTons - totalTruckTons)} تۆن`,
   ]);
   trkTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
   trkTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE68A' } };
-  for (let c = 1; c <= 10; c++) {
+  for (let c = 1; c <= 6; c++) {
     trkTotalRow.getCell(c).border = thinBorder;
   }
 

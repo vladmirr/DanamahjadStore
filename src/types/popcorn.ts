@@ -21,8 +21,8 @@ export interface PopcornTruck {
   driverName: string; // ناوی شۆفێر
   driverPhone?: string; // ژمارەی مۆبایل
   destination: string; // شوێنی گەیندن / مەبەست (سلێمانی)
-  status: 'in_transit' | 'at_border' | 'delivered'; // دۆخ
-  transitCostUSD: number; // کرێی گواستنەوە بە دۆلار
+  status?: 'in_transit' | 'at_border' | 'delivered'; // دۆخ
+  transitCostUSD?: number; // کرێی گواستنەوە بە دۆلار
   dispatchDate: string; // بەرواری بارکردن / دەرچوون
   arrivalDate?: string; // بەرواری گەیشتن
   notes?: string;

@@ -116,12 +116,8 @@ export const PopcornManagement: React.FC = () => {
     plateNumber: '',
     tonsCarried: '',
     driverName: '',
-    driverPhone: '',
     destination: '',
-    status: 'in_transit' as 'in_transit' | 'at_border' | 'delivered',
-    transitCostUSD: '',
     dispatchDate: new Date().toISOString().split('T')[0],
-    arrivalDate: '',
     notes: '',
   });
 
@@ -248,17 +244,14 @@ export const PopcornManagement: React.FC = () => {
   // ----------------------------------------------------
   const filteredTrucks = useMemo(() => {
     return trucks.filter((t) => {
-      const matchSearch =
+      return (
+        truckSearch === '' ||
         t.plateNumber.toLowerCase().includes(truckSearch.toLowerCase()) ||
         t.driverName.toLowerCase().includes(truckSearch.toLowerCase()) ||
-        t.destination.toLowerCase().includes(truckSearch.toLowerCase());
-
-      const matchStatus =
-        truckStatusFilter === 'all' ? true : t.status === truckStatusFilter;
-
-      return matchSearch && matchStatus;
+        t.destination.toLowerCase().includes(truckSearch.toLowerCase())
+      );
     });
-  }, [trucks, truckSearch, truckStatusFilter]);
+  }, [trucks, truckSearch]);
 
   const filteredExpenses = useMemo(() => {
     if (activeExpenseTab === 'all') return expenses;
@@ -390,12 +383,8 @@ export const PopcornManagement: React.FC = () => {
       plateNumber: '',
       tonsCarried: '',
       driverName: '',
-      driverPhone: '',
       destination: '',
-      status: 'in_transit',
-      transitCostUSD: '',
       dispatchDate: new Date().toISOString().split('T')[0],
-      arrivalDate: '',
       notes: '',
     });
     setIsTruckModalOpen(true);
@@ -407,12 +396,8 @@ export const PopcornManagement: React.FC = () => {
       plateNumber: truck.plateNumber,
       tonsCarried: String(truck.tonsCarried),
       driverName: truck.driverName,
-      driverPhone: truck.driverPhone || '',
       destination: truck.destination,
-      status: truck.status,
-      transitCostUSD: String(truck.transitCostUSD || 0),
       dispatchDate: truck.dispatchDate,
-      arrivalDate: truck.arrivalDate || '',
       notes: truck.notes || '',
     });
     setIsTruckModalOpen(true);
@@ -426,7 +411,6 @@ export const PopcornManagement: React.FC = () => {
     }
 
     const tons = Number(truckForm.tonsCarried) || 0;
-    const cost = Number(truckForm.transitCostUSD) || 0;
 
     updateActiveTransaction((current) => {
       let updatedTrucks: PopcornTruck[];
@@ -438,12 +422,8 @@ export const PopcornManagement: React.FC = () => {
                 plateNumber: truckForm.plateNumber.trim(),
                 tonsCarried: tons,
                 driverName: truckForm.driverName.trim(),
-                driverPhone: truckForm.driverPhone.trim(),
                 destination: truckForm.destination.trim(),
-                status: truckForm.status,
-                transitCostUSD: cost,
                 dispatchDate: truckForm.dispatchDate,
-                arrivalDate: truckForm.arrivalDate || undefined,
                 notes: truckForm.notes.trim() || undefined,
               }
             : t
@@ -454,12 +434,8 @@ export const PopcornManagement: React.FC = () => {
           plateNumber: truckForm.plateNumber.trim(),
           tonsCarried: tons,
           driverName: truckForm.driverName.trim(),
-          driverPhone: truckForm.driverPhone.trim(),
           destination: truckForm.destination.trim(),
-          status: truckForm.status,
-          transitCostUSD: cost,
           dispatchDate: truckForm.dispatchDate,
-          arrivalDate: truckForm.arrivalDate || undefined,
           notes: truckForm.notes.trim() || undefined,
         };
         updatedTrucks = [newTruck, ...current.trucks];
@@ -945,47 +921,8 @@ ${
             <Search className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2" />
           </div>
 
-          <div className="flex flex-wrap items-center gap-1.5 w-full md:w-auto bg-slate-900/90 p-1 rounded-xl border border-slate-700/80 text-xs">
-            <button
-              onClick={() => setTruckStatusFilter('all')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                truckStatusFilter === 'all'
-                  ? 'bg-slate-800 text-white font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              هەمووی ({trucks.length})
-            </button>
-            <button
-              onClick={() => setTruckStatusFilter('delivered')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                truckStatusFilter === 'delivered'
-                  ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30'
-                  : 'text-slate-400 hover:text-emerald-300'
-              }`}
-            >
-              گەیشتووە ({trucks.filter((t) => t.status === 'delivered').length})
-            </button>
-            <button
-              onClick={() => setTruckStatusFilter('in_transit')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                truckStatusFilter === 'in_transit'
-                  ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30'
-                  : 'text-slate-400 hover:text-amber-300'
-              }`}
-            >
-              لە ڕێگایە ({trucks.filter((t) => t.status === 'in_transit').length})
-            </button>
-            <button
-              onClick={() => setTruckStatusFilter('at_border')}
-              className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer ${
-                truckStatusFilter === 'at_border'
-                  ? 'bg-cyan-500/20 text-cyan-300 font-bold border border-cyan-500/30'
-                  : 'text-slate-400 hover:text-cyan-300'
-              }`}
-            >
-              لە مەرز / گومرگ ({trucks.filter((t) => t.status === 'at_border').length})
-            </button>
+          <div className="text-xs text-slate-400 font-medium">
+            کۆی گشتی تۆمارکراو: <span className="text-amber-400 font-bold font-numeric">{trucks.length}</span> بارهەڵگر ({totalTonsCarried} تۆن)
           </div>
         </div>
 
@@ -1000,40 +937,18 @@ ${
                   <th className="py-3.5 px-4 font-semibold">بڕی بار بە تۆن</th>
                   <th className="py-3.5 px-4 font-semibold">شوێنی گەیندن / مەبەست</th>
                   <th className="py-3.5 px-4 font-semibold">بەرواری بارکردن</th>
-                  <th className="py-3.5 px-4 font-semibold">کرێی ترانزێت</th>
-                  <th className="py-3.5 px-4 font-semibold">دۆخ</th>
                   <th className="py-3.5 px-4 font-semibold text-center">کردارەکان</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
                 {filteredTrucks.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <td colSpan={6} className="py-12 text-center text-slate-500">
                       هیچ بارهەڵگرێک بۆ ئەم مامەڵەیە تۆمار نەکراوە!
                     </td>
                   </tr>
                 ) : (
                   filteredTrucks.map((truck) => {
-                    const statusConfig = {
-                      delivered: {
-                        label: 'گەیشتووە (Delivered)',
-                        className: 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30',
-                        icon: CheckCircle2,
-                      },
-                      in_transit: {
-                        label: 'لە ڕێگایە (In Transit)',
-                        className: 'bg-amber-500/15 text-amber-400 border-amber-500/30',
-                        icon: Clock,
-                      },
-                      at_border: {
-                        label: 'لە گومرگە (At Border)',
-                        className: 'bg-cyan-500/15 text-cyan-400 border-cyan-500/30',
-                        icon: ShieldCheck,
-                      },
-                    }[truck.status];
-
-                    const StatusIcon = statusConfig.icon;
-
                     return (
                       <tr key={truck.id} className="hover:bg-slate-800/40 transition-colors group">
                         <td className="py-3.5 px-4">
@@ -1053,12 +968,6 @@ ${
                             <User className="w-3.5 h-3.5 text-slate-400" />
                             <span>{truck.driverName}</span>
                           </div>
-                          {truck.driverPhone && (
-                            <div className="text-[11px] text-slate-400 font-mono flex items-center gap-1 mt-0.5">
-                              <Phone className="w-3 h-3 text-slate-500" />
-                              <span>{truck.driverPhone}</span>
-                            </div>
-                          )}
                         </td>
 
                         <td className="py-3.5 px-4 font-bold text-amber-300 font-numeric text-sm">
@@ -1074,19 +983,6 @@ ${
 
                         <td className="py-3.5 px-4 text-slate-400 font-numeric">
                           {truck.dispatchDate}
-                        </td>
-
-                        <td className="py-3.5 px-4 font-medium text-slate-300 font-numeric">
-                          {truck.transitCostUSD > 0 ? formatUSD(truck.transitCostUSD) : '—'}
-                        </td>
-
-                        <td className="py-3.5 px-4">
-                          <span
-                            className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-semibold border ${statusConfig.className}`}
-                          >
-                            <StatusIcon className="w-3 h-3" />
-                            <span>{statusConfig.label}</span>
-                          </span>
                         </td>
 
                         <td className="py-3.5 px-4 text-center">
@@ -1121,10 +1017,6 @@ ${
                       {formatNumber(filteredTrucks.reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0))} تۆن
                     </td>
                     <td className="py-3 px-4 text-slate-400">—</td>
-                    <td className="py-3 px-4 text-slate-400">—</td>
-                    <td className="py-3 px-4 text-amber-300 font-numeric">
-                      {formatUSD(filteredTrucks.reduce((acc, t) => acc + (Number(t.transitCostUSD) || 0), 0))}
-                    </td>
                     <td className="py-3 px-4 text-slate-400">—</td>
                     <td className="py-3 px-4 text-center text-slate-400">—</td>
                   </tr>
@@ -1907,7 +1799,7 @@ ${
                   </div>
                 </div>
 
-                {/* Tons & Phone */}
+                {/* Tons & Destination */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">
@@ -1915,7 +1807,7 @@ ${
                     </label>
                     <input
                       type="number"
-                      step="0.01"
+                      step="any"
                       required
                       placeholder="نموونە: 25.5"
                       value={truckForm.tonsCarried}
@@ -1926,90 +1818,28 @@ ${
 
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">
-                      ژمارەی مۆبایلی شۆفێر
+                      شوێنی گەیندن / مەبەست <span className="text-rose-400">*</span>
                     </label>
                     <input
                       type="text"
-                      placeholder="0918... یان 0770..."
-                      value={truckForm.driverPhone}
-                      onChange={(e) => setTruckForm({ ...truckForm, driverPhone: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-mono focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      required
+                      placeholder="نموونە: سلێمانی - کۆگای سەرەکی عەلوە"
+                      value={truckForm.destination}
+                      onChange={(e) => setTruckForm({ ...truckForm, destination: e.target.value })}
+                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                     />
                   </div>
                 </div>
 
-                {/* Destination */}
+                {/* Dispatch Date */}
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    شوێنی گەیندن / مەبەست <span className="text-rose-400">*</span>
-                  </label>
+                  <label className="block text-slate-300 font-semibold mb-1">بەرواری بارکردن / دەرچوون</label>
                   <input
-                    type="text"
-                    required
-                    placeholder="نموونە: سلێمانی - کۆگای سەرەکی عەلوە"
-                    value={truckForm.destination}
-                    onChange={(e) => setTruckForm({ ...truckForm, destination: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    type="date"
+                    value={truckForm.dispatchDate}
+                    onChange={(e) => setTruckForm({ ...truckForm, dispatchDate: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
                   />
-                </div>
-
-                {/* Status & Transit Cost */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      دۆخی بار (Status)
-                    </label>
-                    <select
-                      value={truckForm.status}
-                      onChange={(e) =>
-                        setTruckForm({
-                          ...truckForm,
-                          status: e.target.value as 'in_transit' | 'at_border' | 'delivered',
-                        })
-                      }
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
-                    >
-                      <option value="in_transit">لە ڕێگایە (In Transit)</option>
-                      <option value="at_border">لە مەرز / گومرگ (At Border)</option>
-                      <option value="delivered">گەیشتووە و تەسلیمکراوە (Delivered)</option>
-                    </select>
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      کرێی گواستنەوە بە دۆلار ($)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="نموونە: 650"
-                      value={truckForm.transitCostUSD}
-                      onChange={(e) => setTruckForm({ ...truckForm, transitCostUSD: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
-                </div>
-
-                {/* Dates */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">بەرواری دەرچوون</label>
-                    <input
-                      type="date"
-                      value={truckForm.dispatchDate}
-                      onChange={(e) => setTruckForm({ ...truckForm, dispatchDate: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">بەرواری گەیشتن</label>
-                    <input
-                      type="date"
-                      value={truckForm.arrivalDate}
-                      onChange={(e) => setTruckForm({ ...truckForm, arrivalDate: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
                 </div>
 
                 {/* Notes */}
