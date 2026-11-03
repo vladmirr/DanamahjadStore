@@ -1525,13 +1525,13 @@ ${
                 {/* 1. Transaction Name (Mandatory) */}
                 <div>
                   <label className="block text-neutral-200 font-bold mb-1">
-                    ناوی مامەڵە (Transaction Name) <span className="text-rose-400">*</span>
+                    ناوی کاڵا <span className="text-rose-400">*</span>
                   </label>
                   <input
                     type="text"
                     required
                     autoFocus
-                    placeholder="ناوی مامەڵە بنووسە (نموونە: وەجبەی دووەم)"
+                    placeholder="ناوی کاڵا بنووسە (نموونە: پۆپکۆرن، وەجبەی دووەم)"
                     value={newTransactionForm.name}
                     onChange={(e) =>
                       setNewTransactionForm({ ...newTransactionForm, name: e.target.value })
@@ -1721,7 +1721,7 @@ ${
               <form onSubmit={handleSaveEditTransaction} className="space-y-4 text-xs">
                 {/* Transaction Name */}
                 <div>
-                  <label className="block text-neutral-200 font-bold mb-1">ناوی مامەڵە</label>
+                  <label className="block text-neutral-200 font-bold mb-1">ناوی کاڵا</label>
                   <input
                     type="text"
                     required
