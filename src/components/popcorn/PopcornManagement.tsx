@@ -70,6 +70,7 @@ export const PopcornManagement: React.FC = () => {
   // Filters & Tabs for Active Transaction
   const [truckSearch, setTruckSearch] = useState<string>('');
   const [isTruckSectionOpen, setIsTruckSectionOpen] = useState<boolean>(false);
+  const [isExpenseSectionOpen, setIsExpenseSectionOpen] = useState<boolean>(false);
   const [activeExpenseTab, setActiveExpenseTab] = useState<'all' | 'iran' | 'iraq'>('all');
 
   // Modals State
@@ -1077,41 +1078,100 @@ ${
       </div>
 
       {/* ====================================================
-          3. EXPENSES (COST IRAN SIDE + COST IRAQ SIDE) & PARTNER ACCOUNTING
+          3. EXPENSES & PARTNER ACCOUNTING (COLLAPSIBLE SECTION)
           ==================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Cost Iran Side & Cost Iraq Side (2 Cols) */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <div className="flex items-center gap-2">
-                <Scale className="w-5 h-5 text-amber-400" />
-                <h3 className="text-base sm:text-lg font-bold text-white">
-                  خەرجییەکانی ئێران و عێراق (Iran & Iraq Expenses)
-                </h3>
-              </div>
-              <p className="text-xs text-slate-400 mt-0.5">
-                تێچووی گواستنەوەی ئێران و ترانزێت + گومرگ و خەرجی ناوخۆی عێراق بۆ ئەم مامەڵەیە
-              </p>
-            </div>
-
+      <div className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => setIsExpenseSectionOpen(!isExpenseSectionOpen)}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-md flex items-center justify-between sm:justify-start gap-3 cursor-pointer hover:scale-[1.01] transition-transform"
+          >
             <div className="flex items-center gap-2">
-              <button
-                onClick={() => handleOpenAddExpense('iran')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/30 text-amber-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ خەرجی ئێران</span>
-              </button>
-              <button
-                onClick={() => handleOpenAddExpense('iraq')}
-                className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-emerald-500/30 text-emerald-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>+ خەرجی عێراق</span>
-              </button>
+              <Scale className="w-4 h-4" />
+              <span>خەرجییەکانی ئێران و عێراق (Expenses)</span>
             </div>
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded-full bg-slate-950/20 text-slate-950 font-numeric font-extrabold text-[11px]">
+                {formatUSD(totalOperatingExpenses)}
+              </span>
+              {isExpenseSectionOpen ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </div>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handleOpenAddExpense('iran')}
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/30 text-amber-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ خەرجی ئێران</span>
+            </button>
+            <button
+              onClick={() => handleOpenAddExpense('iraq')}
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/30 text-emerald-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>+ خەرجی عێراق</span>
+            </button>
           </div>
+        </div>
+
+        {/* Expandable Section Content */}
+        <AnimatePresence>
+          {isExpenseSectionOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden space-y-4 pt-1"
+            >
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Cost Iran Side & Cost Iraq Side (2 Cols) */}
+                <div className="lg:col-span-2 space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <Scale className="w-5 h-5 text-amber-400" />
+                        <h3 className="text-base sm:text-lg font-bold text-white">
+                          خەرجییەکانی ئێران و عێراق (Iran & Iraq Expenses)
+                        </h3>
+                      </div>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        تێچووی گواستنەوەی ئێران و ترانزێت + گومرگ و خەرجی ناوخۆی عێراق بۆ ئەم مامەڵەیە
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleOpenAddExpense('iran')}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-amber-500/30 text-amber-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ خەرجی ئێران</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenAddExpense('iraq')}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-emerald-500/30 text-emerald-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ خەرجی عێراق</span>
+                      </button>
+                      <button
+                        onClick={() => setIsExpenseSectionOpen(false)}
+                        className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="داخستنی بەشەکە"
+                      >
+                        <ChevronUp className="w-4 h-4" />
+                        <span>داخستن</span>
+                      </button>
+                    </div>
+                  </div>
 
           {/* Region Tabs */}
           <div className="flex items-center justify-between p-1 bg-slate-900 rounded-xl border border-slate-800 text-xs">
@@ -1389,6 +1449,10 @@ ${
           </div>
         </div>
       </div>
+    </motion.div>
+  )}
+</AnimatePresence>
+</div>
 
       {/* ====================================================
           MODAL: CREATE NEW TRANSACTION
