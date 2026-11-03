@@ -28,22 +28,20 @@ const MainLayout: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#08090d] text-slate-100 flex flex-col antialiased selection:bg-amber-500/30 selection:text-amber-200 relative">
+    <div className="min-h-screen bg-[#050505] text-neutral-100 flex flex-col antialiased selection:bg-white/20 selection:text-white relative">
       {/* Top Right Floating Action Buttons */}
       <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-40 flex items-center gap-2">
         {/* Menu Button */}
-        <motion.button
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
+        <button
           onClick={() => setIsSidebarOpen(true)}
-          className="flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-[#0e111a]/95 hover:bg-[#151926] border border-amber-500/35 hover:border-amber-500/60 text-white shadow-xl shadow-black/80 backdrop-blur-md transition-all cursor-pointer group select-none"
+          className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0f1115] hover:bg-[#181a20] border border-white/10 hover:border-white/25 text-white shadow-lg backdrop-blur-md transition-colors cursor-pointer select-none"
           title="کردنەوەی مێنۆ"
         >
-          <Menu className="w-4 h-4 text-amber-400 transition-transform group-hover:scale-110" />
-          <span className="text-xs sm:text-sm font-bold text-slate-100 group-hover:text-amber-300 transition-colors">
+          <Menu className="w-4 h-4 text-neutral-300" />
+          <span className="text-xs sm:text-sm font-semibold text-neutral-200">
             مێنۆ
           </span>
-        </motion.button>
+        </button>
       </div>
 
       {/* Main Content Area */}

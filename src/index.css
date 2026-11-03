@@ -6,121 +6,83 @@
   }
 
   * {
-    border-color: rgba(245, 158, 11, 0.1);
+    border-color: rgba(255, 255, 255, 0.08);
   }
 
   body {
     font-family: var(--font-kurdish);
-    background-color: #08090d;
-    color: #f1f5f9;
+    background-color: #050505;
+    color: #f3f4f6;
     min-height: 100vh;
     overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
   }
 
-  /* Custom gold scrollbar */
+  /* Custom minimalist dark scrollbar */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
   ::-webkit-scrollbar-track {
-    background: #0a0b10;
+    background: #050505;
   }
   ::-webkit-scrollbar-thumb {
-    background: #2a2214;
+    background: #262626;
     border-radius: 9999px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: #f59e0b;
+    background: #404040;
   }
 }
 
-/* Luxury Dark Gold Glassmorphism & Utilities */
+/* Minimalist Dark Glassmorphism & Panels */
 .glass-panel {
-  background: rgba(18, 19, 24, 0.78);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(245, 158, 11, 0.14);
+  background: #0f1115;
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-card {
-  background: linear-gradient(135deg, rgba(28, 24, 18, 0.65) 0%, rgba(14, 15, 20, 0.82) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(245, 158, 11, 0.12);
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.65), inset 0 1px 0 0 rgba(251, 191, 36, 0.1);
+  background: #0f1115;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.5);
 }
 
 .glass-card-hover {
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 .glass-card-hover:hover {
-  transform: translateY(-2px);
-  border-color: rgba(245, 158, 11, 0.45);
-  box-shadow: 0 15px 35px -10px rgba(0, 0, 0, 0.7), 0 0 25px rgba(245, 158, 11, 0.16), inset 0 1px 0 0 rgba(251, 191, 36, 0.18);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
 }
 
-.glow-gold {
-  box-shadow: 0 0 30px -5px rgba(245, 158, 11, 0.3);
-}
-
-.glow-amber {
-  box-shadow: 0 0 25px -5px rgba(217, 119, 6, 0.25);
-}
-
-.glow-rose {
-  box-shadow: 0 0 25px -5px rgba(244, 63, 94, 0.25);
-}
-
-/* Gold Gradient Button */
+/* Primary Minimalist Button */
 .btn-gold {
-  background: linear-gradient(135deg, #fcd34d 0%, #f59e0b 50%, #d97706 100%);
-  color: #0b0c10;
+  background: #ffffff;
+  color: #050505;
   font-weight: 700;
-  box-shadow: 0 4px 20px -3px rgba(245, 158, 11, 0.35);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 2px 10px -2px rgba(0, 0, 0, 0.5);
+  transition: background-color 0.15s ease, opacity 0.15s ease;
 }
 .btn-gold:hover {
-  background: linear-gradient(135deg, #fef08a 0%, #fbbf24 50%, #f59e0b 100%) !important;
-  box-shadow: 0 8px 30px -2px rgba(245, 158, 11, 0.55), 0 0 20px rgba(245, 158, 11, 0.3) !important;
-  transform: translateY(-2px) !important;
+  background: #e5e5e5 !important;
+  color: #050505 !important;
+  transform: none !important;
 }
 
-/* ========================================================
-   Universal Luxury Gold Hover System for All Buttons
-   ======================================================== */
+/* Universal Button Styles: Fixed, crisp, NO element shifting/jumping */
 button {
   cursor: pointer;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
 }
 
-/* Micro-lift on hover for interactive buttons */
-button:not(:disabled):hover {
-  transform: translateY(-1.5px);
-}
-
-/* Gold glow, border, and text highlight on hover for all non-danger buttons */
-button:not(:disabled):not(.no-gold-hover):not(.btn-gold):not([class*="text-slate-950"]):not([class*="text-black"]):not([class*="rose"]):not([class*="red"]):hover {
-  border-color: rgba(251, 191, 36, 0.8) !important;
-  box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.28), 0 0 14px rgba(245, 158, 11, 0.16) !important;
-  color: #fef08a !important;
-}
-
-/* Gold ambient background on hover for transparent/dark buttons */
-button:not(:disabled):not(.no-gold-hover):not(.btn-gold):not([class*="text-slate-950"]):not([class*="text-black"]):not([class*="rose"]):not([class*="red"]):not([class*="bg-amber-400"]):hover {
-  background-color: rgba(245, 158, 11, 0.14) !important;
-}
-
-/* SVG icons inside hovered buttons turn gold with soft glow */
-button:not(:disabled):not(.no-gold-hover):not(.btn-gold):not([class*="text-slate-950"]):not([class*="text-black"]):not([class*="rose"]):not([class*="red"]):hover svg {
-  color: #fef08a !important;
-  filter: drop-shadow(0 0 6px rgba(245, 158, 11, 0.4));
-  transition: all 0.2s ease;
-}
-
-/* Number display font */
+/* Number display font with fixed tabular figures to avoid layout shifts */
 .font-numeric {
   font-feature-settings: "tnum" 1, "cv01" 1;
-  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
 }
 
 /* Print styling */

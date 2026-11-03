@@ -1,5 +1,4 @@
 import React from 'react';
-import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -15,15 +14,15 @@ export const BottomNav: React.FC = () => {
     return (
       <nav
         aria-label="خوارەوەی پەڕە - گەڕانەوە بۆ داشبۆرد"
-        className="fixed bottom-0 inset-x-0 z-40 bg-[#090b10]/95 backdrop-blur-xl border-t border-amber-500/20 shadow-[0_-8px_32px_rgba(0,0,0,0.7)] py-2 select-none"
+        className="fixed bottom-0 inset-x-0 z-40 bg-[#0f1115]/95 backdrop-blur-xl border-t border-white/[0.08] shadow-2xl py-2.5 select-none"
       >
         <div className="w-full max-w-md mx-auto px-4 flex items-center justify-center">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className="flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-500/20 text-amber-300 border border-amber-500/40 shadow-lg shadow-amber-500/10 font-bold hover:scale-[1.02] active:scale-95 transition-all cursor-pointer"
+            className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 shadow-sm font-semibold transition-colors cursor-pointer"
           >
-            <LayoutDashboard className="w-4 h-4 text-amber-400" />
-            <span className="text-xs sm:text-sm font-bold">داشبۆردی سەرەکی</span>
+            <LayoutDashboard className="w-4 h-4 text-neutral-300" />
+            <span className="text-xs sm:text-sm font-semibold">داشبۆردی سەرەکی</span>
           </button>
         </div>
       </nav>
@@ -61,11 +60,11 @@ export const BottomNav: React.FC = () => {
   return (
     <nav
       aria-label="خوارەوەی پەڕە - پێڕستی سەرەکی"
-      className="fixed bottom-0 inset-x-0 z-40 bg-[#090b10]/95 backdrop-blur-xl border-t border-amber-500/20 shadow-[0_-8px_32px_rgba(0,0,0,0.7)] py-2 select-none"
+      className="fixed bottom-0 inset-x-0 z-40 bg-[#0f1115]/95 backdrop-blur-xl border-t border-white/[0.08] shadow-2xl py-2.5 select-none"
     >
       <div className="w-full max-w-2xl mx-auto px-4 flex items-center justify-center">
-        {/* Navigation Items - Perfectly Centered without Overflow Clipping */}
-        <div className="flex items-center justify-center gap-2 sm:gap-4 flex-wrap">
+        {/* Navigation Items */}
+        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
@@ -74,25 +73,16 @@ export const BottomNav: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`relative flex items-center justify-center gap-2 px-3.5 sm:px-5 py-2 rounded-xl transition-all duration-200 cursor-pointer shrink-0 ${
+                className={`flex items-center justify-center gap-2 px-3.5 sm:px-5 py-2 rounded-xl transition-colors duration-150 cursor-pointer shrink-0 ${
                   isActive
-                    ? 'bg-gradient-to-r from-amber-500/20 via-yellow-500/15 to-amber-500/20 text-amber-300 border border-amber-500/40 shadow-lg shadow-amber-500/10 font-bold'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent'
+                    ? 'bg-white/10 text-white border border-white/20 font-bold shadow-sm'
+                    : 'text-neutral-400 hover:text-white hover:bg-white/[0.04] border border-transparent font-medium'
                 }`}
               >
-                {/* Active Indicator Top Glow */}
-                {isActive && (
-                  <motion.div
-                    layoutId="bottomNavGlow"
-                    className="absolute -top-1 inset-x-2 h-[2px] bg-gradient-to-r from-transparent via-amber-400 to-transparent rounded-full shadow-[0_0_8px_rgba(245,158,11,0.8)]"
-                    transition={{ type: 'spring', stiffness: 380, damping: 30 }}
-                  />
-                )}
-
                 <div className="relative shrink-0">
                   <Icon
-                    className={`w-4 h-4 transition-transform ${
-                      isActive ? 'text-amber-400 scale-110' : 'text-slate-400'
+                    className={`w-4 h-4 ${
+                      isActive ? 'text-white' : 'text-neutral-400'
                     }`}
                   />
                   {item.badge && (
@@ -102,7 +92,7 @@ export const BottomNav: React.FC = () => {
                   )}
                 </div>
 
-                <span className="text-xs sm:text-sm whitespace-nowrap font-medium">
+                <span className="text-xs sm:text-sm whitespace-nowrap">
                   {item.label}
                 </span>
               </button>

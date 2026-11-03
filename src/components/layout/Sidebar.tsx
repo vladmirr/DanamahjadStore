@@ -35,7 +35,7 @@ export const Sidebar: React.FC = () => {
       sublabel: 'هاوردەکردن لە ڕووسیا، بارهەڵگرەکانی ئێران و شەراکەت',
       icon: Truck,
       badge: (
-        <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-amber-500/25 text-amber-300 border border-amber-500/40">
+        <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-white/10 text-neutral-300 border border-white/15">
           نوێ / NEW
         </span>
       ),
@@ -102,7 +102,7 @@ export const Sidebar: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.15 }}
             onClick={() => setIsSidebarOpen(false)}
             className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50"
           />
@@ -112,37 +112,35 @@ export const Sidebar: React.FC = () => {
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 26, stiffness: 320 }}
-            className="fixed inset-y-0 right-0 z-50 h-full w-80 max-w-[85vw] bg-[#0a0c12] border-l border-amber-500/20 shadow-2xl flex flex-col justify-between"
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            className="fixed inset-y-0 right-0 z-50 h-full w-80 max-w-[85vw] bg-[#0f1115] border-l border-white/[0.08] shadow-2xl flex flex-col justify-between"
           >
             {/* Top Brand Header */}
             <div>
-              <div className="p-5 border-b border-amber-500/15 flex items-center justify-between">
+              <div className="p-5 border-b border-white/[0.08] flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-400/20 via-yellow-500/10 to-amber-600/20 border border-amber-500/35 p-1.5 flex items-center justify-center shadow-lg shadow-amber-500/25 shrink-0">
+                  <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 p-1.5 flex items-center justify-center shrink-0">
                     <img
                       src="/logo-icon.png"
                       alt="DanaMahjadStore Logo"
-                      className="w-full h-full object-contain filter drop-shadow-[0_2px_8px_rgba(245,158,11,0.4)]"
+                      className="w-full h-full object-contain"
                     />
                   </div>
                   <div>
-                    <h1 className="text-base font-black tracking-wider flex items-center gap-1.5">
-                      <span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500">
-                        DanaMahjadStore
-                      </span>
-                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-400 font-mono font-bold border border-amber-500/20">
+                    <h1 className="text-base font-bold text-white tracking-wide flex items-center gap-1.5">
+                      <span>DanaMahjadStore</span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-neutral-300 font-mono font-bold border border-white/15">
                         PRO
                       </span>
                     </h1>
-                    <p className="text-[10px] text-slate-400">مێنۆی سەرەکی سیستەم</p>
+                    <p className="text-[10px] text-neutral-400">مێنۆی سەرەکی سیستەم</p>
                   </div>
                 </div>
 
                 {/* Close Button */}
                 <button
                   onClick={() => setIsSidebarOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800/80 transition-colors cursor-pointer"
+                  className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
                   title="داخستن"
                 >
                   <X className="w-5 h-5" />
@@ -151,9 +149,9 @@ export const Sidebar: React.FC = () => {
 
               {/* Main Menu List */}
               <div className="py-4 px-3 space-y-1.5">
-                <div className="px-3 pb-2 text-[11px] font-bold text-amber-400/90 uppercase tracking-wider flex items-center gap-2">
+                <div className="px-3 pb-2 text-[11px] font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-2">
                   <span>بەشەکانی مێنۆ</span>
-                  <div className="flex-1 h-[1px] bg-amber-500/20" />
+                  <div className="flex-1 h-[1px] bg-white/[0.08]" />
                 </div>
 
                 {primaryMenuItems.map((item) => {
@@ -164,25 +162,25 @@ export const Sidebar: React.FC = () => {
                     <button
                       key={item.id}
                       onClick={() => handleNavClick(item.id)}
-                      className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-all duration-200 group text-right cursor-pointer relative ${
+                      className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl transition-colors duration-150 group text-right cursor-pointer relative ${
                         isActive
-                          ? 'bg-gradient-to-r from-amber-500/20 via-amber-500/10 to-transparent text-amber-300 border-r-4 border-amber-400 font-bold shadow-sm'
-                          : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
+                          ? 'bg-white/10 text-white font-bold border-r-2 border-white'
+                          : 'text-neutral-300 hover:text-white hover:bg-white/[0.04]'
                       }`}
                     >
                       <div className="flex items-center gap-3">
                         <div
                           className={`p-2 rounded-xl transition-colors ${
                             isActive
-                              ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
-                              : 'bg-slate-900 text-slate-400 group-hover:text-amber-300 group-hover:bg-amber-500/10 border border-slate-800'
+                              ? 'bg-white/15 text-white border border-white/20'
+                              : 'bg-white/[0.03] text-neutral-400 group-hover:text-white border border-white/[0.06]'
                           }`}
                         >
                           <Icon className="w-4 h-4" />
                         </div>
                         <div>
                           <div className="text-sm font-semibold">{item.label}</div>
-                          <div className="text-[11px] text-slate-500 group-hover:text-slate-400">
+                          <div className="text-[11px] text-neutral-400">
                             {item.sublabel}
                           </div>
                         </div>
@@ -191,7 +189,7 @@ export const Sidebar: React.FC = () => {
                       <div className="flex items-center gap-2">
                         {item.badge}
                         {isActive && (
-                          <ChevronLeft className="w-4 h-4 text-amber-400 animate-pulse" />
+                          <ChevronLeft className="w-4 h-4 text-white" />
                         )}
                       </div>
                     </button>
@@ -199,9 +197,9 @@ export const Sidebar: React.FC = () => {
                 })}
 
                 {/* Secondary Divider & Links */}
-                <div className="pt-4 px-3 pb-2 text-[10px] font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-2">
+                <div className="pt-4 px-3 pb-2 text-[10px] font-semibold text-neutral-400 uppercase tracking-wider flex items-center gap-2">
                   <span>بەستەری خێرا</span>
-                  <div className="flex-1 h-[1px] bg-slate-800/80" />
+                  <div className="flex-1 h-[1px] bg-white/[0.08]" />
                 </div>
 
                 <div className="space-y-1">
@@ -215,11 +213,11 @@ export const Sidebar: React.FC = () => {
                         onClick={() => handleNavClick(item.id)}
                         className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs transition-colors cursor-pointer text-right ${
                           isActive
-                            ? 'text-amber-300 bg-amber-500/10 font-bold'
-                            : 'text-slate-400 hover:text-white hover:bg-slate-900'
+                            ? 'text-white bg-white/10 font-bold'
+                            : 'text-neutral-400 hover:text-white hover:bg-white/[0.04]'
                         }`}
                       >
-                        <Icon className="w-3.5 h-3.5 text-slate-400" />
+                        <Icon className="w-3.5 h-3.5 text-neutral-400" />
                         <span>{item.label}</span>
                       </button>
                     );
@@ -229,16 +227,16 @@ export const Sidebar: React.FC = () => {
             </div>
 
             {/* Admin User Card & Logout */}
-            <div className="p-4 border-t border-amber-500/15 bg-slate-950/80 space-y-3">
-              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-slate-900/80 border border-slate-800/80">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/15 border border-amber-500/25 flex items-center justify-center text-amber-400 shrink-0">
+            <div className="p-4 border-t border-white/[0.08] bg-[#0c0d10] space-y-3">
+              <div className="flex items-center gap-2.5 p-3 rounded-xl bg-[#14161b] border border-white/[0.08]">
+                <div className="w-10 h-10 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-neutral-300 shrink-0">
                   <Shield className="w-5 h-5" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-xs font-bold text-white truncate">
                     {adminUser?.displayName || 'بەڕێوەبەر'}
                   </div>
-                  <div className="text-[11px] text-amber-400/80 font-mono truncate">
+                  <div className="text-[11px] text-neutral-400 font-mono truncate">
                     @{adminUser?.username || 'Danamahjad'}
                   </div>
                 </div>
@@ -247,7 +245,7 @@ export const Sidebar: React.FC = () => {
               {/* Full-width Logout Button in Menu */}
               <button
                 onClick={logout}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-500/50 transition-all cursor-pointer"
+                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-semibold text-rose-400 hover:text-white bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 transition-colors cursor-pointer"
               >
                 <LogOut className="w-4 h-4" />
                 <span>چوونەدەروە لە سیستم (Logout)</span>

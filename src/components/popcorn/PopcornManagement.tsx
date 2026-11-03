@@ -617,40 +617,33 @@ ${
   };
 
   return (
-    <div className="space-y-8 animate-fadeIn pb-16">
+    <div className="space-y-6 pb-16">
       {/* ====================================================
-          TOP HERO & TRANSACTION SWITCHER BAR (EXECUTIVE SAAS)
+          TOP HERO & TRANSACTION SWITCHER BAR (MINIMALIST DARK)
           ==================================================== */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-b from-[#0e1424] via-[#0b0f1a] to-[#080b14] border border-amber-500/25 p-5 md:p-7 shadow-2xl backdrop-blur-2xl">
-        {/* Subtle Ambient Glowing Background Orbs */}
-        <div className="absolute -top-24 -right-12 w-96 h-96 bg-gradient-to-br from-amber-500/12 via-yellow-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-24 -left-12 w-96 h-96 bg-gradient-to-tr from-emerald-500/10 via-sky-500/5 to-transparent rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
-          {/* Left: Transaction Brand & Route Hierarchy */}
-          <div className="space-y-3">
-            {/* Main Title & Logistics Subtext */}
-            <div>
-              <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight flex items-center gap-2.5">
-                <span>{activeTransaction.name}</span>
-              </h1>
-              <p className="text-xs text-slate-400 mt-1 flex items-center gap-2 flex-wrap font-numeric">
-                <span className="text-slate-300 font-semibold">{totalCargoTons} تۆن دەنکە گەنمەشامی</span>
-                <span className="text-slate-600">•</span>
-                <span>کڕین: {formatUSD(buyPricePerTon)}/تۆن</span>
-                <span className="text-slate-600">•</span>
-                <span>{sellPricePerTon > 0 ? `فرۆشتن: ${formatUSD(sellPricePerTon)}/تۆن` : 'فرۆشتن: دیارینەکراوە'}</span>
-                <span className="text-slate-600">•</span>
-                <span className="text-amber-400 font-bold">{trucks.length} بارهەڵگر تۆمارکراوە ({totalTonsCarried} تۆن)</span>
-              </p>
-            </div>
+      <div className="rounded-2xl bg-[#0f1115] border border-white/[0.08] p-5 md:p-6 shadow-lg">
+        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+          {/* Left: Transaction Brand & Logistics Subtext */}
+          <div className="space-y-1">
+            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+              {activeTransaction.name}
+            </h1>
+            <p className="text-xs text-neutral-400 flex items-center gap-2 flex-wrap font-numeric">
+              <span className="text-neutral-200 font-medium">{totalCargoTons} تۆن دەنکە گەنمەشامی</span>
+              <span className="text-neutral-600">•</span>
+              <span>کڕین: {formatUSD(buyPricePerTon)}/تۆن</span>
+              <span className="text-neutral-600">•</span>
+              <span>{sellPricePerTon > 0 ? `فرۆشتن: ${formatUSD(sellPricePerTon)}/تۆن` : 'فرۆشتن: دیارینەکراوە'}</span>
+              <span className="text-neutral-600">•</span>
+              <span className="text-neutral-300 font-semibold">{trucks.length} بارهەڵگر تۆمارکراوە ({totalTonsCarried} تۆن)</span>
+            </p>
           </div>
 
           {/* Right: Modern Command Toolbar */}
           <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
-            {/* Transaction Dropdown Switcher (SaaS Select) */}
-            <div className="relative flex items-center bg-[#101728] hover:bg-[#141d33] border border-amber-500/30 hover:border-amber-400/50 rounded-xl px-3 py-2 shadow-md transition-colors">
-              <Layers className="w-4 h-4 text-amber-400 ml-2 shrink-0" />
+            {/* Transaction Dropdown Switcher */}
+            <div className="relative flex items-center bg-[#050505] hover:bg-[#12141a] border border-white/10 hover:border-white/20 rounded-xl px-3 py-2 transition-colors">
+              <Layers className="w-4 h-4 text-neutral-400 ml-2 shrink-0" />
               <select
                 value={store.activeTransactionId}
                 onChange={(e) => {
@@ -660,10 +653,10 @@ ${
                   });
                   playSound('click');
                 }}
-                className="bg-transparent text-xs font-bold text-white pr-2 pl-4 focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs font-semibold text-white pr-2 pl-4 focus:outline-none cursor-pointer"
               >
                 {store.transactions.map((trans) => (
-                  <option key={trans.id} value={trans.id} className="bg-[#0e1424] text-white">
+                  <option key={trans.id} value={trans.id} className="bg-[#0f1115] text-white">
                     {trans.name} ({trans.config.totalTons} تۆن)
                   </option>
                 ))}
@@ -671,19 +664,17 @@ ${
             </div>
 
             {/* CREATE NEW TRANSACTION BUTTON */}
-            <motion.button
-              whileHover={{ scale: 1.03 }}
-              whileTap={{ scale: 0.97 }}
+            <button
               onClick={handleOpenCreateTransaction}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-xl btn-gold text-xs font-black text-slate-950 shadow-lg shadow-amber-500/20 cursor-pointer"
+              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold shadow-sm transition-colors cursor-pointer"
               title="دروستکردنی مامەڵەی نوێ بۆ پۆپکورن"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
+              <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>+ مامەڵەی نوێ (New Transaction)</span>
-            </motion.button>
+            </button>
 
             {/* Action Group: Settings, Excel, Copy, Delete */}
-            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#101728] border border-slate-800">
+            <div className="flex items-center gap-1 p-1 rounded-xl bg-[#050505] border border-white/10">
               {/* Edit Active Transaction Settings */}
               <button
                 onClick={() => {
@@ -691,10 +682,10 @@ ${
                   setEditTransactionName(activeTransaction.name);
                   setIsEditTransactionModalOpen(true);
                 }}
-                className="p-2 rounded-lg hover:bg-slate-800/80 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                className="p-2 rounded-lg hover:bg-white/[0.06] text-neutral-400 hover:text-white transition-colors cursor-pointer"
                 title="دەستکاریکردنی ناوی مامەڵە، نرخەکان و شەراکەت"
               >
-                <Settings className="w-4 h-4 text-amber-400" />
+                <Settings className="w-4 h-4" />
               </button>
 
               {/* Export Excel for this transaction */}
@@ -707,26 +698,26 @@ ${
                   });
                   playSound('success');
                 }}
-                className="p-2 rounded-lg hover:bg-slate-800/80 text-slate-300 hover:text-emerald-300 transition-colors cursor-pointer"
+                className="p-2 rounded-lg hover:bg-white/[0.06] text-neutral-400 hover:text-emerald-400 transition-colors cursor-pointer"
                 title="داگرتنی ئێکسڵی ئەم مامەڵەیە"
               >
-                <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                <FileSpreadsheet className="w-4 h-4" />
               </button>
 
               {/* Copy Summary */}
               <button
                 onClick={handleCopySummary}
-                className="p-2 rounded-lg hover:bg-slate-800/80 text-slate-300 hover:text-amber-300 transition-colors cursor-pointer"
+                className="p-2 rounded-lg hover:bg-white/[0.06] text-neutral-400 hover:text-white transition-colors cursor-pointer"
                 title="کۆپیکردنی پوختەی ئەم مامەڵەیە بۆ واتساپ"
               >
-                {copiedSummary ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4 text-amber-400" />}
+                {copiedSummary ? <Check className="w-4 h-4 text-emerald-400" /> : <Copy className="w-4 h-4" />}
               </button>
 
               {/* Delete Transaction (if more than 1) */}
               {store.transactions.length > 1 && (
                 <button
                   onClick={() => setTransactionToDelete(activeTransaction)}
-                  className="p-2 rounded-lg hover:bg-rose-500/20 text-rose-400 transition-colors cursor-pointer"
+                  className="p-2 rounded-lg hover:bg-rose-500/10 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
                   title="سڕینەوەی ئەم مامەڵەیە"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -738,61 +729,61 @@ ${
       </div>
 
       {/* ====================================================
-          1. BUYING DETAILS, SELLING INFORMATIONS & FINANCIAL KPIS
+          1. FINANCIAL KPIS (5 UNIFIED MINIMALIST CARDS)
           ==================================================== */}
       <div>
         <div className="flex items-center justify-between mb-3 px-1">
           <div className="flex items-center gap-2">
-            <Coins className="w-4 h-4 text-amber-400" />
-            <h2 className="text-xs font-bold text-slate-300 uppercase tracking-widest">
+            <Coins className="w-4 h-4 text-neutral-400" />
+            <h2 className="text-xs font-semibold text-neutral-400 uppercase tracking-wider">
               پوختەی دارایی و حیساباتی سەرەکی (Financial Metrics)
             </h2>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
           {/* 1. Buying Details */}
-          <TiltCard glowColor="emerald" className="bg-gradient-to-br from-[#0c161f] via-[#09111a] to-[#070c12] border-emerald-500/20 hover:border-emerald-500/40">
+          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">تێچووی کڕین (Buying Cost)</p>
-                <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-200 to-emerald-400 mt-2 font-numeric tracking-tight">
+                <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">تێچووی کڕین (Buying Cost)</p>
+                <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight">
                   {formatUSD(totalBuyingCost)}
                 </h3>
               </div>
-              <div className="p-2.5 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shadow-sm shadow-emerald-500/10">
-                <Globe2 className="w-5 h-5" />
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+                <Globe2 className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-emerald-500/15 flex items-center justify-between text-[11px] text-slate-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>{totalCargoTons} تۆن × {formatUSD(buyPricePerTon)}</span>
-              <span className="text-emerald-400 font-semibold">
-                لە {config.originCountry}
+              <span className="text-neutral-300 font-medium">
+                {config.originCountry}
               </span>
             </div>
           </TiltCard>
 
           {/* 2. Selling Revenue */}
-          <TiltCard glowColor="indigo" className="bg-gradient-to-br from-[#0f152b] via-[#0b1021] to-[#080c1a] border-sky-500/20 hover:border-sky-500/40">
+          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">داهاتی فرۆش (Selling Revenue)</p>
-                <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-sky-300 via-indigo-200 to-sky-400 mt-2 font-numeric tracking-tight">
+                <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">داهاتی فرۆش (Selling Revenue)</p>
+                <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight">
                   {sellPricePerTon > 0 ? formatUSD(expectedTotalRevenue) : 'دیارینەکراوە'}
                 </h3>
               </div>
-              <div className="p-2.5 rounded-2xl bg-sky-500/15 border border-sky-500/30 text-sky-400 shadow-sm shadow-sky-500/10">
-                <TrendingUp className="w-5 h-5" />
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+                <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-sky-500/15 flex items-center justify-between text-[11px] text-slate-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>
                 {sellPricePerTon > 0
                   ? `فرۆشتن: ${formatUSD(sellPricePerTon)}/تۆن`
                   : 'نرخی فرۆشتن دیارینەکراوە'}
               </span>
               {sellPricePerTon > 0 && (
-                <span className="text-sky-300 font-bold">
+                <span className="text-neutral-300 font-semibold">
                   +{formatUSD(grossTradeProfit)} جیاوازی
                 </span>
               )}
@@ -800,53 +791,53 @@ ${
           </TiltCard>
 
           {/* 3. Cost Iran Side + Cost Iraq Side */}
-          <TiltCard glowColor="rose" className="bg-gradient-to-br from-[#1c0f16] via-[#140b10] to-[#0d070b] border-rose-500/20 hover:border-rose-500/40">
+          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">کۆی خەرجییەکان (Expenses)</p>
-                <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-rose-300 via-pink-200 to-rose-400 mt-2 font-numeric tracking-tight">
+                <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">کۆی خەرجییەکان (Expenses)</p>
+                <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight">
                   {formatUSD(totalOperatingExpenses)}
                 </h3>
               </div>
-              <div className="p-2.5 rounded-2xl bg-rose-500/15 border border-rose-500/30 text-rose-400 shadow-sm shadow-rose-500/10">
-                <Scale className="w-5 h-5" />
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+                <Scale className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-rose-500/15 flex items-center justify-between text-[11px] text-slate-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>ئێران: {formatUSD(totalIranSpending)}</span>
-              <span className="text-rose-300 font-medium">
+              <span className="text-neutral-300 font-medium">
                 عێراق: {formatUSD(totalIraqSpending)}
               </span>
             </div>
           </TiltCard>
 
           {/* 4. Net Profit */}
-          <TiltCard glowColor="emerald" className="bg-gradient-to-br from-[#0c1f18] via-[#081711] to-[#06100c] border-emerald-400/30 hover:border-emerald-400/60 shadow-xl shadow-emerald-950/20">
+          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">قازانجی پوختەی مامەڵە (Net)</p>
+                <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">قازانجی پوختەی مامەڵە (Net)</p>
                 <h3
-                  className={`text-2xl font-black mt-2 font-numeric tracking-tight ${
+                  className={`text-2xl font-bold mt-2 font-numeric tracking-tight ${
                     sellPricePerTon > 0
                       ? finalNetProfit >= 0
-                        ? 'text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 via-teal-100 to-emerald-400'
+                        ? 'text-emerald-400'
                         : 'text-rose-400'
-                      : 'text-amber-300'
+                      : 'text-white'
                   }`}
                 >
                   {sellPricePerTon > 0 ? formatUSD(finalNetProfit) : 'چاوەڕوانی فرۆشتن'}
                 </h3>
               </div>
-              <div className="p-2.5 rounded-2xl bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 shadow-md shadow-emerald-500/20">
-                <DollarSign className="w-5 h-5" />
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+                <DollarSign className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-emerald-500/20 flex items-center justify-between text-[11px] text-slate-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               {sellPricePerTon > 0 ? (
                 <>
                   <span>قازانجی سەدەهاوردە:</span>
                   <span
-                    className={`font-black ${
+                    className={`font-semibold ${
                       finalNetProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'
                     }`}
                   >
@@ -856,7 +847,7 @@ ${
               ) : (
                 <>
                   <span>کۆی تێچوو تا ئێستا:</span>
-                  <span className="text-amber-300 font-bold">
+                  <span className="text-neutral-300 font-semibold">
                     {formatUSD(totalOverallProjectCost)}
                   </span>
                 </>
@@ -865,13 +856,13 @@ ${
           </TiltCard>
 
           {/* 5. Calculate with Partner if there is any */}
-          <TiltCard glowColor="gold" className="bg-gradient-to-br from-[#1c160c] via-[#141008] to-[#0e0a05] border-amber-500/25 hover:border-amber-400/50">
+          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
+                <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
                   {hasPartner ? `پشکی هاوبەش (%${partnerPercent})` : 'پشکی من (بێ هاوبەش)'}
                 </p>
-                <h3 className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-400 mt-2 font-numeric tracking-tight">
+                <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight">
                   {sellPricePerTon > 0
                     ? hasPartner
                       ? formatUSD(partnerProfitShare)
@@ -879,13 +870,13 @@ ${
                     : 'چاوەڕوانی فرۆشتن'}
                 </h3>
               </div>
-              <div className="p-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-sm shadow-amber-500/10">
-                {hasPartner ? <Split className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+                {hasPartner ? <Split className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-amber-500/15 flex items-center justify-between text-[11px] text-slate-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>{hasPartner ? `پشکی من (%${myPercent}):` : '١٠٠٪ بۆ خۆت:'}</span>
-              <span className="text-amber-400 font-bold">
+              <span className="text-neutral-300 font-semibold">
                 {sellPricePerTon > 0 ? formatUSD(myProfitShare) : 'چاوەڕوانی فرۆشتن'}
               </span>
             </div>
@@ -901,36 +892,36 @@ ${
           <button
             type="button"
             onClick={() => setIsTruckSectionOpen(!isTruckSectionOpen)}
-            className="w-full p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-[#0d1322] via-[#101729] to-[#0d1322] border border-amber-500/25 hover:border-amber-400/50 shadow-xl shadow-black/60 hover:shadow-amber-500/10 flex items-center justify-between gap-4 transition-all duration-300 group cursor-pointer"
+            className="w-full p-4 sm:p-5 rounded-2xl bg-[#0f1115] hover:bg-[#14171d] border border-white/[0.08] hover:border-white/20 shadow-md flex items-center justify-between gap-4 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500/20 via-yellow-500/10 to-transparent border border-amber-500/30 text-amber-400 flex items-center justify-center shrink-0 shadow-lg shadow-amber-500/10 group-hover:scale-105 transition-transform">
-                <Truck className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 flex items-center justify-center shrink-0">
+                <Truck className="w-5 h-5" />
               </div>
               <div className="text-right">
-                <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-amber-300 transition-colors flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                   <span>بەڕێوەبردنی بارهەڵگرەکان (Trucks & Logistics)</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-neutral-400 mt-0.5">
                   تۆمارکردن و بەدواداچوونی وردی بارهەڵگرەکانی ئەم مامەڵەیە لە ئێرانەوە بۆ سلێمانی
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#141b2e] border border-amber-500/30 text-amber-300 font-numeric font-bold text-xs shadow-inner">
+              <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#050505] border border-white/10 text-neutral-300 font-numeric font-medium text-xs">
                 <span>{trucks.length} بارهەڵگر</span>
-                <span className="text-slate-600">|</span>
+                <span className="text-neutral-600">|</span>
                 <span>{totalTonsCarried} لە {totalCargoTons} تۆن</span>
-                <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px]">
+                <span className="px-1.5 py-0.5 rounded bg-white/10 text-white border border-white/15 text-[10px] font-bold">
                   {Math.min(100, Math.round((totalTonsCarried / (totalCargoTons || 1)) * 100))}%
                 </span>
               </span>
 
-              <div className="w-9 h-9 rounded-xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center text-slate-400 group-hover:text-amber-300 group-hover:border-amber-500/40 transition-all">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-neutral-400">
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-300 ${
-                    isTruckSectionOpen ? 'rotate-180 text-amber-400' : ''
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isTruckSectionOpen ? 'rotate-180 text-white' : ''
                   }`}
                 />
               </div>
@@ -945,23 +936,23 @@ ${
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
               className="overflow-hidden space-y-4 pt-1"
             >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#0c1220]/90 border border-amber-500/25 shadow-xl backdrop-blur-xl">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[#0f1115] border border-white/[0.08] shadow-md">
                 <div className="flex items-center gap-3">
-                  <div className="p-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-sm">
-                    <Truck className="w-5 h-5" />
+                  <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+                    <Truck className="w-4 h-4" />
                   </div>
                   <div>
-                    <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                    <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <span>زانیاری بارهەڵگرەکان (Truck Information)</span>
-                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-[#131b2e] text-amber-300 border border-amber-500/30 font-numeric font-bold">
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/[0.06] text-neutral-300 border border-white/10 font-numeric font-medium">
                         {trucks.length} بارهەڵگر ({totalTonsCarried} لە {totalCargoTons} تۆن)
                       </span>
                     </h3>
-                    <p className="text-xs text-slate-400 mt-0.5">
-                      تۆمارکردن و بەدواداچوونی وردی بارهەڵگرەکانی ئەم مامەڵەیە لە ئێرانەوە بۆ سلێمانی
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      تۆمارکردن و بەدواداچوونی وردی بارهەڵگرەکانی ئەم مامەڵەیە
                     </p>
                   </div>
                 </div>
@@ -969,14 +960,14 @@ ${
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                   <button
                     onClick={handleOpenAddTruck}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-md cursor-pointer hover:scale-105 transition-transform"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-colors cursor-pointer shadow-sm"
                   >
-                    <Plus className="w-4 h-4 stroke-[3]" />
+                    <Plus className="w-4 h-4 stroke-[2.5]" />
                     <span>+ فۆڕمی بارهەڵگری نوێ</span>
                   </button>
                   <button
                     onClick={() => setIsTruckSectionOpen(false)}
-                    className="px-3.5 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700/80 text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border border-white/10 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
                     title="داخستنی بەشەکە"
                   >
                     <ChevronUp className="w-4 h-4" />
@@ -986,91 +977,91 @@ ${
               </div>
 
               {/* Filter and Search Bar */}
-              <div className="p-4 rounded-2xl bg-[#0c1220]/80 border border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between shadow-lg">
+              <div className="p-3.5 rounded-2xl bg-[#0f1115] border border-white/[0.08] flex flex-col md:flex-row gap-3 items-center justify-between shadow-sm">
                 <div className="relative w-full md:w-80">
                   <input
                     type="text"
                     value={truckSearch}
                     onChange={(e) => setTruckSearch(e.target.value)}
                     placeholder="گەڕان بەپێی تابلۆ، ناوی شۆفێر یان شوێن..."
-                    className="w-full bg-[#101728] border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-400 focus:ring-2 focus:ring-amber-500/20 pr-10"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl px-4 py-2 text-xs text-white placeholder-neutral-500 focus:outline-none focus:border-white/30 pr-10"
                   />
-                  <Search className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                  <Search className="w-4 h-4 text-neutral-500 absolute right-3 top-1/2 -translate-y-1/2" />
                 </div>
 
-                <div className="text-xs text-slate-400 font-medium font-numeric">
-                  کۆی گشتی تۆمارکراو: <span className="text-amber-400 font-bold">{trucks.length}</span> بارهەڵگر ({totalTonsCarried} تۆن)
+                <div className="text-xs text-neutral-400 font-medium font-numeric">
+                  کۆی گشتی تۆمارکراو: <span className="text-white font-bold">{trucks.length}</span> بارهەڵگر ({totalTonsCarried} تۆن)
                 </div>
               </div>
 
               {/* Truck Table */}
-              <div className="bg-[#0b101c] rounded-2xl border border-slate-800/80 overflow-hidden shadow-2xl">
+              <div className="bg-[#0f1115] rounded-2xl border border-white/[0.08] overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full text-right text-xs">
                     <thead>
-                      <tr className="bg-[#0e1526] border-b border-slate-800 text-slate-400">
-                        <th className="py-3.5 px-4 font-semibold">ژمارەی تابلۆی بارهەڵگر</th>
-                        <th className="py-3.5 px-4 font-semibold">ناوی شۆفێر</th>
-                        <th className="py-3.5 px-4 font-semibold">بڕی بار بە تۆن</th>
-                        <th className="py-3.5 px-4 font-semibold">شوێنی گەیندن / مەبەست</th>
-                        <th className="py-3.5 px-4 font-semibold">بەرواری بارکردن</th>
-                        <th className="py-3.5 px-4 font-semibold text-center">کردارەکان</th>
+                      <tr className="bg-[#050505] border-b border-white/[0.08] text-neutral-400">
+                        <th className="py-3 px-4 font-semibold whitespace-nowrap">ژمارەی تابلۆی بارهەڵگر</th>
+                        <th className="py-3 px-4 font-semibold whitespace-nowrap">ناوی شۆفێر</th>
+                        <th className="py-3 px-4 font-semibold whitespace-nowrap">بڕی بار بە تۆن</th>
+                        <th className="py-3 px-4 font-semibold whitespace-nowrap">شوێنی گەیندن / مەبەست</th>
+                        <th className="py-3 px-4 font-semibold whitespace-nowrap">بەرواری بارکردن</th>
+                        <th className="py-3 px-4 font-semibold text-center whitespace-nowrap">کردارەکان</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-slate-800/60">
+                    <tbody className="divide-y divide-white/[0.04]">
                       {filteredTrucks.length === 0 ? (
                         <tr>
-                          <td colSpan={6} className="py-12 text-center text-slate-500">
+                          <td colSpan={6} className="py-10 text-center text-neutral-500">
                             هیچ بارهەڵگرێک بۆ ئەم مامەڵەیە تۆمار نەکراوە!
                           </td>
                         </tr>
                       ) : (
                         filteredTrucks.map((truck) => {
                           return (
-                            <tr key={truck.id} className="hover:bg-[#121a2f]/60 transition-colors group">
-                              <td className="py-3.5 px-4">
-                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#12192b] border border-amber-500/25 font-mono font-bold text-amber-300 text-xs shadow-inner">
-                                  <Truck className="w-3.5 h-3.5 text-amber-400" />
+                            <tr key={truck.id} className="hover:bg-white/[0.02] transition-colors">
+                              <td className="py-3 px-4 whitespace-nowrap">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/[0.05] border border-white/10 font-mono font-bold text-white text-xs">
+                                  <Truck className="w-3.5 h-3.5 text-neutral-400" />
                                   <span>{truck.plateNumber}</span>
                                 </div>
                                 {truck.notes && (
-                                  <div className="text-[10px] text-slate-500 mt-1 max-w-xs truncate">
+                                  <div className="text-[10px] text-neutral-500 mt-1 max-w-xs truncate">
                                     {truck.notes}
                                   </div>
                                 )}
                               </td>
 
-                              <td className="py-3.5 px-4">
+                              <td className="py-3 px-4 whitespace-nowrap">
                                 <div className="font-semibold text-white flex items-center gap-1.5">
-                                  <User className="w-3.5 h-3.5 text-slate-400" />
+                                  <User className="w-3.5 h-3.5 text-neutral-400" />
                                   <span>{truck.driverName}</span>
                                 </div>
                               </td>
 
-                              <td className="py-3.5 px-4 font-bold text-amber-300 font-numeric text-sm">
+                              <td className="py-3 px-4 font-bold text-white font-numeric text-sm whitespace-nowrap">
                                 {formatNumber(truck.tonsCarried)} تۆن
                               </td>
 
-                              <td className="py-3.5 px-4 text-slate-300">
+                              <td className="py-3 px-4 text-neutral-300 whitespace-nowrap">
                                 {truck.destination ? (
                                   <div className="flex items-center gap-1.5">
-                                    <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                    <MapPin className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                                     <span>{truck.destination}</span>
                                   </div>
                                 ) : (
-                                  <span className="text-slate-500">—</span>
+                                  <span className="text-neutral-500">—</span>
                                 )}
                               </td>
 
-                              <td className="py-3.5 px-4 text-slate-400 font-numeric">
+                              <td className="py-3 px-4 text-neutral-400 font-numeric whitespace-nowrap">
                                 {truck.dispatchDate}
                               </td>
 
-                              <td className="py-3.5 px-4 text-center">
+                              <td className="py-3 px-4 text-center whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-1.5">
                                   <button
                                     onClick={() => handleOpenEditTruck(truck)}
-                                    className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                                    className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
                                     title="دەستکاریکردن"
                                   >
                                     <Edit2 className="w-3.5 h-3.5" />
@@ -1091,15 +1082,15 @@ ${
                     </tbody>
                     {filteredTrucks.length > 0 && (
                       <tfoot>
-                        <tr className="bg-[#0e1526] font-bold border-t-2 border-amber-500/20 text-slate-200">
-                          <td className="py-3.5 px-4 text-amber-400">کۆی گشتی ({filteredTrucks.length} بارهەڵگر)</td>
-                          <td className="py-3.5 px-4 text-slate-400">—</td>
-                          <td className="py-3.5 px-4 text-amber-300 font-numeric text-sm">
+                        <tr className="bg-[#050505] font-bold border-t border-white/10 text-neutral-300">
+                          <td className="py-3 px-4 text-white">کۆی گشتی ({filteredTrucks.length} بارهەڵگر)</td>
+                          <td className="py-3 px-4 text-neutral-500">—</td>
+                          <td className="py-3 px-4 text-white font-numeric text-sm">
                             {formatNumber(filteredTrucks.reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0))} تۆن
                           </td>
-                          <td className="py-3.5 px-4 text-slate-400">—</td>
-                          <td className="py-3.5 px-4 text-slate-400">—</td>
-                          <td className="py-3.5 px-4 text-center text-slate-400">—</td>
+                          <td className="py-3 px-4 text-neutral-500">—</td>
+                          <td className="py-3 px-4 text-neutral-500">—</td>
+                          <td className="py-3 px-4 text-center text-neutral-500">—</td>
                         </tr>
                       </tfoot>
                     )}
@@ -1119,34 +1110,34 @@ ${
           <button
             type="button"
             onClick={() => setIsExpenseSectionOpen(!isExpenseSectionOpen)}
-            className="w-full p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-[#170e17] via-[#120f1c] to-[#0e1220] border border-rose-500/25 hover:border-amber-400/50 shadow-xl shadow-black/60 hover:shadow-rose-500/10 flex items-center justify-between gap-4 transition-all duration-300 group cursor-pointer"
+            className="w-full p-4 sm:p-5 rounded-2xl bg-[#0f1115] hover:bg-[#14171d] border border-white/[0.08] hover:border-white/20 shadow-md flex items-center justify-between gap-4 transition-colors cursor-pointer"
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-rose-500/20 via-pink-500/10 to-transparent border border-rose-500/30 text-rose-400 flex items-center justify-center shrink-0 shadow-lg shadow-rose-500/10 group-hover:scale-105 transition-transform">
-                <Scale className="w-6 h-6" />
+              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 flex items-center justify-center shrink-0">
+                <Scale className="w-5 h-5" />
               </div>
               <div className="text-right">
-                <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-amber-300 transition-colors flex items-center gap-2">
+                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
                   <span>خەرجییەکانی ئێران و عێراق و حیساباتی شەراکەت (Expenses & Waterfall)</span>
                 </h3>
-                <p className="text-xs text-slate-400 mt-0.5">
+                <p className="text-xs text-neutral-400 mt-0.5">
                   تێچووی گواستنەوەی ئێران و ترانزێت + گومرگ و خەرجی ناوخۆی عێراق و دابەشکردنی قازانج
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#1c121e] border border-rose-500/30 text-rose-300 font-numeric font-bold text-xs shadow-inner">
+              <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#050505] border border-white/10 text-neutral-300 font-numeric font-medium text-xs">
                 <span>کۆی گشتی: {formatUSD(totalOperatingExpenses)}</span>
-                <span className="text-slate-600">|</span>
-                <span className="text-amber-400 text-[11px]">🇮🇷 {formatUSD(totalIranSpending)}</span>
-                <span className="text-emerald-400 text-[11px]">🇮🇶 {formatUSD(totalIraqSpending)}</span>
+                <span className="text-neutral-600">|</span>
+                <span className="text-neutral-300 text-[11px]">🇮🇷 {formatUSD(totalIranSpending)}</span>
+                <span className="text-neutral-300 text-[11px]">🇮🇶 {formatUSD(totalIraqSpending)}</span>
               </span>
 
-              <div className="w-9 h-9 rounded-xl bg-slate-900/90 border border-slate-700/80 flex items-center justify-center text-slate-400 group-hover:text-amber-300 group-hover:border-amber-500/40 transition-all">
+              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-neutral-400">
                 <ChevronDown
-                  className={`w-4 h-4 transition-transform duration-300 ${
-                    isExpenseSectionOpen ? 'rotate-180 text-amber-400' : ''
+                  className={`w-4 h-4 transition-transform duration-200 ${
+                    isExpenseSectionOpen ? 'rotate-180 text-white' : ''
                   }`}
                 />
               </div>
@@ -1161,23 +1152,23 @@ ${
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              transition={{ duration: 0.25 }}
+              transition={{ duration: 0.2 }}
               className="overflow-hidden space-y-4 pt-1"
             >
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
                 {/* Cost Iran Side & Cost Iraq Side (2 Cols) */}
                 <div className="lg:col-span-2 space-y-4">
-                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-5 rounded-3xl bg-[#0c1220]/90 border border-amber-500/25 shadow-xl backdrop-blur-xl">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 sm:p-5 rounded-2xl bg-[#0f1115] border border-white/[0.08] shadow-md">
                     <div className="flex items-center gap-3">
-                      <div className="p-2.5 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 shadow-sm">
-                        <Scale className="w-5 h-5" />
+                      <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+                        <Scale className="w-4 h-4" />
                       </div>
                       <div>
-                        <h3 className="text-base sm:text-lg font-bold text-white">
+                        <h3 className="text-base font-bold text-white">
                           خەرجییەکانی ئێران و عێراق (Iran & Iraq Expenses)
                         </h3>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          تێچووی گواستنەوەی ئێران و ترانزێت + گومرگ و خەرجی ناوخۆی عێراق بۆ ئەم مامەڵەیە
+                        <p className="text-xs text-neutral-400 mt-0.5">
+                          تێچووی گواستنەوەی ئێران و ترانزێت + گومرگ و خەرجی ناوخۆی عێراق
                         </p>
                       </div>
                     </div>
@@ -1185,21 +1176,21 @@ ${
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleOpenAddExpense('iran')}
-                        className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/40 text-amber-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
+                        className="px-3 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                         <span>+ خەرجی ئێران</span>
                       </button>
                       <button
                         onClick={() => handleOpenAddExpense('iraq')}
-                        className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 border border-emerald-500/40 text-emerald-300 text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
+                        className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
                       >
-                        <Plus className="w-3.5 h-3.5" />
+                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                         <span>+ خەرجی عێراق</span>
                       </button>
                       <button
                         onClick={() => setIsExpenseSectionOpen(false)}
-                        className="px-3 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer border border-slate-700/80"
+                        className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer border border-white/10"
                         title="داخستنی بەشەکە"
                       >
                         <ChevronUp className="w-4 h-4" />
@@ -1208,35 +1199,35 @@ ${
                     </div>
                   </div>
 
-                  {/* Region Tabs (Sleek Segmented Control) */}
-                  <div className="flex items-center justify-between p-1.5 bg-[#0a0f1d] rounded-2xl border border-slate-800 text-xs shadow-inner">
-                    <div className="flex items-center gap-1.5">
+                  {/* Region Tabs (Minimalist Segmented Control) */}
+                  <div className="flex items-center justify-between p-1 bg-[#050505] rounded-xl border border-white/[0.08] text-xs">
+                    <div className="flex items-center gap-1">
                       <button
                         onClick={() => setActiveExpenseTab('all')}
-                        className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer font-semibold ${
+                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
                           activeExpenseTab === 'all'
-                            ? 'bg-[#151e33] text-white shadow-md border border-slate-700/80'
-                            : 'text-slate-400 hover:text-white'
+                            ? 'bg-white/10 text-white font-bold border border-white/15'
+                            : 'text-neutral-400 hover:text-white'
                         }`}
                       >
                         هەموو خەرجییەکان ({formatUSD(totalOperatingExpenses)})
                       </button>
                       <button
                         onClick={() => setActiveExpenseTab('iran')}
-                        className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer font-semibold ${
+                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
                           activeExpenseTab === 'iran'
-                            ? 'bg-amber-500/20 text-amber-300 font-bold border border-amber-500/35 shadow-sm'
-                            : 'text-slate-400 hover:text-amber-300'
+                            ? 'bg-white/10 text-white font-bold border border-white/15'
+                            : 'text-neutral-400 hover:text-white'
                         }`}
                       >
                         🇮🇷 لقی ئێران ({formatUSD(totalIranSpending)})
                       </button>
                       <button
                         onClick={() => setActiveExpenseTab('iraq')}
-                        className={`px-3.5 py-2 rounded-xl transition-all cursor-pointer font-semibold ${
+                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
                           activeExpenseTab === 'iraq'
-                            ? 'bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/35 shadow-sm'
-                            : 'text-slate-400 hover:text-emerald-300'
+                            ? 'bg-white/10 text-white font-bold border border-white/15'
+                            : 'text-neutral-400 hover:text-white'
                         }`}
                       >
                         🇮🇶 لقی عێراق ({formatUSD(totalIraqSpending)})
@@ -1245,71 +1236,71 @@ ${
                   </div>
 
                   {/* Expenses Table */}
-                  <div className="bg-[#0b101c] rounded-2xl border border-slate-800/80 overflow-hidden shadow-2xl">
+                  <div className="bg-[#0f1115] rounded-2xl border border-white/[0.08] overflow-hidden shadow-sm">
                     <div className="overflow-x-auto">
                       <table className="w-full text-right text-xs">
                         <thead>
-                          <tr className="bg-[#0e1526] border-b border-slate-800 text-slate-400">
-                            <th className="py-3.5 px-4 font-semibold">خەرجی (لق)</th>
-                            <th className="py-3.5 px-4 font-semibold">بڕ بە دۆلار ($)</th>
-                            <th className="py-3.5 px-4 font-semibold">بەروار</th>
-                            <th className="py-3.5 px-4 font-semibold">دراوە لەلایەن</th>
-                            <th className="py-3.5 px-4 font-semibold text-center">کردارەکان</th>
+                          <tr className="bg-[#050505] border-b border-white/[0.08] text-neutral-400">
+                            <th className="py-3 px-4 font-semibold whitespace-nowrap">خەرجی (لق)</th>
+                            <th className="py-3 px-4 font-semibold whitespace-nowrap">بڕ بە دۆلار ($)</th>
+                            <th className="py-3 px-4 font-semibold whitespace-nowrap">بەروار</th>
+                            <th className="py-3 px-4 font-semibold whitespace-nowrap">دراوە لەلایەن</th>
+                            <th className="py-3 px-4 font-semibold text-center whitespace-nowrap">کردارەکان</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-800/60">
+                        <tbody className="divide-y divide-white/[0.04]">
                           {filteredExpenses.length === 0 ? (
                             <tr>
-                              <td colSpan={5} className="py-12 text-center text-slate-500">
+                              <td colSpan={5} className="py-10 text-center text-neutral-500">
                                 هیچ خەرجییەک بۆ ئەم بەشە تۆمار نەکراوە!
                               </td>
                             </tr>
                           ) : (
                             filteredExpenses.map((expense) => {
                               return (
-                                <tr key={expense.id} className="hover:bg-[#121a2f]/60 transition-colors group">
-                                  <td className="py-3.5 px-4">
+                                <tr key={expense.id} className="hover:bg-white/[0.02] transition-colors">
+                                  <td className="py-3 px-4">
                                     <div className="font-semibold text-white flex items-center gap-1.5">
                                       <span className="text-base">{expense.region === 'iran' ? '🇮🇷' : '🇮🇶'}</span>
                                       <span>{expense.title || (expense.region === 'iran' ? 'خەرجی ئێران' : 'خەرجی عێراق')}</span>
                                     </div>
                                     {expense.region === 'iran' && expense.amountLocal ? (
-                                      <div className="text-[10px] text-amber-300 font-numeric mt-1 flex items-center gap-1.5 flex-wrap">
-                                        <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/20 font-bold">
+                                      <div className="text-[10px] text-neutral-300 font-numeric mt-1 flex items-center gap-1.5 flex-wrap">
+                                        <span className="px-1.5 py-0.5 rounded bg-white/[0.05] border border-white/10 font-bold">
                                           {formatNumber(expense.amountLocal)} تمەن
                                         </span>
                                         {expense.exchangeRate ? (
-                                          <span className="text-slate-400">
+                                          <span className="text-neutral-400">
                                             (صەرف: {formatNumber(expense.exchangeRate)})
                                           </span>
                                         ) : null}
                                       </div>
                                     ) : null}
                                     {expense.region === 'iraq' && expense.amountLocal ? (
-                                      <div className="text-[10px] text-emerald-300 font-numeric mt-1">
+                                      <div className="text-[10px] text-neutral-300 font-numeric mt-1">
                                         {formatNumber(expense.amountLocal)} دینار
                                       </div>
                                     ) : null}
                                     {expense.notes && (
-                                      <div className="text-[10px] text-slate-400 mt-1">
+                                      <div className="text-[10px] text-neutral-400 mt-1">
                                         {expense.notes}
                                       </div>
                                     )}
                                   </td>
-                                  <td className="py-3.5 px-4 font-bold text-rose-300 font-numeric text-sm">
+                                  <td className="py-3 px-4 font-bold text-white font-numeric text-sm whitespace-nowrap">
                                     {formatUSD(expense.amountUSD)}
                                   </td>
-                                  <td className="py-3.5 px-4 text-slate-400 font-numeric">
+                                  <td className="py-3 px-4 text-neutral-400 font-numeric whitespace-nowrap">
                                     {expense.date}
                                   </td>
-                                  <td className="py-3.5 px-4">
+                                  <td className="py-3 px-4 whitespace-nowrap">
                                     <span
-                                      className={`px-2.5 py-1 rounded-full text-[10px] font-semibold ${
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-medium border ${
                                         expense.paidBy === 'partner'
-                                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                          ? 'bg-white/10 text-neutral-200 border-white/20'
                                           : expense.paidBy === 'me'
-                                          ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                                          : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'
+                                          ? 'bg-white/[0.05] text-neutral-300 border-white/10'
+                                          : 'bg-white/[0.05] text-neutral-300 border-white/10'
                                       }`}
                                     >
                                       {expense.paidBy === 'partner'
@@ -1319,11 +1310,11 @@ ${
                                         : 'هاوبەش'}
                                     </span>
                                   </td>
-                                  <td className="py-3.5 px-4 text-center">
+                                  <td className="py-3 px-4 text-center whitespace-nowrap">
                                     <div className="flex items-center justify-center gap-1.5">
                                       <button
                                         onClick={() => handleOpenEditExpense(expense)}
-                                        className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                                        className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
                                         title="دەستکاریکردن"
                                       >
                                         <Edit2 className="w-3.5 h-3.5" />
@@ -1347,62 +1338,62 @@ ${
                   </div>
                 </div>
 
-                {/* Calculate with Partner Waterfall (1 Col - Stripe SaaS Style) */}
+                {/* Calculate with Partner Waterfall (1 Col - Minimalist Dark) */}
                 <div className="space-y-4">
-                  <div className="p-6 rounded-3xl bg-[#0c1220]/95 border border-amber-500/30 space-y-5 shadow-2xl relative overflow-hidden backdrop-blur-2xl">
-                    <div className="flex items-center justify-between pb-3 border-b border-amber-500/20">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/35 flex items-center justify-center text-amber-400 shadow-md">
-                          {hasPartner ? <Split className="w-5 h-5" /> : <UserCheck className="w-5 h-5" />}
+                  <div className="p-5 rounded-2xl bg-[#0f1115] border border-white/[0.08] space-y-4 shadow-sm">
+                    <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-9 h-9 rounded-xl bg-white/[0.04] border border-white/10 flex items-center justify-center text-neutral-300">
+                          {hasPartner ? <Split className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
                         </div>
                         <div>
-                          <h4 className="text-base font-bold text-white">
+                          <h4 className="text-sm font-bold text-white">
                             {hasPartner ? 'حیساباتی شەراکەت' : 'حیساباتی مامەڵەی سەربەخۆ'}
                           </h4>
-                          <p className="text-xs text-slate-400">
+                          <p className="text-[11px] text-neutral-400">
                             {hasPartner ? 'Partner Profit Sharing' : 'Solo Transaction (No Partner)'}
                           </p>
                         </div>
                       </div>
 
                       {hasPartner ? (
-                        <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/35 font-numeric">
+                        <span className="px-2 py-0.5 rounded-full text-xs font-semibold bg-white/10 text-neutral-200 border border-white/15 font-numeric">
                           %{partnerPercent} / %{myPercent}
                         </span>
                       ) : (
-                        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800 text-slate-300 border border-slate-700 font-numeric">
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-white/[0.06] text-neutral-300 border border-white/10 font-numeric">
                           ١٠٠٪ بۆ من
                         </span>
                       )}
                     </div>
 
                     {/* Waterfall Breakdown */}
-                    <div className="space-y-2.5 text-xs">
+                    <div className="space-y-2 text-xs">
                       <div className="flex justify-between items-center py-1">
-                        <span className="text-slate-400">کۆی داهاتی فرۆش ({totalCargoTons} تۆن):</span>
+                        <span className="text-neutral-400">کۆی داهاتی فرۆش ({totalCargoTons} تۆن):</span>
                         <span className="font-bold text-white font-numeric">{formatUSD(expectedTotalRevenue)}</span>
                       </div>
 
-                      <div className="flex justify-between items-center py-1 text-rose-400">
+                      <div className="flex justify-between items-center py-1 text-neutral-300">
                         <span>- تێچووی کڕین لە {config.originCountry}:</span>
-                        <span className="font-bold font-numeric">-{formatUSD(totalBuyingCost)}</span>
+                        <span className="font-bold font-numeric text-rose-400">-{formatUSD(totalBuyingCost)}</span>
                       </div>
 
-                      <div className="flex justify-between items-center py-1 text-rose-400">
+                      <div className="flex justify-between items-center py-1 text-neutral-300">
                         <span>- خەرجییەکانی گواستنەوەی ئێران:</span>
-                        <span className="font-bold font-numeric">-{formatUSD(totalIranSpending)}</span>
+                        <span className="font-bold font-numeric text-rose-400">-{formatUSD(totalIranSpending)}</span>
                       </div>
 
-                      <div className="flex justify-between items-center py-1 text-rose-400">
+                      <div className="flex justify-between items-center py-1 text-neutral-300">
                         <span>- خەرجییەکانی ناوخۆی عێراق:</span>
-                        <span className="font-bold font-numeric">-{formatUSD(totalIraqSpending)}</span>
+                        <span className="font-bold font-numeric text-rose-400">-{formatUSD(totalIraqSpending)}</span>
                       </div>
 
-                      <div className="h-[1px] bg-amber-500/20 my-2" />
+                      <div className="h-[1px] bg-white/[0.08] my-2" />
 
-                      <div className="flex justify-between items-center py-1 text-sm font-black">
-                        <span className="text-amber-400">قازانجی پوختەی ماوە:</span>
-                        <span className={`${sellPricePerTon > 0 ? (finalNetProfit >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-amber-400'} font-numeric`}>
+                      <div className="flex justify-between items-center py-1 text-sm font-bold">
+                        <span className="text-white">قازانجی پوختەی ماوە:</span>
+                        <span className={`${sellPricePerTon > 0 ? (finalNetProfit >= 0 ? 'text-emerald-400' : 'text-rose-400') : 'text-white'} font-numeric`}>
                           {sellPricePerTon > 0 ? formatUSD(finalNetProfit) : 'چاوەڕوانی فرۆشتن'}
                         </span>
                       </div>
@@ -1411,48 +1402,48 @@ ${
                     {/* Split Breakdown / Partner details */}
                     {hasPartner ? (
                       <>
-                        <div className="p-4 rounded-2xl bg-[#080d17] border border-slate-800 space-y-3 shadow-inner">
+                        <div className="p-3.5 rounded-xl bg-[#050505] border border-white/[0.08] space-y-2.5">
                           <div className="flex justify-between items-center text-xs">
                             <div>
                               <div className="font-bold text-white">{config.partnerName || 'هاوبەش'}</div>
-                              <div className="text-[11px] text-slate-400 font-numeric">پشکی قازانج (%{partnerPercent})</div>
+                              <div className="text-[11px] text-neutral-400 font-numeric">پشکی قازانج (%{partnerPercent})</div>
                             </div>
                             <div className="text-right">
-                              <div className="font-black text-amber-300 font-numeric text-sm">
+                              <div className="font-bold text-white font-numeric text-sm">
                                 {sellPricePerTon > 0 ? formatUSD(partnerProfitShare) : 'چاوەڕوانی فرۆشتن'}
                               </div>
                             </div>
                           </div>
 
-                          <div className="h-[1px] bg-slate-800" />
+                          <div className="h-[1px] bg-white/[0.06]" />
 
                           <div className="flex justify-between items-center text-xs">
                             <div>
                               <div className="font-bold text-white">پشکی من (My Share)</div>
-                              <div className="text-[11px] text-slate-400 font-numeric">پشکی قازانج (%{myPercent})</div>
+                              <div className="text-[11px] text-neutral-400 font-numeric">پشکی قازانج (%{myPercent})</div>
                             </div>
                             <div className="text-right">
-                              <div className="font-black text-amber-300 font-numeric text-sm">
+                              <div className="font-bold text-white font-numeric text-sm">
                                 {sellPricePerTon > 0 ? formatUSD(myProfitShare) : 'چاوەڕوانی فرۆشتن'}
                               </div>
                             </div>
                           </div>
                         </div>
 
-                        <div className="p-3.5 rounded-xl bg-[#080d17]/80 border border-slate-800 text-[11px] space-y-2">
-                          <div className="text-slate-400 font-semibold flex items-center justify-between">
+                        <div className="p-3 rounded-xl bg-[#050505] border border-white/[0.08] text-[11px] space-y-2">
+                          <div className="text-neutral-400 font-medium flex items-center justify-between">
                             <span>خەرجی دراو لەلایەن هاوبەش:</span>
                             <span className="text-white font-numeric font-bold">{formatUSD(expensesPaidByPartner)}</span>
                           </div>
-                          <div className="text-slate-400 font-semibold flex items-center justify-between">
+                          <div className="text-neutral-400 font-medium flex items-center justify-between">
                             <span>خەرجی دراو لەلایەن من:</span>
                             <span className="text-white font-numeric font-bold">{formatUSD(expensesPaidByMe)}</span>
                           </div>
 
-                          <div className="h-[1px] bg-slate-800 my-1" />
+                          <div className="h-[1px] bg-white/[0.06] my-1" />
 
                           <div className="flex items-center justify-between font-bold text-xs pt-1">
-                            <span className="text-amber-400">کۆی شایستەی هاوبەش:</span>
+                            <span className="text-white">کۆی شایستەی هاوبەش:</span>
                             <span className="text-emerald-400 font-numeric">
                               {sellPricePerTon > 0 ? formatUSD(netDueToPartner) : formatUSD(expensesPaidByPartner)}
                             </span>
@@ -1460,11 +1451,11 @@ ${
                         </div>
                       </>
                     ) : (
-                      <div className="p-4 rounded-2xl bg-[#080d17] border border-slate-800 text-center space-y-2">
-                        <p className="text-xs text-slate-300">
+                      <div className="p-4 rounded-xl bg-[#050505] border border-white/[0.08] text-center space-y-2">
+                        <p className="text-xs text-neutral-400">
                           ئەم مامەڵەیە شەراکەتی تێدانییە و تەواوی قازانجی پوخت بۆ خۆت پاشەکەوت دەبێت.
                         </p>
-                        <div className="text-xl font-black text-emerald-400 font-numeric">
+                        <div className="text-xl font-bold text-white font-numeric">
                           {formatUSD(myProfitShare)}
                         </div>
                         <button
@@ -1475,7 +1466,7 @@ ${
                             });
                             setIsEditTransactionModalOpen(true);
                           }}
-                          className="text-xs text-amber-400 hover:underline cursor-pointer pt-1"
+                          className="text-xs text-neutral-300 hover:text-white underline cursor-pointer pt-1"
                         >
                           + زیادکردنی شەراکەت بۆ ئەم مامەڵەیە
                         </button>
@@ -1483,10 +1474,10 @@ ${
                     )}
 
                     {/* Quick Actions */}
-                    <div className="space-y-2 pt-2">
+                    <div className="space-y-2 pt-1">
                       <button
                         onClick={handleCopySummary}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-md cursor-pointer"
+                        className="w-full flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold shadow-sm cursor-pointer transition-colors"
                       >
                         <Copy className="w-4 h-4" />
                         <span>{copiedSummary ? 'کۆپیکرا بۆ کلیپبۆرد!' : 'کۆپیکردنی پوختەی ئەم مامەڵەیە'}</span>
@@ -1515,25 +1506,25 @@ ${
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              className="relative w-full max-w-lg bg-[#0e111a] border border-amber-500/30 rounded-3xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-5">
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                    <Sparkles className="w-5 h-5" />
+                  <div className="p-2 rounded-xl bg-white/[0.05] text-white border border-white/10">
+                    <Sparkles className="w-4 h-4" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white">دروستکردنی مامەڵەی نوێ</h3>
-                    <p className="text-xs text-slate-400">دیاریکردنی ناو، نرخەکانی کڕین، فرۆشتن و شەراکەت</p>
+                    <p className="text-xs text-neutral-400">دیاریکردنی ناو، نرخەکانی کڕین، فرۆشتن و شەراکەت</p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setIsNewTransactionModalOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1542,7 +1533,7 @@ ${
               <form onSubmit={handleCreateTransaction} className="space-y-4 text-xs">
                 {/* 1. Transaction Name (Mandatory) */}
                 <div>
-                  <label className="block text-slate-200 font-bold mb-1">
+                  <label className="block text-neutral-200 font-bold mb-1">
                     ناوی مامەڵە (Transaction Name) <span className="text-rose-400">*</span>
                   </label>
                   <input
@@ -1554,16 +1545,16 @@ ${
                     onChange={(e) =>
                       setNewTransactionForm({ ...newTransactionForm, name: e.target.value })
                     }
-                    className="w-full bg-slate-900 border border-amber-500/50 rounded-xl px-3.5 py-2.5 text-white font-semibold placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full bg-[#050505] border border-white/15 rounded-xl px-3.5 py-2.5 text-white font-semibold placeholder-neutral-500 focus:outline-none focus:border-white/35"
                   />
                 </div>
 
                 {/* 2. Buying Details */}
-                <div className="pt-2 border-t border-slate-800">
-                  <span className="font-bold text-amber-300 block mb-2">زانیاری کڕین (Buying Details):</span>
+                <div className="pt-2 border-t border-white/[0.08]">
+                  <span className="font-bold text-neutral-200 block mb-2">زانیاری کڕین (Buying Details):</span>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
-                      <label className="block text-slate-300 font-medium mb-1">بڕی بار بە تۆن</label>
+                      <label className="block text-neutral-300 font-medium mb-1">بڕی بار بە تۆن</label>
                       <input
                         type="number"
                         step="any"
@@ -1572,11 +1563,11 @@ ${
                         onChange={(e) =>
                           setNewTransactionForm({ ...newTransactionForm, totalTons: e.target.value })
                         }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 font-numeric focus:outline-none focus:border-white/30"
                       />
                     </div>
                     <div>
-                      <label className="block text-slate-300 font-medium mb-1">نرخی کڕین ($/تۆن)</label>
+                      <label className="block text-neutral-300 font-medium mb-1">نرخی کڕین ($/تۆن)</label>
                       <input
                         type="number"
                         step="any"
@@ -1588,18 +1579,18 @@ ${
                             buyPricePerTonUSD: e.target.value,
                           })
                         }
-                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 font-numeric focus:outline-none focus:border-white/30"
                       />
                     </div>
                   </div>
                 </div>
 
                 {/* 3. Selling Informations */}
-                <div className="pt-2 border-t border-slate-800">
-                  <span className="font-bold text-emerald-300 block mb-2">زانیاری فرۆشتن (Selling Informations):</span>
+                <div className="pt-2 border-t border-white/[0.08]">
+                  <span className="font-bold text-neutral-200 block mb-2">زانیاری فرۆشتن (Selling Informations):</span>
                   <div>
-                    <label className="block text-slate-300 font-medium mb-1">
-                      نرخی فرۆشتن ($/تۆن) <span className="text-slate-400 font-normal text-[11px]">(ئارەزوومەندانە / Optional)</span>
+                    <label className="block text-neutral-300 font-medium mb-1">
+                      نرخی فرۆشتن ($/تۆن) <span className="text-neutral-500 font-normal text-[11px]">(ئارەزوومەندانە / Optional)</span>
                     </label>
                     <input
                       type="number"
@@ -1612,17 +1603,17 @@ ${
                           sellingPricePerTonUSD: e.target.value,
                         })
                       }
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 font-numeric focus:outline-none focus:border-white/30"
                     />
                   </div>
                 </div>
 
                 {/* 4. Partner Calculation if any */}
-                <div className="pt-2 border-t border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <div className="pt-2 border-t border-white/[0.08] space-y-3">
+                  <div className="flex items-center justify-between bg-[#050505] p-3 rounded-xl border border-white/[0.08]">
                     <div>
                       <span className="font-bold text-white block">حیساباتی شەراکەت (Partner Calculation)</span>
-                      <span className="text-[11px] text-slate-400">ئایا ئەم مامەڵەیە شەراکەت/هاوبەشی تێدایە؟</span>
+                      <span className="text-[11px] text-neutral-400">ئایا ئەم مامەڵەیە شەراکەت/هاوبەشی تێدایە؟</span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -1633,14 +1624,14 @@ ${
                         }
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500 cursor-pointer" />
+                      <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white after:peer-checked:bg-black cursor-pointer" />
                     </label>
                   </div>
 
                   {newTransactionForm.hasPartner && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-900/40 border border-amber-500/20">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-[#050505] border border-white/10">
                       <div>
-                        <label className="block text-slate-300 font-medium mb-1">ناوی هاوبەش / شەریک</label>
+                        <label className="block text-neutral-300 font-medium mb-1">ناوی هاوبەش / شەریک</label>
                         <input
                           type="text"
                           placeholder="ناوی هاوبەش بنووسە..."
@@ -1651,11 +1642,11 @@ ${
                               partnerName: e.target.value,
                             })
                           }
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                          className="w-full bg-[#0f1115] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 font-medium mb-1">
+                        <label className="block text-neutral-300 font-medium mb-1">
                           ڕێژەی پشکی هاوبەش (%): {newTransactionForm.partnerSharePercent || 50}%
                         </label>
                         <input
@@ -1669,24 +1660,24 @@ ${
                               partnerSharePercent: e.target.value,
                             })
                           }
-                          className="w-full accent-amber-500 cursor-pointer mt-2"
+                          className="w-full accent-white cursor-pointer mt-2"
                         />
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
                   <button
                     type="button"
                     onClick={() => setIsNewTransactionModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 font-medium transition-colors cursor-pointer border border-white/[0.08]"
                   >
                     پەشیمانبوونەوە
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl btn-gold font-bold text-slate-950 shadow-md cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold transition-colors shadow-sm cursor-pointer"
                   >
                     دروستکردن و تۆمارکردن
                   </button>
@@ -1712,25 +1703,25 @@ ${
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              className="relative w-full max-w-lg bg-[#0e111a] border border-amber-500/30 rounded-3xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-5">
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                    <Settings className="w-5 h-5" />
+                  <div className="p-2 rounded-xl bg-white/[0.05] text-white border border-white/10">
+                    <Settings className="w-4 h-4" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white">دەستکاریکردنی ئەم مامەڵەیە</h3>
-                    <p className="text-xs text-slate-400">ناوی مامەڵە، نرخەکان و شەراکەت</p>
+                    <p className="text-xs text-neutral-400">ناوی مامەڵە، نرخەکان و شەراکەت</p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setIsEditTransactionModalOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1739,20 +1730,20 @@ ${
               <form onSubmit={handleSaveEditTransaction} className="space-y-4 text-xs">
                 {/* Transaction Name */}
                 <div>
-                  <label className="block text-slate-200 font-bold mb-1">ناوی مامەڵە</label>
+                  <label className="block text-neutral-200 font-bold mb-1">ناوی مامەڵە</label>
                   <input
                     type="text"
                     required
                     value={editTransactionName}
                     onChange={(e) => setEditTransactionName(e.target.value)}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full bg-[#050505] border border-white/15 rounded-xl px-3 py-2 text-white font-semibold focus:outline-none focus:border-white/35"
                   />
                 </div>
 
                 {/* Tons & Buy Price */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">بڕ بە تۆن</label>
+                    <label className="block text-neutral-300 font-semibold mb-1">بڕ بە تۆن</label>
                     <input
                       type="number"
                       required
@@ -1763,11 +1754,11 @@ ${
                           totalTons: Number(e.target.value),
                         })
                       }
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:border-white/30"
                     />
                   </div>
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">نرخی کڕین ($/تۆن)</label>
+                    <label className="block text-neutral-300 font-semibold mb-1">نرخی کڕین ($/تۆن)</label>
                     <input
                       type="number"
                       required
@@ -1778,15 +1769,15 @@ ${
                           buyPricePerTonUSD: Number(e.target.value),
                         })
                       }
-                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:border-white/30"
                     />
                   </div>
                 </div>
 
                 {/* Sell Price (Optional) */}
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">
-                    نرخی فرۆشتن ($/تۆن) <span className="text-slate-400 font-normal text-[11px]">(ئارەزوومەندانە / Optional)</span>
+                  <label className="block text-neutral-300 font-semibold mb-1">
+                    نرخی فرۆشتن ($/تۆن) <span className="text-neutral-500 font-normal text-[11px]">(ئارەزوومەندانە / Optional)</span>
                   </label>
                   <input
                     type="number"
@@ -1799,16 +1790,16 @@ ${
                         sellingPricePerTonUSD: Number(e.target.value) || 0,
                       })
                     }
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white font-numeric placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white font-numeric placeholder-neutral-500 focus:outline-none focus:border-white/30"
                   />
                 </div>
 
                 {/* Partner Settings */}
-                <div className="pt-2 border-t border-slate-800 space-y-3">
-                  <div className="flex items-center justify-between bg-slate-900/80 p-3 rounded-xl border border-slate-800">
+                <div className="pt-2 border-t border-white/[0.08] space-y-3">
+                  <div className="flex items-center justify-between bg-[#050505] p-3 rounded-xl border border-white/[0.08]">
                     <div>
                       <span className="font-bold text-white block">حیساباتی شەراکەت</span>
-                      <span className="text-[11px] text-slate-400">ئایا شەراکەتی تێدایە؟</span>
+                      <span className="text-[11px] text-neutral-400">ئایا شەراکەتی تێدایە؟</span>
                     </div>
                     <label className="relative inline-flex items-center cursor-pointer">
                       <input
@@ -1822,14 +1813,14 @@ ${
                         }
                         className="sr-only peer"
                       />
-                      <div className="w-11 h-6 bg-slate-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500" />
+                      <div className="w-11 h-6 bg-neutral-800 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-white after:peer-checked:bg-black" />
                     </label>
                   </div>
 
                   {editTransactionForm.hasPartner !== false && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-slate-900/40 border border-amber-500/20">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-[#050505] border border-white/10">
                       <div>
-                        <label className="block text-slate-300 font-medium mb-1">ناوی هاوبەش</label>
+                        <label className="block text-neutral-300 font-medium mb-1">ناوی هاوبەش</label>
                         <input
                           type="text"
                           value={editTransactionForm.partnerName}
@@ -1839,11 +1830,11 @@ ${
                               partnerName: e.target.value,
                             })
                           }
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                          className="w-full bg-[#0f1115] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-white/30"
                         />
                       </div>
                       <div>
-                        <label className="block text-slate-300 font-medium mb-1">
+                        <label className="block text-neutral-300 font-medium mb-1">
                           ڕێژەی پشکی هاوبەش (%): {editTransactionForm.partnerSharePercent}%
                         </label>
                         <input
@@ -1857,24 +1848,24 @@ ${
                               partnerSharePercent: Number(e.target.value),
                             })
                           }
-                          className="w-full accent-amber-500 cursor-pointer mt-2"
+                          className="w-full accent-white cursor-pointer mt-2"
                         />
                       </div>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
                   <button
                     type="button"
                     onClick={() => setIsEditTransactionModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 font-medium transition-colors cursor-pointer border border-white/[0.08]"
                   >
                     پەشیمانبوونەوە
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl btn-gold font-bold text-slate-950 shadow-md cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold transition-colors shadow-sm cursor-pointer"
                   >
                     پاشەکەوتکردن
                   </button>
@@ -1900,27 +1891,27 @@ ${
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              className="relative w-full max-w-lg bg-[#0e111a] border border-amber-500/30 rounded-3xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-5">
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                    <Truck className="w-5 h-5" />
+                  <div className="p-2 rounded-xl bg-white/[0.05] text-white border border-white/10">
+                    <Truck className="w-4 h-4" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white">
                       {editingTruck ? 'دەستکاریکردنی بارهەڵگر' : 'زیادکردنی بارهەڵگری نوێ'}
                     </h3>
-                    <p className="text-xs text-slate-400">بۆ مامەڵەی: {activeTransaction.name}</p>
+                    <p className="text-xs text-neutral-400">بۆ مامەڵەی: {activeTransaction.name}</p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setIsTruckModalOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1930,7 +1921,7 @@ ${
                 {/* Plate & Driver */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
+                    <label className="block text-neutral-300 font-semibold mb-1">
                       ژمارەی تابلۆی بارهەڵگر <span className="text-rose-400">*</span>
                     </label>
                     <input
@@ -1939,12 +1930,12 @@ ${
                       placeholder="نموونە: ایران 23 / 789 ب 12"
                       value={truckForm.plateNumber}
                       onChange={(e) => setTruckForm({ ...truckForm, plateNumber: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
+                    <label className="block text-neutral-300 font-semibold mb-1">
                       ناوی شۆفێر <span className="text-rose-400">*</span>
                     </label>
                     <input
@@ -1953,7 +1944,7 @@ ${
                       placeholder="ناوی تەواوی شۆفێر"
                       value={truckForm.driverName}
                       onChange={(e) => setTruckForm({ ...truckForm, driverName: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
                     />
                   </div>
                 </div>
@@ -1961,7 +1952,7 @@ ${
                 {/* Tons & Destination */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
+                    <label className="block text-neutral-300 font-semibold mb-1">
                       بڕی بار بە تۆن <span className="text-rose-400">*</span>
                     </label>
                     <input
@@ -1971,58 +1962,58 @@ ${
                       placeholder="نموونە: 25.5"
                       value={truckForm.tonsCarried}
                       onChange={(e) => setTruckForm({ ...truckForm, tonsCarried: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 font-numeric focus:outline-none focus:border-white/30"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      شوێنی گەیندن / مەبەست <span className="text-slate-400 font-normal text-[11px]">(ئارەزوومەندانە / Optional)</span>
+                    <label className="block text-neutral-300 font-semibold mb-1">
+                      شوێنی گەیندن / مەبەست <span className="text-neutral-500 font-normal text-[11px]">(ئارەزوومەندانە)</span>
                     </label>
                     <input
                       type="text"
                       placeholder="نموونە: سلێمانی - کۆگای سەرەکی عەلوە"
                       value={truckForm.destination}
                       onChange={(e) => setTruckForm({ ...truckForm, destination: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
                     />
                   </div>
                 </div>
 
                 {/* Dispatch Date */}
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">بەرواری بارکردن / دەرچوون</label>
+                  <label className="block text-neutral-300 font-semibold mb-1">بەرواری بارکردن / دەرچوون</label>
                   <input
                     type="date"
                     value={truckForm.dispatchDate}
                     onChange={(e) => setTruckForm({ ...truckForm, dispatchDate: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:border-white/30"
                   />
                 </div>
 
                 {/* Notes */}
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">تێبینی</label>
+                  <label className="block text-neutral-300 font-semibold mb-1">تێبینی</label>
                   <textarea
                     rows={2}
                     placeholder="کوالیتی بار، دۆخی پشکنین، هتد..."
                     value={truckForm.notes}
                     onChange={(e) => setTruckForm({ ...truckForm, notes: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
                   <button
                     type="button"
                     onClick={() => setIsTruckModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 font-medium transition-colors cursor-pointer border border-white/[0.08]"
                   >
                     پەشیمانبوونەوە
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl btn-gold font-bold text-slate-950 shadow-md cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold transition-colors shadow-sm cursor-pointer"
                   >
                     {editingTruck ? 'پاشەکەوتکردنی گۆڕانکاری' : 'زیادکردنی بارهەڵگر'}
                   </button>
@@ -2048,34 +2039,30 @@ ${
             />
 
             <motion.div
-              initial={{ scale: 0.95, opacity: 0, y: 15 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.95, opacity: 0, y: 15 }}
-              className="relative w-full max-w-lg bg-[#0e111a] border border-amber-500/30 rounded-3xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              initial={{ scale: 0.98, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
             >
-              <div className="flex items-center justify-between pb-4 border-b border-amber-500/20 mb-5">
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30">
-                    <Scale className="w-5 h-5" />
+                  <div className="p-2 rounded-xl bg-white/[0.05] text-white border border-white/10">
+                    <Scale className="w-4 h-4" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <span>{editingExpense ? 'دەستکاریکردنی مەسروف' : 'تۆمارکردنی خەرجی نوێ'}</span>
-                      <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
-                        expenseForm.region === 'iran'
-                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
-                          : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      }`}>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-white/10 text-neutral-300 border border-white/15">
                         {expenseForm.region === 'iran' ? '🇮🇷 لقی ئێران' : '🇮🇶 لقی عێراق'}
                       </span>
                     </h3>
-                    <p className="text-xs text-slate-400">بۆ مامەڵەی: {activeTransaction.name}</p>
+                    <p className="text-xs text-neutral-400">بۆ مامەڵەی: {activeTransaction.name}</p>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setIsExpenseModalOpen(false)}
-                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  className="p-2 rounded-xl text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -2085,34 +2072,34 @@ ${
                 {/* Amount Inputs */}
                 {expenseForm.region === 'iran' ? (
                   /* IRAN EXPENSE: Toman & Exchange Rate Calculator */
-                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3.5">
+                  <div className="p-4 rounded-xl bg-[#050505] border border-white/10 space-y-3.5">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <span className="text-base">🇮🇷</span>
-                        <span className="font-bold text-amber-300 text-xs">
+                        <span className="font-bold text-white text-xs">
                           خەرجی بە دراوی تمەن و گۆڕینەوە بۆ دۆلار
                         </span>
                       </div>
-                      <span className="text-[11px] text-amber-400 font-numeric font-medium">
-                        بڕی تمەن ÷ صەرف = $ دۆلار
+                      <span className="text-[11px] text-neutral-400 font-numeric">
+                        تمەن ÷ صەرف = $ دۆلار
                       </span>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                       {/* 1. Toman Amount */}
                       <div>
-                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
-                          بڕی خەرجی بە تمەن (تۆمەن) <span className="text-amber-400">*</span>
+                        <label className="block text-neutral-300 font-semibold mb-1 text-[11px]">
+                          بڕی خەرجی بە تمەن <span className="text-rose-400">*</span>
                         </label>
                         <input
                           type="number"
                           placeholder="نموونە: 500000000"
                           value={expenseForm.amountLocal}
                           onChange={(e) => handleTomanCalculation(e.target.value, expenseForm.exchangeRate)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                          className="w-full bg-[#0f1115] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 font-numeric focus:outline-none focus:border-white/30"
                         />
                         {expenseForm.amountLocal && Number(expenseForm.amountLocal) > 0 && (
-                          <div className="text-[10px] text-amber-300 mt-1 font-numeric">
+                          <div className="text-[10px] text-neutral-300 mt-1 font-numeric">
                             {formatNumber(Number(expenseForm.amountLocal))} تمەن
                           </div>
                         )}
@@ -2120,18 +2107,18 @@ ${
 
                       {/* 2. Exchange Rate per $1 */}
                       <div>
-                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
-                          نرخی ١ دۆلار بە تمەن (صەرف) <span className="text-amber-400">*</span>
+                        <label className="block text-neutral-300 font-semibold mb-1 text-[11px]">
+                          نرخی ١ دۆلار بە تمەن (صەرف) <span className="text-rose-400">*</span>
                         </label>
                         <input
                           type="number"
                           placeholder="نموونە: 265000"
                           value={expenseForm.exchangeRate}
                           onChange={(e) => handleTomanCalculation(expenseForm.amountLocal, e.target.value)}
-                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                          className="w-full bg-[#0f1115] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 font-numeric focus:outline-none focus:border-white/30"
                         />
                         {expenseForm.exchangeRate && Number(expenseForm.exchangeRate) > 0 && (
-                          <div className="text-[10px] text-slate-400 mt-1 font-numeric">
+                          <div className="text-[10px] text-neutral-400 mt-1 font-numeric">
                             $1 = {formatNumber(Number(expenseForm.exchangeRate))} تمەن
                           </div>
                         )}
@@ -2139,13 +2126,13 @@ ${
                     </div>
 
                     {/* Result: Dollar USD */}
-                    <div className="pt-2 border-t border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div className="pt-2 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
                       <div>
-                        <label className="block text-amber-300 font-bold mb-0.5 text-xs">
+                        <label className="block text-white font-bold mb-0.5 text-xs">
                           کۆی خەرجی بە دۆلار ($ USD) <span className="text-rose-400">*</span>
                         </label>
-                        <p className="text-[10px] text-slate-400">
-                          بە خۆکاری حیسابکراوە، دەتوانیت دەستکاریشی بکەیت
+                        <p className="text-[10px] text-neutral-400">
+                          بە خۆکاری حیسابکراوە
                         </p>
                       </div>
 
@@ -2159,7 +2146,7 @@ ${
                                 amountUSD: Math.round(Number(prev.amountUSD)).toString(),
                               }))
                             }
-                            className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold cursor-pointer transition-colors"
+                            className="px-2.5 py-1.5 rounded-lg bg-white/10 hover:bg-white/15 text-white border border-white/15 text-[11px] font-semibold cursor-pointer transition-colors"
                             title="گردکردنەوە بۆ ژمارەی تەواو"
                           >
                             گردکردنەوە: ${Math.round(Number(expenseForm.amountUSD))}
@@ -2173,9 +2160,9 @@ ${
                             placeholder="1887"
                             value={expenseForm.amountUSD}
                             onChange={(e) => setExpenseForm({ ...expenseForm, amountUSD: e.target.value })}
-                            className="w-full bg-slate-900 border-2 border-amber-500/60 rounded-xl px-3 py-2 text-amber-300 font-black font-numeric text-base focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                            className="w-full bg-[#0f1115] border border-white/20 rounded-xl px-3 py-2 text-white font-bold font-numeric text-base focus:outline-none focus:border-white/40"
                           />
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400 font-bold text-xs">$</span>
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 font-bold text-xs">$</span>
                         </div>
                       </div>
                     </div>
@@ -2183,7 +2170,7 @@ ${
                 ) : (
                   /* IRAQ EXPENSE: Amount USD */
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
+                    <label className="block text-neutral-300 font-semibold mb-1">
                       بڕ بە دۆلار ($ USD) <span className="text-rose-400">*</span>
                     </label>
                     <input
@@ -2193,7 +2180,7 @@ ${
                       placeholder="نموونە: 650"
                       value={expenseForm.amountUSD}
                       onChange={(e) => setExpenseForm({ ...expenseForm, amountUSD: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 font-numeric focus:outline-none focus:border-white/30"
                     />
                   </div>
                 )}
@@ -2201,7 +2188,7 @@ ${
                 {/* Paid By & Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">دراوە لەلایەن کێ؟</label>
+                    <label className="block text-neutral-300 font-semibold mb-1">دراوە لەلایەن کێ؟</label>
                     <select
                       value={expenseForm.paidBy}
                       onChange={(e) =>
@@ -2210,7 +2197,7 @@ ${
                           paidBy: e.target.value as 'me' | 'partner' | 'shared',
                         })
                       }
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white focus:outline-none focus:ring-2 focus:ring-amber-500/50 cursor-pointer"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none focus:border-white/30 cursor-pointer"
                     >
                       <option value="me">لەلایەن منەوە (من داومە)</option>
                       <option value="partner">لەلایەن شەریکەوە (هاوبەش داویەتی)</option>
@@ -2219,39 +2206,39 @@ ${
                   </div>
 
                   <div>
-                    <label className="block text-slate-300 font-semibold mb-1">بەروار</label>
+                    <label className="block text-neutral-300 font-semibold mb-1">بەروار</label>
                     <input
                       type="date"
                       value={expenseForm.date}
                       onChange={(e) => setExpenseForm({ ...expenseForm, date: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white font-numeric focus:outline-none focus:border-white/30"
                     />
                   </div>
                 </div>
 
                 {/* Notes */}
                 <div>
-                  <label className="block text-slate-300 font-semibold mb-1">تێبینی یان ژمارەی وەسڵ</label>
+                  <label className="block text-neutral-300 font-semibold mb-1">تێبینی یان ژمارەی وەسڵ</label>
                   <textarea
                     rows={2}
                     placeholder="ژمارەی پسوولەی فەرمی..."
                     value={expenseForm.notes}
                     onChange={(e) => setExpenseForm({ ...expenseForm, notes: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                    className="w-full bg-[#050505] border border-white/10 rounded-xl px-3 py-2 text-white placeholder-neutral-500 focus:outline-none focus:border-white/30"
                   />
                 </div>
 
-                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
+                <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-white/[0.08]">
                   <button
                     type="button"
                     onClick={() => setIsExpenseModalOpen(false)}
-                    className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold transition-colors cursor-pointer"
+                    className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 font-medium transition-colors cursor-pointer border border-white/[0.08]"
                   >
                     پەشیمانبوونەوە
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl btn-gold font-bold text-slate-950 shadow-md cursor-pointer"
+                    className="px-5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold transition-colors shadow-sm cursor-pointer"
                   >
                     {editingExpense ? 'پاشەکەوتکردن' : 'تۆمارکردنی خەرجی'}
                   </button>
@@ -2276,30 +2263,30 @@ ${
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm bg-[#0e111a] border border-rose-500/30 rounded-2xl p-5 shadow-2xl z-10 text-center space-y-4"
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="relative w-full max-w-sm bg-[#0f1115] border border-white/10 rounded-2xl p-5 shadow-2xl z-10 text-center space-y-4"
             >
-              <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mx-auto flex items-center justify-center">
-                <Trash2 className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 mx-auto flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="text-base font-bold text-white">سڕینەوەی ئەم مامەڵەیە؟</h4>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   ئایا دڵنیایت لە سڕینەوەی مامەڵەی <strong className="text-white">{transactionToDelete.name}</strong>؟ سەرجەم بارهەڵگرەکان و خەرجییەکانی ئەم وەجبەیە دەسڕدرێنەوە.
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 pt-2">
                 <button
                   onClick={() => setTransactionToDelete(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 text-xs font-semibold border border-white/[0.08]"
                 >
                   نەخێر، پەشیمانم
                 </button>
                 <button
                   onClick={() => handleDeleteTransaction(transactionToDelete.id)}
-                  className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg"
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md"
                 >
                   بەڵێ، بیسڕەوە
                 </button>
@@ -2321,30 +2308,30 @@ ${
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm bg-[#0e111a] border border-rose-500/30 rounded-2xl p-5 shadow-2xl z-10 text-center space-y-4"
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="relative w-full max-w-sm bg-[#0f1115] border border-white/10 rounded-2xl p-5 shadow-2xl z-10 text-center space-y-4"
             >
-              <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mx-auto flex items-center justify-center">
-                <Trash2 className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 mx-auto flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="text-base font-bold text-white">سڕینەوەی بارهەڵگر؟</h4>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   ئایا دڵنیایت لە سڕینەوەی بارهەڵگری <strong className="text-white">{truckToDelete.plateNumber}</strong> بە بڕی {truckToDelete.tonsCarried} تۆن؟
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 pt-2">
                 <button
                   onClick={() => setTruckToDelete(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 text-xs font-semibold border border-white/[0.08]"
                 >
                   نەخێر
                 </button>
                 <button
                   onClick={() => handleDeleteTruck(truckToDelete.id)}
-                  className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg"
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md"
                 >
                   بەڵێ، بیسڕەوە
                 </button>
@@ -2366,30 +2353,30 @@ ${
               className="fixed inset-0 bg-black/80 backdrop-blur-sm"
             />
             <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
+              initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="relative w-full max-w-sm bg-[#0e111a] border border-rose-500/30 rounded-2xl p-5 shadow-2xl z-10 text-center space-y-4"
+              exit={{ scale: 0.98, opacity: 0 }}
+              className="relative w-full max-w-sm bg-[#0f1115] border border-white/10 rounded-2xl p-5 shadow-2xl z-10 text-center space-y-4"
             >
-              <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 mx-auto flex items-center justify-center">
-                <Trash2 className="w-6 h-6" />
+              <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-400 mx-auto flex items-center justify-center">
+                <Trash2 className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="text-base font-bold text-white">سڕینەوەی مەسروف؟</h4>
-                <p className="text-xs text-slate-400 mt-1">
+                <p className="text-xs text-neutral-400 mt-1">
                   ئایا دڵنیایت لە سڕینەوەی خەرجی <strong className="text-white">{expenseToDelete.notes || expenseToDelete.title || (expenseToDelete.region === 'iran' ? 'خەرجی لقی ئێران' : 'خەرجی لقی عێراق')}</strong> بە بڕی {formatUSD(expenseToDelete.amountUSD)}؟
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 pt-2">
                 <button
                   onClick={() => setExpenseToDelete(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 text-slate-300 text-xs font-semibold"
+                  className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 text-xs font-semibold border border-white/[0.08]"
                 >
                   نەخێر
                 </button>
                 <button
                   onClick={() => handleDeleteExpense(expenseToDelete.id)}
-                  className="px-4 py-2 rounded-xl bg-rose-500 hover:bg-rose-600 text-white text-xs font-bold shadow-lg"
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md"
                 >
                   بەڵێ، بیسڕەوە
                 </button>
