@@ -14,7 +14,7 @@ export const BottomNav: React.FC = () => {
     return (
       <nav
         aria-label="خوارەوەی پەڕە - گەڕانەوە بۆ داشبۆرد"
-        className="fixed bottom-0 inset-x-0 z-40 bg-[#0f1115]/95 backdrop-blur-xl border-t border-white/[0.08] shadow-2xl py-2.5 select-none"
+        className="fixed bottom-0 inset-x-0 z-40 bg-[#0f1115]/95 backdrop-blur-xl border-t border-white/[0.08] shadow-2xl py-2 select-none"
       >
         <div className="w-full max-w-md mx-auto px-4 flex items-center justify-center">
           <button
@@ -60,11 +60,11 @@ export const BottomNav: React.FC = () => {
   return (
     <nav
       aria-label="خوارەوەی پەڕە - پێڕستی سەرەکی"
-      className="fixed bottom-0 inset-x-0 z-40 bg-[#0f1115]/95 backdrop-blur-xl border-t border-white/[0.08] shadow-2xl py-2.5 select-none"
+      className="fixed bottom-0 inset-x-0 z-40 bg-[#0f1115]/95 backdrop-blur-xl border-t border-white/[0.08] shadow-2xl py-2 select-none"
     >
-      <div className="w-full max-w-2xl mx-auto px-4 flex items-center justify-center">
-        {/* Navigation Items */}
-        <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
+      <div className="w-full max-w-lg mx-auto px-2 sm:px-4">
+        {/* Navigation Items: Strictly 1 Single Row (No Wrapping) */}
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 w-full">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
@@ -73,7 +73,7 @@ export const BottomNav: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center justify-center gap-2 px-3.5 sm:px-5 py-2 rounded-xl transition-colors duration-150 cursor-pointer shrink-0 ${
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-2 rounded-xl transition-colors duration-150 cursor-pointer min-w-0 ${
                   isActive
                     ? 'bg-white/10 text-white border border-white/20 font-bold shadow-sm'
                     : 'text-neutral-400 hover:text-white hover:bg-white/[0.04] border border-transparent font-medium'
@@ -92,8 +92,9 @@ export const BottomNav: React.FC = () => {
                   )}
                 </div>
 
-                <span className="text-xs sm:text-sm whitespace-nowrap">
-                  {item.label}
+                <span className="text-xs sm:text-sm whitespace-nowrap truncate">
+                  <span className="sm:hidden">{item.shortLabel}</span>
+                  <span className="hidden sm:inline">{item.label}</span>
                 </span>
               </button>
             );
