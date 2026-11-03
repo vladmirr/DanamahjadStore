@@ -26,6 +26,7 @@ import {
   Split,
   ShieldCheck,
   ChevronDown,
+  ChevronUp,
   Sparkles,
   Layers,
   ArrowRightLeft,
@@ -68,7 +69,7 @@ export const PopcornManagement: React.FC = () => {
 
   // Filters & Tabs for Active Transaction
   const [truckSearch, setTruckSearch] = useState<string>('');
-  const [truckStatusFilter, setTruckStatusFilter] = useState<'all' | 'delivered' | 'in_transit' | 'at_border'>('all');
+  const [isTruckSectionOpen, setIsTruckSectionOpen] = useState<boolean>(false);
   const [activeExpenseTab, setActiveExpenseTab] = useState<'all' | 'iran' | 'iraq'>('all');
 
   // Modals State
@@ -876,159 +877,203 @@ ${
       </div>
 
       {/* ====================================================
-          2. TRUCK & TRANSPORT INFORMATION TABLE (لقی بارهەڵگرەکان)
+          2. TRUCK & TRANSPORT MANAGEMENT (COLLAPSIBLE SECTION)
           ==================================================== */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400">
-                <Truck className="w-5 h-5" />
-              </div>
-              <div>
-                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
-                  <span>زانیاری بارهەڵگرەکان (Truck Information)</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-slate-700 font-numeric">
-                    {trucks.length} بارهەڵگر ({totalTonsCarried} لە {totalCargoTons} تۆن)
-                  </span>
-                </h3>
-                <p className="text-xs text-slate-400">
-                  تۆمارکردن و بەدواداچوونی وردی بارهەڵگرەکانی ئەم مامەڵەیە لە ئێرانەوە بۆ سلێمانی
-                </p>
-              </div>
-            </div>
-          </div>
-
+        <div className="flex items-center justify-between">
           <button
-            onClick={handleOpenAddTruck}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-md cursor-pointer shrink-0"
+            type="button"
+            onClick={() => setIsTruckSectionOpen(!isTruckSectionOpen)}
+            className="w-full sm:w-auto px-5 py-2.5 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-md flex items-center justify-between sm:justify-start gap-3 cursor-pointer hover:scale-[1.01] transition-transform"
           >
-            <Plus className="w-4 h-4" />
-            <span>زیادکردنی بارهەڵگر بۆ ئەم مامەڵەیە</span>
+            <div className="flex items-center gap-2">
+              <Plus className="w-4 h-4" />
+              <span>زیادکردنی بارهەڵگر بۆ ئەم مامەڵەیە</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="px-2 py-0.5 rounded-full bg-slate-950/20 text-slate-950 font-numeric font-extrabold text-[11px]">
+                {trucks.length} بارهەڵگر ({totalTonsCarried} تۆن)
+              </span>
+              {isTruckSectionOpen ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </div>
           </button>
         </div>
 
-        {/* Filter and Search Bar */}
-        <div className="p-3.5 rounded-2xl glass-card border border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">
-          <div className="relative w-full md:w-80">
-            <input
-              type="text"
-              value={truckSearch}
-              onChange={(e) => setTruckSearch(e.target.value)}
-              placeholder="گەڕان بەپێی تابلۆ، ناوی شۆفێر یان شوێن..."
-              className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 pr-10"
-            />
-            <Search className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2" />
-          </div>
+        {/* Expandable Section Content */}
+        <AnimatePresence>
+          {isTruckSectionOpen && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.2 }}
+              className="overflow-hidden space-y-4 pt-1"
+            >
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-2xl glass-card border border-amber-500/25">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-400">
+                    <Truck className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                      <span>زانیاری بارهەڵگرەکان (Truck Information)</span>
+                      <span className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-amber-400 border border-slate-700 font-numeric">
+                        {trucks.length} بارهەڵگر ({totalTonsCarried} لە {totalCargoTons} تۆن)
+                      </span>
+                    </h3>
+                    <p className="text-xs text-slate-400">
+                      تۆمارکردن و بەدواداچوونی وردی بارهەڵگرەکانی ئەم مامەڵەیە لە ئێرانەوە بۆ سلێمانی
+                    </p>
+                  </div>
+                </div>
 
-          <div className="text-xs text-slate-400 font-medium">
-            کۆی گشتی تۆمارکراو: <span className="text-amber-400 font-bold font-numeric">{trucks.length}</span> بارهەڵگر ({totalTonsCarried} تۆن)
-          </div>
-        </div>
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={handleOpenAddTruck}
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-1.5 px-4 py-2 rounded-xl btn-gold text-xs font-bold text-slate-950 shadow-md cursor-pointer hover:scale-105 transition-transform"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>+ فۆڕمی بارهەڵگری نوێ</span>
+                  </button>
+                  <button
+                    onClick={() => setIsTruckSectionOpen(false)}
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+                    title="داخستنی بەشەکە"
+                  >
+                    <ChevronUp className="w-4 h-4" />
+                    <span>داخستن</span>
+                  </button>
+                </div>
+              </div>
 
-        {/* Truck Table */}
-        <div className="glass-card rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
-          <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
-              <thead>
-                <tr className="bg-slate-900/90 border-b border-slate-800 text-slate-400">
-                  <th className="py-3.5 px-4 font-semibold">ژمارەی تابلۆی بارهەڵگر</th>
-                  <th className="py-3.5 px-4 font-semibold">ناوی شۆفێر</th>
-                  <th className="py-3.5 px-4 font-semibold">بڕی بار بە تۆن</th>
-                  <th className="py-3.5 px-4 font-semibold">شوێنی گەیندن / مەبەست</th>
-                  <th className="py-3.5 px-4 font-semibold">بەرواری بارکردن</th>
-                  <th className="py-3.5 px-4 font-semibold text-center">کردارەکان</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800/60">
-                {filteredTrucks.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
-                      هیچ بارهەڵگرێک بۆ ئەم مامەڵەیە تۆمار نەکراوە!
-                    </td>
-                  </tr>
-                ) : (
-                  filteredTrucks.map((truck) => {
-                    return (
-                      <tr key={truck.id} className="hover:bg-slate-800/40 transition-colors group">
-                        <td className="py-3.5 px-4">
-                          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 font-mono font-bold text-amber-300 text-xs shadow-inner">
-                            <Truck className="w-3.5 h-3.5 text-amber-400" />
-                            <span>{truck.plateNumber}</span>
-                          </div>
-                          {truck.notes && (
-                            <div className="text-[10px] text-slate-500 mt-1 max-w-xs truncate">
-                              {truck.notes}
-                            </div>
-                          )}
-                        </td>
+              {/* Filter and Search Bar */}
+              <div className="p-3.5 rounded-2xl glass-card border border-slate-800 flex flex-col md:flex-row gap-3 items-center justify-between">
+                <div className="relative w-full md:w-80">
+                  <input
+                    type="text"
+                    value={truckSearch}
+                    onChange={(e) => setTruckSearch(e.target.value)}
+                    placeholder="گەڕان بەپێی تابلۆ، ناوی شۆفێر یان شوێن..."
+                    className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 pr-10"
+                  />
+                  <Search className="w-4 h-4 text-slate-500 absolute right-3 top-1/2 -translate-y-1/2" />
+                </div>
 
-                        <td className="py-3.5 px-4">
-                          <div className="font-semibold text-white flex items-center gap-1.5">
-                            <User className="w-3.5 h-3.5 text-slate-400" />
-                            <span>{truck.driverName}</span>
-                          </div>
-                        </td>
+                <div className="text-xs text-slate-400 font-medium">
+                  کۆی گشتی تۆمارکراو: <span className="text-amber-400 font-bold font-numeric">{trucks.length}</span> بارهەڵگر ({totalTonsCarried} تۆن)
+                </div>
+              </div>
 
-                        <td className="py-3.5 px-4 font-bold text-amber-300 font-numeric text-sm">
-                          {formatNumber(truck.tonsCarried)} تۆن
-                        </td>
-
-                        <td className="py-3.5 px-4 text-slate-300">
-                          {truck.destination ? (
-                            <div className="flex items-center gap-1.5">
-                              <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                              <span>{truck.destination}</span>
-                            </div>
-                          ) : (
-                            <span className="text-slate-500">—</span>
-                          )}
-                        </td>
-
-                        <td className="py-3.5 px-4 text-slate-400 font-numeric">
-                          {truck.dispatchDate}
-                        </td>
-
-                        <td className="py-3.5 px-4 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              onClick={() => handleOpenEditTruck(truck)}
-                              className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
-                              title="دەستکاریکردن"
-                            >
-                              <Edit2 className="w-3.5 h-3.5" />
-                            </button>
-                            <button
-                              onClick={() => setTruckToDelete(truck)}
-                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors cursor-pointer"
-                              title="سڕینەوە"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                        </td>
+              {/* Truck Table */}
+              <div className="glass-card rounded-2xl border border-slate-800 overflow-hidden shadow-xl">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-right text-xs">
+                    <thead>
+                      <tr className="bg-slate-900/90 border-b border-slate-800 text-slate-400">
+                        <th className="py-3.5 px-4 font-semibold">ژمارەی تابلۆی بارهەڵگر</th>
+                        <th className="py-3.5 px-4 font-semibold">ناوی شۆفێر</th>
+                        <th className="py-3.5 px-4 font-semibold">بڕی بار بە تۆن</th>
+                        <th className="py-3.5 px-4 font-semibold">شوێنی گەیندن / مەبەست</th>
+                        <th className="py-3.5 px-4 font-semibold">بەرواری بارکردن</th>
+                        <th className="py-3.5 px-4 font-semibold text-center">کردارەکان</th>
                       </tr>
-                    );
-                  })
-                )}
-              </tbody>
-              {filteredTrucks.length > 0 && (
-                <tfoot>
-                  <tr className="bg-slate-900/90 font-bold border-t-2 border-amber-500/20 text-slate-200">
-                    <td className="py-3 px-4 text-amber-400">کۆی گشتی ({filteredTrucks.length} بارهەڵگر)</td>
-                    <td className="py-3 px-4 text-slate-400">—</td>
-                    <td className="py-3 px-4 text-amber-300 font-numeric text-sm">
-                      {formatNumber(filteredTrucks.reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0))} تۆن
-                    </td>
-                    <td className="py-3 px-4 text-slate-400">—</td>
-                    <td className="py-3 px-4 text-slate-400">—</td>
-                    <td className="py-3 px-4 text-center text-slate-400">—</td>
-                  </tr>
-                </tfoot>
-              )}
-            </table>
-          </div>
-        </div>
+                    </thead>
+                    <tbody className="divide-y divide-slate-800/60">
+                      {filteredTrucks.length === 0 ? (
+                        <tr>
+                          <td colSpan={6} className="py-12 text-center text-slate-500">
+                            هیچ بارهەڵگرێک بۆ ئەم مامەڵەیە تۆمار نەکراوە!
+                          </td>
+                        </tr>
+                      ) : (
+                        filteredTrucks.map((truck) => {
+                          return (
+                            <tr key={truck.id} className="hover:bg-slate-800/40 transition-colors group">
+                              <td className="py-3.5 px-4">
+                                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 font-mono font-bold text-amber-300 text-xs shadow-inner">
+                                  <Truck className="w-3.5 h-3.5 text-amber-400" />
+                                  <span>{truck.plateNumber}</span>
+                                </div>
+                                {truck.notes && (
+                                  <div className="text-[10px] text-slate-500 mt-1 max-w-xs truncate">
+                                    {truck.notes}
+                                  </div>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4">
+                                <div className="font-semibold text-white flex items-center gap-1.5">
+                                  <User className="w-3.5 h-3.5 text-slate-400" />
+                                  <span>{truck.driverName}</span>
+                                </div>
+                              </td>
+
+                              <td className="py-3.5 px-4 font-bold text-amber-300 font-numeric text-sm">
+                                {formatNumber(truck.tonsCarried)} تۆن
+                              </td>
+
+                              <td className="py-3.5 px-4 text-slate-300">
+                                {truck.destination ? (
+                                  <div className="flex items-center gap-1.5">
+                                    <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                                    <span>{truck.destination}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-slate-500">—</span>
+                                )}
+                              </td>
+
+                              <td className="py-3.5 px-4 text-slate-400 font-numeric">
+                                {truck.dispatchDate}
+                              </td>
+
+                              <td className="py-3.5 px-4 text-center">
+                                <div className="flex items-center justify-center gap-1.5">
+                                  <button
+                                    onClick={() => handleOpenEditTruck(truck)}
+                                    className="p-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                                    title="دەستکاریکردن"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => setTruckToDelete(truck)}
+                                    className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors cursor-pointer"
+                                    title="سڕینەوە"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          );
+                        })
+                      )}
+                    </tbody>
+                    {filteredTrucks.length > 0 && (
+                      <tfoot>
+                        <tr className="bg-slate-900/90 font-bold border-t-2 border-amber-500/20 text-slate-200">
+                          <td className="py-3 px-4 text-amber-400">کۆی گشتی ({filteredTrucks.length} بارهەڵگر)</td>
+                          <td className="py-3 px-4 text-slate-400">—</td>
+                          <td className="py-3 px-4 text-amber-300 font-numeric text-sm">
+                            {formatNumber(filteredTrucks.reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0))} تۆن
+                          </td>
+                          <td className="py-3 px-4 text-slate-400">—</td>
+                          <td className="py-3 px-4 text-slate-400">—</td>
+                          <td className="py-3 px-4 text-center text-slate-400">—</td>
+                        </tr>
+                      </tfoot>
+                    )}
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ====================================================
