@@ -34,7 +34,8 @@ export interface PopcornExpense {
   title?: string; // ناونیشانی خەرجی (ئارەزوومەندانە)
   category?: string; // پۆلێن (ئارەزوومەندانە)
   amountUSD: number; // بڕ بە دۆلار ($)
-  amountLocal?: number; // بڕ بە دراوی ناوخۆ (تمەن یان دینار)
+  amountLocal?: number; // بڕ بە دراوی ناوخۆ (تمەن بۆ ئێران، دینار بۆ عێراق)
+  exchangeRate?: number; // نرخی گۆڕینەوە (وەک: 265000 تمەن بۆ $1)
   date: string; // بەروار
   paidBy: 'me' | 'partner' | 'shared'; // کێ پارەکەی داوە
   notes?: string; // تێبینی

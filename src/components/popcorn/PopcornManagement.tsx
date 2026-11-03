@@ -130,6 +130,7 @@ export const PopcornManagement: React.FC = () => {
     category: '',
     amountUSD: '',
     amountLocal: '',
+    exchangeRate: '',
     date: new Date().toISOString().split('T')[0],
     paidBy: 'me' as 'me' | 'partner' | 'shared',
     notes: '',
@@ -464,6 +465,27 @@ export const PopcornManagement: React.FC = () => {
   // ----------------------------------------------------
   // EXPENSE HANDLERS
   // ----------------------------------------------------
+  const handleTomanCalculation = (tomanVal: string, rateVal: string) => {
+    const toman = Number(tomanVal) || 0;
+    const rate = Number(rateVal) || 0;
+    if (toman > 0 && rate > 0) {
+      const calculatedUSD = toman / rate;
+      const formatted = Math.round(calculatedUSD * 100) / 100;
+      setExpenseForm((prev) => ({
+        ...prev,
+        amountLocal: tomanVal,
+        exchangeRate: rateVal,
+        amountUSD: formatted.toString(),
+      }));
+    } else {
+      setExpenseForm((prev) => ({
+        ...prev,
+        amountLocal: tomanVal,
+        exchangeRate: rateVal,
+      }));
+    }
+  };
+
   const handleOpenAddExpense = (defaultRegion?: 'iran' | 'iraq') => {
     setEditingExpense(null);
     setExpenseForm({
@@ -472,6 +494,7 @@ export const PopcornManagement: React.FC = () => {
       category: '',
       amountUSD: '',
       amountLocal: '',
+      exchangeRate: '',
       date: new Date().toISOString().split('T')[0],
       paidBy: 'me',
       notes: '',
@@ -487,6 +510,7 @@ export const PopcornManagement: React.FC = () => {
       category: expense.category || '',
       amountUSD: String(expense.amountUSD),
       amountLocal: expense.amountLocal ? String(expense.amountLocal) : '',
+      exchangeRate: expense.exchangeRate ? String(expense.exchangeRate) : '',
       date: expense.date,
       paidBy: expense.paidBy,
       notes: expense.notes || '',
@@ -503,6 +527,7 @@ export const PopcornManagement: React.FC = () => {
 
     const usd = Number(expenseForm.amountUSD) || 0;
     const local = expenseForm.amountLocal ? Number(expenseForm.amountLocal) : undefined;
+    const exRate = expenseForm.exchangeRate ? Number(expenseForm.exchangeRate) : undefined;
 
     updateActiveTransaction((current) => {
       let updatedExpenses: PopcornExpense[];
@@ -516,6 +541,7 @@ export const PopcornManagement: React.FC = () => {
                 category: expenseForm.category?.trim() || '',
                 amountUSD: usd,
                 amountLocal: local,
+                exchangeRate: exRate,
                 date: expenseForm.date,
                 paidBy: expenseForm.paidBy,
                 notes: expenseForm.notes.trim() || undefined,
@@ -530,6 +556,7 @@ export const PopcornManagement: React.FC = () => {
           category: expenseForm.category?.trim() || '',
           amountUSD: usd,
           amountLocal: local,
+          exchangeRate: exRate,
           date: expenseForm.date,
           paidBy: expenseForm.paidBy,
           notes: expenseForm.notes.trim() || undefined,
@@ -1221,6 +1248,21 @@ ${
                               <span className="text-base">{expense.region === 'iran' ? '🇮🇷' : '🇮🇶'}</span>
                               <span>{expense.title || (expense.region === 'iran' ? 'خەرجی ئێران' : 'خەرجی عێراق')}</span>
                             </div>
+                            {expense.region === 'iran' && expense.amountLocal ? (
+                              <div className="text-[10px] text-amber-300 font-numeric mt-0.5 flex items-center gap-1.5 flex-wrap">
+                                <span>{formatNumber(expense.amountLocal)} تمەن</span>
+                                {expense.exchangeRate ? (
+                                  <span className="text-slate-400">
+                                    (صەرف: {formatNumber(expense.exchangeRate)})
+                                  </span>
+                                ) : null}
+                              </div>
+                            ) : null}
+                            {expense.region === 'iraq' && expense.amountLocal ? (
+                              <div className="text-[10px] text-emerald-300 font-numeric mt-0.5">
+                                {formatNumber(expense.amountLocal)} دینار
+                              </div>
+                            ) : null}
                             {expense.notes && (
                               <div className="text-[10px] text-slate-400 mt-0.5">
                                 {expense.notes}
@@ -2013,36 +2055,136 @@ ${
               </div>
 
               <form onSubmit={handleSaveExpense} className="space-y-4 text-xs">
-                {/* Amount USD & Local */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      بڕ بە دۆلار ($ USD) <span className="text-rose-400">*</span>
-                    </label>
-                    <input
-                      type="number"
-                      step="any"
-                      required
-                      placeholder="نموونە: 650"
-                      value={expenseForm.amountUSD}
-                      onChange={(e) => setExpenseForm({ ...expenseForm, amountUSD: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
-                  </div>
+                {/* Amount Inputs */}
+                {expenseForm.region === 'iran' ? (
+                  /* IRAN EXPENSE: Toman & Exchange Rate Calculator */
+                  <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3.5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-base">🇮🇷</span>
+                        <span className="font-bold text-amber-300 text-xs">
+                          خەرجی بە دراوی تمەن و گۆڕینەوە بۆ دۆلار
+                        </span>
+                      </div>
+                      <span className="text-[11px] text-amber-400 font-numeric font-medium">
+                        بڕی تمەن ÷ صەرف = $ دۆلار
+                      </span>
+                    </div>
 
-                  <div>
-                    <label className="block text-slate-300 font-semibold mb-1">
-                      بڕ بە دراوی ناوخۆ (تمەن یان دینار)
-                    </label>
-                    <input
-                      type="number"
-                      placeholder="نموونە: 918000"
-                      value={expenseForm.amountLocal}
-                      onChange={(e) => setExpenseForm({ ...expenseForm, amountLocal: e.target.value })}
-                      className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
-                    />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* 1. Toman Amount */}
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                          بڕی خەرجی بە تمەن (تۆمەن) <span className="text-amber-400">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="نموونە: 500000000"
+                          value={expenseForm.amountLocal}
+                          onChange={(e) => handleTomanCalculation(e.target.value, expenseForm.exchangeRate)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        />
+                        {expenseForm.amountLocal && Number(expenseForm.amountLocal) > 0 && (
+                          <div className="text-[10px] text-amber-300 mt-1 font-numeric">
+                            {formatNumber(Number(expenseForm.amountLocal))} تمەن
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 2. Exchange Rate per $1 */}
+                      <div>
+                        <label className="block text-slate-300 font-semibold mb-1 text-[11px]">
+                          نرخی ١ دۆلار بە تمەن (صەرف) <span className="text-amber-400">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          placeholder="نموونە: 265000"
+                          value={expenseForm.exchangeRate}
+                          onChange={(e) => handleTomanCalculation(expenseForm.amountLocal, e.target.value)}
+                          className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                        />
+                        {expenseForm.exchangeRate && Number(expenseForm.exchangeRate) > 0 && (
+                          <div className="text-[10px] text-slate-400 mt-1 font-numeric">
+                            $1 = {formatNumber(Number(expenseForm.exchangeRate))} تمەن
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Result: Dollar USD */}
+                    <div className="pt-2 border-t border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                      <div>
+                        <label className="block text-amber-300 font-bold mb-0.5 text-xs">
+                          کۆی خەرجی بە دۆلار ($ USD) <span className="text-rose-400">*</span>
+                        </label>
+                        <p className="text-[10px] text-slate-400">
+                          بە خۆکاری حیسابکراوە، دەتوانیت دەستکاریشی بکەیت
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 w-full sm:w-auto">
+                        {expenseForm.amountUSD && !Number.isInteger(Number(expenseForm.amountUSD)) && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpenseForm((prev) => ({
+                                ...prev,
+                                amountUSD: Math.round(Number(prev.amountUSD)).toString(),
+                              }))
+                            }
+                            className="px-2.5 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40 text-[11px] font-bold cursor-pointer transition-colors"
+                            title="گردکردنەوە بۆ ژمارەی تەواو"
+                          >
+                            گردکردنەوە: ${Math.round(Number(expenseForm.amountUSD))}
+                          </button>
+                        )}
+                        <div className="relative flex-1 sm:w-36">
+                          <input
+                            type="number"
+                            step="any"
+                            required
+                            placeholder="1887"
+                            value={expenseForm.amountUSD}
+                            onChange={(e) => setExpenseForm({ ...expenseForm, amountUSD: e.target.value })}
+                            className="w-full bg-slate-900 border-2 border-amber-500/60 rounded-xl px-3 py-2 text-amber-300 font-black font-numeric text-base focus:outline-none focus:ring-2 focus:ring-amber-500 shadow-inner"
+                          />
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-amber-400 font-bold text-xs">$</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  /* IRAQ EXPENSE: Amount USD & IQD */
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-300 font-semibold mb-1">
+                        بڕ بە دۆلار ($ USD) <span className="text-rose-400">*</span>
+                      </label>
+                      <input
+                        type="number"
+                        step="any"
+                        required
+                        placeholder="نموونە: 650"
+                        value={expenseForm.amountUSD}
+                        onChange={(e) => setExpenseForm({ ...expenseForm, amountUSD: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-300 font-semibold mb-1">
+                        بڕ بە دیناری عێراقی (IQD)
+                      </label>
+                      <input
+                        type="number"
+                        placeholder="نموونە: 918000"
+                        value={expenseForm.amountLocal}
+                        onChange={(e) => setExpenseForm({ ...expenseForm, amountLocal: e.target.value })}
+                        className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-3 py-2 text-white placeholder-slate-500 font-numeric focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                      />
+                    </div>
+                  </div>
+                )}
 
                 {/* Paid By & Date */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

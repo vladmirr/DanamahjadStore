@@ -919,10 +919,13 @@ function renderSinglePopcornWorksheet(
   expenses.forEach((e) => {
     const regText = e.region === 'iran' ? '🇮🇷 ئێران' : '🇮🇶 عێراق';
     const payerText = e.paidBy === 'partner' ? 'شەریک / هاوبەش' : e.paidBy === 'me' ? 'لەلایەن منەوە' : 'هاوبەش';
+    const localText = e.amountLocal
+      ? `${Number(e.amountLocal).toLocaleString()} ${e.region === 'iran' ? 'تمەن' : 'دینار'}${e.exchangeRate ? ` (صەرف: ${Number(e.exchangeRate).toLocaleString()})` : ''}`
+      : '—';
     const r = ws.addRow([
       regText,
       Number(e.amountUSD) || 0,
-      e.amountLocal ? Number(e.amountLocal).toLocaleString() : '—',
+      localText,
       e.date,
       payerText,
       e.notes || '',
