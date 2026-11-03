@@ -45,3 +45,4 @@ export interface PopcornProjectData {
   expenses: PopcornExpense[];
   lastSyncedAt?: string;
 }
+
