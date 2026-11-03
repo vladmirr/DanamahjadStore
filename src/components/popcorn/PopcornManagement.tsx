@@ -696,34 +696,6 @@ export const PopcornManagement: React.FC = () => {
         </div>
       </div>
 
-      {/* Cargo Logistics Progress Bar */}
-      <div className="p-5 rounded-2xl glass-card border border-amber-500/20 flex flex-col md:flex-row items-center justify-between gap-4">
-        <div className="space-y-1 w-full md:w-auto">
-          <div className="flex items-center gap-2">
-            <Truck className="w-4 h-4 text-amber-400" />
-            <h4 className="text-sm font-bold text-white">
-              ڕەوشی بارکردن و گواستنەوەی ٢٠٠ تۆن دانەوێڵە
-            </h4>
-          </div>
-          <p className="text-xs text-slate-400">
-            تۆمارکراو لە ڕێگای بارهەڵگرەکان: <strong className="text-amber-300 font-numeric">{totalTonsCarried} تۆن</strong> لە کۆی <strong className="text-white font-numeric">{totalCargoTons} تۆن</strong> (ماوە: <strong className="text-rose-400 font-numeric">{remainingTonsToTransport} تۆن</strong>)
-          </p>
-        </div>
-
-        <div className="w-full md:w-72 space-y-1.5">
-          <div className="flex justify-between text-xs font-semibold">
-            <span className="text-slate-400">پێشکەوتنی گواستنەوە</span>
-            <span className="text-amber-400 font-numeric">{transportProgressPercent}%</span>
-          </div>
-          <div className="h-3 w-full bg-slate-900 rounded-full overflow-hidden p-0.5 border border-slate-700">
-            <div
-              className="h-full bg-gradient-to-r from-amber-500 to-yellow-400 rounded-full transition-all duration-500 shadow-md shadow-amber-500/50"
-              style={{ width: `${transportProgressPercent}%` }}
-            />
-          </div>
-        </div>
-      </div>
-
       {/* ====================================================
           2. TRUCK & TRANSPORT MANAGEMENT TABLE (لقی بارهەڵگرەکان)
           ==================================================== */}
