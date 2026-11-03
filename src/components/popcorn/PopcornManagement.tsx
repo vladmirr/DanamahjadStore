@@ -31,7 +31,6 @@ import {
   Layers,
   ArrowRightLeft,
   UserCheck,
-  UserX,
 } from 'lucide-react';
 import {
   PopcornStoreState,
@@ -630,33 +629,6 @@ ${
         <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6">
           {/* Left: Transaction Brand & Route Hierarchy */}
           <div className="space-y-3">
-            {/* Live Status Pill & Quick Route Info */}
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 shadow-sm shadow-emerald-500/10">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                مامەڵەی چالاک (Active Trade)
-              </span>
-
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-[#141b2d] text-amber-300 border border-amber-500/25 font-numeric">
-                <Globe2 className="w-3.5 h-3.5 text-amber-400" />
-                <span>{config.originCountry}</span>
-                <span className="text-amber-500/60 font-sans">➔</span>
-                <span>{config.destinationCity}</span>
-              </span>
-
-              {hasPartner ? (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-300 border border-amber-500/30">
-                  <UserCheck className="w-3.5 h-3.5" />
-                  <span>شەراکەت: {config.partnerName || 'هاوبەش'} (%{partnerPercent})</span>
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-slate-800/80 text-slate-300 border border-slate-700/80">
-                  <UserX className="w-3.5 h-3.5" />
-                  <span>بێ هاوبەش (تایبەت)</span>
-                </span>
-              )}
-            </div>
-
             {/* Main Title & Logistics Subtext */}
             <div className="flex items-center gap-3.5">
               <div className="w-13 h-13 rounded-2xl bg-gradient-to-tr from-amber-500/25 via-yellow-400/20 to-amber-600/30 border border-amber-500/40 p-2.5 flex items-center justify-center shadow-xl shadow-amber-500/15 text-3xl shrink-0">
