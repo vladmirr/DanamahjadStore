@@ -866,7 +866,7 @@ function renderSinglePopcornWorksheet(
       t.plateNumber,
       t.driverName,
       tons,
-      t.destination,
+      t.destination || '—',
       t.dispatchDate,
       t.notes || '',
     ]);

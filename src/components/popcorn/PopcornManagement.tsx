@@ -248,7 +248,7 @@ export const PopcornManagement: React.FC = () => {
         truckSearch === '' ||
         t.plateNumber.toLowerCase().includes(truckSearch.toLowerCase()) ||
         t.driverName.toLowerCase().includes(truckSearch.toLowerCase()) ||
-        t.destination.toLowerCase().includes(truckSearch.toLowerCase())
+        (t.destination || '').toLowerCase().includes(truckSearch.toLowerCase())
       );
     });
   }, [trucks, truckSearch]);
@@ -396,7 +396,7 @@ export const PopcornManagement: React.FC = () => {
       plateNumber: truck.plateNumber,
       tonsCarried: String(truck.tonsCarried),
       driverName: truck.driverName,
-      destination: truck.destination,
+      destination: truck.destination || '',
       dispatchDate: truck.dispatchDate,
       notes: truck.notes || '',
     });
@@ -975,10 +975,14 @@ ${
                         </td>
 
                         <td className="py-3.5 px-4 text-slate-300">
-                          <div className="flex items-center gap-1.5">
-                            <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
-                            <span>{truck.destination}</span>
-                          </div>
+                          {truck.destination ? (
+                            <div className="flex items-center gap-1.5">
+                              <MapPin className="w-3.5 h-3.5 text-rose-400 shrink-0" />
+                              <span>{truck.destination}</span>
+                            </div>
+                          ) : (
+                            <span className="text-slate-500">—</span>
+                          )}
                         </td>
 
                         <td className="py-3.5 px-4 text-slate-400 font-numeric">
@@ -1818,11 +1822,10 @@ ${
 
                   <div>
                     <label className="block text-slate-300 font-semibold mb-1">
-                      شوێنی گەیندن / مەبەست <span className="text-rose-400">*</span>
+                      شوێنی گەیندن / مەبەست <span className="text-slate-400 font-normal text-[11px]">(ئارەزوومەندانە / Optional)</span>
                     </label>
                     <input
                       type="text"
-                      required
                       placeholder="نموونە: سلێمانی - کۆگای سەرەکی عەلوە"
                       value={truckForm.destination}
                       onChange={(e) => setTruckForm({ ...truckForm, destination: e.target.value })}

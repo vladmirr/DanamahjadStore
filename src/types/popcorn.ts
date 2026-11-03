@@ -20,7 +20,7 @@ export interface PopcornTruck {
   tonsCarried: number; // بڕی بار بە تۆن
   driverName: string; // ناوی شۆفێر
   driverPhone?: string; // ژمارەی مۆبایل
-  destination: string; // شوێنی گەیندن / مەبەست (سلێمانی)
+  destination?: string; // شوێنی گەیندن / مەبەست (ئارەزوومەندانە)
   status?: 'in_transit' | 'at_border' | 'delivered'; // دۆخ
   transitCostUSD?: number; // کرێی گواستنەوە بە دۆلار
   dispatchDate: string; // بەرواری بارکردن / دەرچوون
