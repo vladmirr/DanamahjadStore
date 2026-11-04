@@ -48,7 +48,7 @@ import {
   DEFAULT_TRANSACTION,
 } from '../../services/popcornStorage';
 import { formatUSD, formatIQD, formatNumber, playSound } from '../../utils/formatters';
-import { exportPopcornToExcel, exportTrucksToExcel } from '../../utils/excelExport';
+import { exportPopcornToExcel, exportTrucksToExcel, exportExpensesToExcel } from '../../utils/excelExport';
 import { TiltCard } from '../common/TiltCard';
 import confetti from 'canvas-confetti';
 
@@ -1432,24 +1432,38 @@ ${
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      {/* Excel Export Button for Expenses (Two Tables: Iran & Iraq) */}
+                      <button
+                        onClick={() => {
+                          exportExpensesToExcel(expenses, safeTransaction.name);
+                          playSound('success');
+                        }}
+                        disabled={expenses.length === 0}
+                        className="flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-emerald-400 border border-white/10 hover:border-emerald-500/30 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed select-none shadow-sm"
+                        title="داگرتنی خەرجییەکان بە فایلی ئێکسڵ (دوو خشتە: ئێران و عێراق)"
+                      >
+                        <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                        <span>ئێکسڵی خەرجییەکان</span>
+                      </button>
+
                       <button
                         onClick={() => handleOpenAddExpense('iran')}
-                        className="px-3 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
+                        className="px-3 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm select-none"
                       >
                         <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                         <span>خەرجی ئێران</span>
                       </button>
                       <button
                         onClick={() => handleOpenAddExpense('iraq')}
-                        className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm"
+                        className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm select-none"
                       >
                         <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                         <span>خەرجی عێراق</span>
                       </button>
                       <button
                         onClick={() => setIsExpenseSectionOpen(false)}
-                        className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer border border-white/10"
+                        className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white text-xs font-medium flex items-center gap-1 transition-colors cursor-pointer border border-white/10 select-none"
                         title="داخستنی بەشەکە"
                       >
                         <ChevronUp className="w-4 h-4" />

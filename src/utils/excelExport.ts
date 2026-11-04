@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Product, Sale, PaymentVoucher, CustomerDebtSummary } from '../types';
-import { PopcornProjectData, PopcornTransaction, PopcornTruck } from '../types/popcorn';
+import { PopcornProjectData, PopcornTransaction, PopcornTruck, PopcornExpense } from '../types/popcorn';
 import { loadLocalPopcornData, loadLocalPopcornStore, DEFAULT_TRANSACTION } from '../services/popcornStorage';
 import { formatShortDate } from './formatters';
 
@@ -1155,5 +1155,286 @@ export async function exportTrucksToExcel(
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
     `Barhalgrakany_${cleanName}_${dateStr}.xlsx`
+  );
+}
+
+/**
+ * Export Expenses specifically to Excel featuring two distinct tables:
+ * 1. Table for Iran Expenses (خەرجییەکانی ئێران)
+ * 2. Table for Iraq Expenses (خەرجییەکانی عێراق)
+ */
+export async function exportExpensesToExcel(
+  expenses: PopcornExpense[],
+  transactionName: string = 'مامەڵە'
+) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'DanaMahjadStore';
+  workbook.created = new Date();
+
+  const thinBorder: Partial<ExcelJS.Borders> = {
+    top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+  };
+
+  const iranExpenses = expenses.filter((e) => e.region === 'iran');
+  const iraqExpenses = expenses.filter((e) => e.region === 'iraq');
+
+  const totalIranUSD = iranExpenses.reduce((acc, e) => acc + (Number(e.amountUSD) || 0), 0);
+  const totalIranLocal = iranExpenses.reduce((acc, e) => acc + (Number(e.amountLocal) || 0), 0);
+
+  const totalIraqUSD = iraqExpenses.reduce((acc, e) => acc + (Number(e.amountUSD) || 0), 0);
+  const totalIraqLocal = iraqExpenses.reduce((acc, e) => acc + (Number(e.amountLocal) || 0), 0);
+
+  const totalOverallUSD = totalIranUSD + totalIraqUSD;
+
+  // ---------------------------------------------------------
+  // MAIN SHEET: BOTH TABLES (TWO DISTINCT TABLES ON ONE SHEET)
+  // ---------------------------------------------------------
+  const ws = workbook.addWorksheet('خەرجییەکان (دوو خشتە)', {
+    views: [{ rightToLeft: true }],
+  });
+
+  // Main Page Header
+  const titleRow = ws.addRow([`تۆماری خەرجییەکانی ئێران و عێراق - ${transactionName}`]);
+  ws.mergeCells('A1:H1');
+  titleRow.height = 34;
+  const titleCell = ws.getCell('A1');
+  titleCell.font = { name: 'Calibri', bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  // Subtitle info
+  const infoRow = ws.addRow([
+    `کۆی گشتی هەردوو لق: $${totalOverallUSD.toLocaleString()} USD | ئێران: $${totalIranUSD.toLocaleString()} | عێراق: $${totalIraqUSD.toLocaleString()} | بەروار: ${new Date().toISOString().split('T')[0]}`,
+  ]);
+  ws.mergeCells('A2:H2');
+  infoRow.height = 22;
+  const infoCell = ws.getCell('A2');
+  infoCell.font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
+  infoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+  infoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  ws.addRow([]); // Blank row
+
+  // Helper to render an expense table
+  const renderExpenseTable = (
+    sheet: ExcelJS.Worksheet,
+    title: string,
+    bannerColor: string,
+    tableExpenses: PopcornExpense[],
+    localCurrencyName: string,
+    subtotalUSD: number,
+    subtotalLocal: number
+  ) => {
+    // Section Title
+    const secRow = sheet.addRow([title]);
+    const startRowIdx = sheet.rowCount;
+    sheet.mergeCells(`A${startRowIdx}:H${startRowIdx}`);
+    secRow.height = 28;
+    const secCell = sheet.getCell(`A${startRowIdx}`);
+    secCell.font = { name: 'Calibri', bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+    secCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bannerColor } };
+    secCell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+    // Headers
+    const headers = [
+      'ڕیزبەندی',
+      'ناونیشانی خەرجی',
+      'بڕ بە دۆلار ($ USD)',
+      `بڕ بە دراو (${localCurrencyName})`,
+      `نرخی گۆڕینەوە / صەرف`,
+      'بەروار',
+      'دراوە لەلایەن',
+      'تێبینی و پسوولە',
+    ];
+    const headRow = sheet.addRow(headers);
+    headRow.height = 24;
+    headRow.font = { name: 'Calibri', bold: true, size: 10, color: { argb: 'FFFFFFFF' } };
+    headRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+    headRow.alignment = { horizontal: 'center', vertical: 'middle' };
+    for (let c = 1; c <= headers.length; c++) {
+      headRow.getCell(c).border = thinBorder;
+    }
+
+    if (tableExpenses.length === 0) {
+      const emptyRow = sheet.addRow(['هیچ خەرجییەک لەم بەشەدا تۆمار نەکراوە', '', '', '', '', '', '', '']);
+      const emptyRowIdx = sheet.rowCount;
+      sheet.mergeCells(`A${emptyRowIdx}:H${emptyRowIdx}`);
+      emptyRow.height = 24;
+      const emptyCell = sheet.getCell(`A${emptyRowIdx}`);
+      emptyCell.alignment = { horizontal: 'center', vertical: 'middle' };
+      emptyCell.font = { name: 'Calibri', italic: true, size: 10, color: { argb: 'FF94A3B8' } };
+      for (let c = 1; c <= headers.length; c++) {
+        emptyRow.getCell(c).border = thinBorder;
+      }
+    } else {
+      tableExpenses.forEach((item, idx) => {
+        const usd = Number(item.amountUSD) || 0;
+        const local = Number(item.amountLocal) || 0;
+        const rate = Number(item.exchangeRate) || 0;
+        const payer =
+          item.paidBy === 'partner'
+            ? 'شەریک / هاوبەش'
+            : item.paidBy === 'me'
+            ? 'لەلایەن منەوە'
+            : 'هاوبەش';
+
+        const row = sheet.addRow([
+          idx + 1,
+          item.title || (item.region === 'iran' ? 'خەرجی ئێران' : 'خەرجی عێراق'),
+          usd,
+          local > 0 ? local : '—',
+          rate > 0 ? rate : '—',
+          item.date || '—',
+          payer,
+          item.notes || '',
+        ]);
+        row.height = 22;
+        row.font = { name: 'Calibri', size: 10 };
+
+        if (idx % 2 === 1) {
+          row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+        }
+
+        for (let c = 1; c <= headers.length; c++) {
+          const cell = row.getCell(c);
+          cell.border = thinBorder;
+          if ([1, 3, 4, 5, 6, 7].includes(c)) {
+            cell.alignment = { horizontal: 'center', vertical: 'middle' };
+          } else {
+            cell.alignment = { horizontal: 'right', vertical: 'middle' };
+          }
+        }
+      });
+    }
+
+    // Subtotal Row
+    const totalRow = sheet.addRow([
+      'کۆی گشتی ئەم لقە',
+      `${tableExpenses.length} خەرجی تۆمارکراو`,
+      subtotalUSD,
+      subtotalLocal > 0 ? subtotalLocal : '—',
+      '—',
+      '—',
+      '—',
+      '',
+    ]);
+    totalRow.height = 26;
+    totalRow.font = { name: 'Calibri', bold: true, size: 10.5, color: { argb: 'FF0F172A' } };
+    totalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Light amber
+    for (let c = 1; c <= headers.length; c++) {
+      const cell = totalRow.getCell(c);
+      cell.border = thinBorder;
+      if ([1, 3, 4, 5, 6, 7].includes(c)) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      } else {
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+    }
+  };
+
+  // 1. RENDER IRAN TABLE
+  renderExpenseTable(
+    ws,
+    '١. خەرجییەکانی لقی ئێران و ترانزێت (Cost Iran Side)',
+    'FFD97706', // Warm Amber/Orange
+    iranExpenses,
+    'تمەن',
+    totalIranUSD,
+    totalIranLocal
+  );
+
+  ws.addRow([]); // Blank line separator
+  ws.addRow([]); // Blank line separator
+
+  // 2. RENDER IRAQ TABLE
+  renderExpenseTable(
+    ws,
+    '٢. خەرجییەکانی ناوخۆی عێراق و گومرگ (Cost Iraq Side)',
+    'FF0D9488', // Teal/Cyan
+    iraqExpenses,
+    'دینار',
+    totalIraqUSD,
+    totalIraqLocal
+  );
+
+  ws.addRow([]); // Blank line separator
+
+  // GRAND TOTAL CARD (Combined)
+  const grandTotalRow = ws.addRow([
+    'کۆی گشتی هەردوو لق (ئێران + عێراق)',
+    'سەرجەم خەرجییەکان',
+    totalOverallUSD,
+    '—',
+    '—',
+    '—',
+    '—',
+    `ئێران: $${totalIranUSD.toLocaleString()} | عێراق: $${totalIraqUSD.toLocaleString()}`,
+  ]);
+  grandTotalRow.height = 30;
+  grandTotalRow.font = { name: 'Calibri', bold: true, size: 12, color: { argb: 'FF065F46' } };
+  grandTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD1FAE5' } }; // Light Emerald
+  for (let c = 1; c <= 8; c++) {
+    const cell = grandTotalRow.getCell(c);
+    cell.border = thinBorder;
+    if ([1, 3, 4, 5, 6, 7].includes(c)) {
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    } else {
+      cell.alignment = { horizontal: 'right', vertical: 'middle' };
+    }
+  }
+
+  // Set column widths for main sheet
+  ws.columns = [
+    { width: 10 },
+    { width: 28 },
+    { width: 20 },
+    { width: 22 },
+    { width: 20 },
+    { width: 16 },
+    { width: 18 },
+    { width: 34 },
+  ];
+
+  // ---------------------------------------------------------
+  // SHEET 2: STANDALONE IRAN SHEET
+  // ---------------------------------------------------------
+  const wsIran = workbook.addWorksheet('لقی ئێران', { views: [{ rightToLeft: true }] });
+  renderExpenseTable(
+    wsIran,
+    'خەرجییەکانی لقی ئێران و ترانزێت (Cost Iran Side)',
+    'FFD97706',
+    iranExpenses,
+    'تمەن',
+    totalIranUSD,
+    totalIranLocal
+  );
+  wsIran.columns = ws.columns;
+
+  // ---------------------------------------------------------
+  // SHEET 3: STANDALONE IRAQ SHEET
+  // ---------------------------------------------------------
+  const wsIraq = workbook.addWorksheet('لقی عێراق', { views: [{ rightToLeft: true }] });
+  renderExpenseTable(
+    wsIraq,
+    'خەرجییەکانی ناوخۆی عێراق و گومرگ (Cost Iraq Side)',
+    'FF0D9488',
+    iraqExpenses,
+    'دینار',
+    totalIraqUSD,
+    totalIraqLocal
+  );
+  wsIraq.columns = ws.columns;
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const dateStr = new Date().toISOString().split('T')[0];
+  const cleanName = transactionName.replace(/[/\\?%*:|"<>]/g, '_');
+  saveAs(
+    new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+    `Xarjyakany_${cleanName}_${dateStr}.xlsx`
   );
 }
