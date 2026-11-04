@@ -11,17 +11,45 @@ import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 export const POPCORN_STORAGE_KEY = 'floderm_popcorn_multitrans_v1';
 
+export function sanitizeTransaction(trans: PopcornTransaction): PopcornTransaction {
+  const cleanStr = (s?: string) =>
+    s
+      ? s
+          .replace(/لە ڕووسیا/g, '')
+          .replace(/لە روسیا/g, '')
+          .replace(/ڕووسیا \(Russia\)/gi, '')
+          .replace(/روسیا \(Russia\)/gi, '')
+          .replace(/ڕووسیا/g, '')
+          .replace(/روسیا/g, '')
+          .replace(/\(Russia\)/gi, '')
+          .replace(/Russia/gi, '')
+          .replace(/\s+/g, ' ')
+          .trim()
+      : '';
+
+  return {
+    ...trans,
+    name: cleanStr(trans.name) || 'وەجبەی هاوردەکراو',
+    config: {
+      ...trans.config,
+      title: cleanStr(trans.config?.title) || cleanStr(trans.name) || 'وەجبەی هاوردەکراو',
+      originCountry: cleanStr(trans.config?.originCountry),
+      notes: cleanStr(trans.config?.notes),
+    },
+  };
+}
+
 export const DEFAULT_TRANSACTION: PopcornTransaction = {
-  id: 'trans-russia-200t',
-  name: 'وەجبەی ١: هاوردەی ٢٠٠ تۆن لە ڕووسیا',
+  id: 'trans-default-200t',
+  name: 'وەجبەی ١: هاوردەی ٢٠٠ تۆن',
   createdAt: '2026-10-24T10:00:00.000Z',
   updatedAt: new Date().toISOString(),
   status: 'active',
   config: {
-    id: 'config-russia-200t',
-    title: 'وەجبەی ١: هاوردەی ٢٠٠ تۆن لە ڕووسیا',
-    originCountry: 'ڕووسیا (Russia)',
-    destinationCity: 'سلێمانی، هەرێمی کوردستان (Sulaimani)',
+    id: 'config-default-200t',
+    title: 'وەجبەی ١: هاوردەی ٢٠٠ تۆن',
+    originCountry: '',
+    destinationCity: 'سلێمانی، هەرێمی کوردستان',
     totalTons: 200, // 200 Tons
     buyPricePerTonUSD: 220, // $220 per ton
     sellingPricePerTonUSD: 302, // $302 per ton
@@ -29,7 +57,7 @@ export const DEFAULT_TRANSACTION: PopcornTransaction = {
     partnerName: 'هاوبەشی پڕۆژە (Partner)',
     partnerSharePercent: 50, // 50%
     exchangeRateIQD: 1530, // 100$ = 153,000 IQD
-    notes: 'کڕینی ٢٠٠ تۆن گەنمەشامی (Popcorn) لە ڕووسیا بە نرخی ٢٢٠ دۆلار بۆ هەر تۆنێک و فرۆشتن بە ٣٠٢ دۆلار لە سلێمانی بە شەراکەت.',
+    notes: 'کڕینی ٢٠٠ تۆن گەنمەشامی بە نرخی ٢٢٠ دۆلار بۆ هەر تۆنێک و فرۆشتن بە ٣٠٢ دۆلار لە سلێمانی بە شەراکەت.',
     updatedAt: new Date().toISOString(),
   },
   trucks: [
@@ -167,7 +195,7 @@ export const DEFAULT_TRANSACTION: PopcornTransaction = {
 };
 
 export const DEFAULT_STORE_STATE: PopcornStoreState = {
-  activeTransactionId: 'trans-russia-200t',
+  activeTransactionId: 'trans-default-200t',
   transactions: [DEFAULT_TRANSACTION],
   lastSyncedAt: new Date().toISOString(),
 };
@@ -189,11 +217,14 @@ export function loadLocalPopcornStore(): PopcornStoreState {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.transactions) && parsed.transactions.length > 0) {
-        return {
-          activeTransactionId: parsed.activeTransactionId || parsed.transactions[0].id,
-          transactions: parsed.transactions,
+        const sanitized = parsed.transactions.map(sanitizeTransaction);
+        const state: PopcornStoreState = {
+          activeTransactionId: parsed.activeTransactionId || sanitized[0].id,
+          transactions: sanitized,
           lastSyncedAt: parsed.lastSyncedAt || new Date().toISOString(),
         };
+        saveLocalPopcornStore(state);
+        return state;
       }
     }
 
@@ -202,9 +233,9 @@ export function loadLocalPopcornStore(): PopcornStoreState {
     if (oldRaw) {
       const oldParsed = JSON.parse(oldRaw);
       if (oldParsed && oldParsed.config && Array.isArray(oldParsed.trucks)) {
-        const migratedTrans: PopcornTransaction = {
-          id: oldParsed.config.id || 'trans-russia-200t',
-          name: oldParsed.config.title || 'وەجبەی ١: هاوردەی ٢٠٠ تۆن لە ڕووسیا',
+        const migratedTrans: PopcornTransaction = sanitizeTransaction({
+          id: oldParsed.config.id || 'trans-default-200t',
+          name: oldParsed.config.title || 'وەجبەی ١: هاوردەی ٢٠٠ تۆن',
           createdAt: new Date().toISOString(),
           updatedAt: oldParsed.config.updatedAt || new Date().toISOString(),
           status: 'active',
@@ -214,7 +245,7 @@ export function loadLocalPopcornStore(): PopcornStoreState {
           },
           trucks: oldParsed.trucks || [],
           expenses: oldParsed.expenses || [],
-        };
+        });
         const migratedState: PopcornStoreState = {
           activeTransactionId: migratedTrans.id,
           transactions: [migratedTrans],
@@ -276,8 +307,14 @@ export function subscribeToCloudPopcornStore(
         if (docSnap.exists()) {
           const cloudData = docSnap.data() as PopcornStoreState;
           if (cloudData && Array.isArray(cloudData.transactions) && cloudData.transactions.length > 0) {
-            saveLocalPopcornStore(cloudData);
-            onData(cloudData);
+            const sanitized = cloudData.transactions.map(sanitizeTransaction);
+            const sanitizedStore: PopcornStoreState = {
+              activeTransactionId: cloudData.activeTransactionId || sanitized[0].id,
+              transactions: sanitized,
+              lastSyncedAt: cloudData.lastSyncedAt || new Date().toISOString(),
+            };
+            saveLocalPopcornStore(sanitizedStore);
+            onData(sanitizedStore);
           }
         }
       },

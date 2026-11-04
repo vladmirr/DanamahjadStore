@@ -1,7 +1,7 @@
 export interface PopcornShipmentConfig {
   id: string;
   title: string;
-  originCountry: string; // e.g. ڕووسیا (Russia)
+  originCountry: string; // وڵاتی سەرچاوە
   destinationCity: string; // e.g. سلێمانی، عێراق (Sulaimani, Iraq)
   totalTons: number; // 200 tons
   buyPricePerTonUSD: number; // $220 / ton

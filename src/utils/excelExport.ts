@@ -769,7 +769,7 @@ function renderSinglePopcornWorksheet(
 
   // Sub-banner
   ws.addRow([
-    `کڕینی ${totalCargoTons} تۆن دانەوێڵە لە ${config.originCountry} بە نرخی $${buyPricePerTon} و فرۆشتن بە $${sellPricePerTon} لە ${config.destinationCity} ${
+    `کڕینی ${totalCargoTons} تۆن دانەوێڵە ${config.originCountry ? `لە ${config.originCountry} ` : ''}بە نرخی $${buyPricePerTon} و فرۆشتن بە $${sellPricePerTon} لە ${config.destinationCity} ${
       hasPartner ? `(شەراکەت: %${partnerPercent} - ${config.partnerName})` : '(مامەڵەی تایبەت - بێ هاوبەش)'
     }`
   ]);
@@ -799,7 +799,7 @@ function renderSinglePopcornWorksheet(
   }
 
   const kpis = [
-    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', `سەرچاوە: ${config.originCountry}`],
+    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', config.originCountry ? `سەرچاوە: ${config.originCountry}` : `مەبەست: ${config.destinationCity}`],
     ['نرخی کڕینی ١ تۆن', `$${buyPricePerTon}`, `${(buyPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی کڕینی گرێبەست'],
     ['کۆی تێچووی کڕین (سەرمایە)', `$${totalBuyingCost.toLocaleString()}`, `${(totalBuyingCost * exchangeRate).toLocaleString()} د.ع`, `${totalCargoTons} تۆن × $${buyPricePerTon}`],
     ['نرخی پێشبینیکراوی فرۆشتنی ١ تۆن', `$${sellPricePerTon}`, `${(sellPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'لە بازاڕی سلێمانی'],

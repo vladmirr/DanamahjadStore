@@ -315,7 +315,7 @@ export const PopcornManagement: React.FC = () => {
     const newConfig: PopcornShipmentConfig = {
       id: `config-${Date.now()}`,
       title: cleanName,
-      originCountry: newTransactionForm.originCountry.trim() || 'ڕووسیا (Russia)',
+      originCountry: newTransactionForm.originCountry.trim(),
       destinationCity: newTransactionForm.destinationCity.trim() || 'سلێمانی',
       totalTons: Number(newTransactionForm.totalTons) || 0,
       buyPricePerTonUSD: Number(newTransactionForm.buyPricePerTonUSD) || 0,
@@ -614,7 +614,7 @@ export const PopcornManagement: React.FC = () => {
     if (!activeTransaction) return;
     const text = `📊 مامەڵەی: ${activeTransaction.name}
 ----------------------------------------
-📍 سەرچاوە: ${config.originCountry} | 🎯 مەبەست: ${config.destinationCity}
+${config.originCountry ? `📍 سەرچاوە: ${config.originCountry} | ` : ''}🎯 مەبەست: ${config.destinationCity}
 ⚖️ بڕی بار: ${totalCargoTons} تۆن
 💵 نرخی کڕین: $${buyPricePerTon}/تۆن | کۆی کڕین: ${formatUSD(totalBuyingCost)}
 📈 نرخی فرۆشتن: $${sellPricePerTon}/تۆن | کۆی داهات: ${formatUSD(expectedTotalRevenue)}
@@ -769,6 +769,8 @@ ${
                                 <span>
                                   {trans.config.originCountry} ← {trans.config.destinationCity}
                                 </span>
+                              ) : trans.config.destinationCity ? (
+                                <span>بەرەو {trans.config.destinationCity}</span>
                               ) : (
                                 <span>هاوردەکردن و بارکردن</span>
                               )}
@@ -1003,7 +1005,7 @@ ${
             <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>{totalCargoTons} تۆن × {formatUSD(buyPricePerTon)}</span>
               <span className="text-neutral-300 font-medium">
-                {config.originCountry}
+                {config.originCountry || config.destinationCity || 'هاوردەکراو'}
               </span>
             </div>
           </TiltCard>
@@ -1648,7 +1650,7 @@ ${
                       </div>
 
                       <div className="flex justify-between items-center py-1 text-neutral-300">
-                        <span>- تێچووی کڕین لە {config.originCountry}:</span>
+                        <span>- تێچووی کڕین{config.originCountry ? ` لە ${config.originCountry}` : ''}:</span>
                         <span className="font-bold font-numeric text-rose-400">-{formatUSD(totalBuyingCost)}</span>
                       </div>
 
