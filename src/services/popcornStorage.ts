@@ -273,22 +273,30 @@ export function saveLocalPopcornStore(state: PopcornStoreState): void {
 }
 
 /**
+ * Recursively remove undefined values so Firestore never throws
+ */
+export function stripUndefined<T>(value: T): T {
+  return JSON.parse(
+    JSON.stringify(value, (_key, val) => (val === undefined ? null : val))
+  );
+}
+
+/**
  * Sync entire Multi-Transaction store to Cloud Firestore
  */
 export async function syncPopcornStoreToCloud(state: PopcornStoreState): Promise<boolean> {
   try {
+    const cleanState = stripUndefined({
+      activeTransactionId: state.activeTransactionId || '',
+      transactions: state.transactions || [],
+      lastSyncedAt: new Date().toISOString(),
+    });
+
     const docRef = doc(db, 'popcorn', 'multitrans_shipments');
-    await setDoc(
-      docRef,
-      {
-        ...state,
-        lastSyncedAt: new Date().toISOString(),
-      },
-      { merge: true }
-    );
+    await setDoc(docRef, cleanState, { merge: true });
     return true;
   } catch (error) {
-    console.warn('Firestore multi-transaction sync skipped (offline or permission):', error);
+    console.error('Firestore multi-transaction sync error:', error);
     return false;
   }
 }
@@ -308,13 +316,36 @@ export function subscribeToCloudPopcornStore(
           const cloudData = docSnap.data() as PopcornStoreState;
           if (cloudData && Array.isArray(cloudData.transactions) && cloudData.transactions.length > 0) {
             const sanitized = cloudData.transactions.map(sanitizeTransaction);
-            const sanitizedStore: PopcornStoreState = {
-              activeTransactionId: cloudData.activeTransactionId || sanitized[0].id,
-              transactions: sanitized,
-              lastSyncedAt: cloudData.lastSyncedAt || new Date().toISOString(),
+            const cloudIds = new Set(sanitized.map((t) => t.id));
+
+            // Preserve any local transactions not yet reflected in cloud
+            let localTransactions: PopcornTransaction[] = [];
+            try {
+              const rawLocal = localStorage.getItem(POPCORN_STORAGE_KEY);
+              if (rawLocal) {
+                const parsedLocal = JSON.parse(rawLocal);
+                if (Array.isArray(parsedLocal.transactions)) {
+                  localTransactions = parsedLocal.transactions.map(sanitizeTransaction);
+                }
+              }
+            } catch {}
+
+            const unSyncedLocal = localTransactions.filter((lt) => !cloudIds.has(lt.id));
+            const mergedTransactions = [...unSyncedLocal, ...sanitized];
+
+            const mergedStore: PopcornStoreState = {
+              activeTransactionId: cloudData.activeTransactionId || mergedTransactions[0]?.id || '',
+              transactions: mergedTransactions,
+              lastSyncedAt: new Date().toISOString(),
             };
-            saveLocalPopcornStore(sanitizedStore);
-            onData(sanitizedStore);
+
+            saveLocalPopcornStore(mergedStore);
+            onData(mergedStore);
+
+            // If there were unsynced local transactions, push merged state back to cloud immediately!
+            if (unSyncedLocal.length > 0) {
+              syncPopcornStoreToCloud(mergedStore).catch(() => {});
+            }
           }
         }
       },

@@ -315,16 +315,16 @@ export const PopcornManagement: React.FC = () => {
     const newConfig: PopcornShipmentConfig = {
       id: `config-${Date.now()}`,
       title: cleanName,
-      originCountry: newTransactionForm.originCountry.trim(),
+      originCountry: newTransactionForm.originCountry.trim() || '',
       destinationCity: newTransactionForm.destinationCity.trim() || 'سلێمانی',
       totalTons: Number(newTransactionForm.totalTons) || 0,
       buyPricePerTonUSD: Number(newTransactionForm.buyPricePerTonUSD) || 0,
       sellingPricePerTonUSD: Number(newTransactionForm.sellingPricePerTonUSD) || 0,
-      hasPartner: newTransactionForm.hasPartner,
+      hasPartner: Boolean(newTransactionForm.hasPartner),
       partnerName: newTransactionForm.partnerName.trim() || '',
       partnerSharePercent: Number(newTransactionForm.partnerSharePercent) || 50,
       exchangeRateIQD: Number(newTransactionForm.exchangeRateIQD) || 1530,
-      notes: newTransactionForm.notes.trim() || undefined,
+      notes: newTransactionForm.notes.trim() || '',
       updatedAt: new Date().toISOString(),
     };
 
@@ -441,6 +441,8 @@ export const PopcornManagement: React.FC = () => {
     }
 
     const tons = Number(truckForm.tonsCarried) || 0;
+    const dest = truckForm.destination.trim() || '';
+    const truckNotes = truckForm.notes.trim() || '';
 
     updateActiveTransaction((current) => {
       let updatedTrucks: PopcornTruck[];
@@ -452,9 +454,9 @@ export const PopcornManagement: React.FC = () => {
                 plateNumber: truckForm.plateNumber.trim(),
                 tonsCarried: tons,
                 driverName: truckForm.driverName.trim(),
-                destination: truckForm.destination.trim(),
+                destination: dest,
                 dispatchDate: truckForm.dispatchDate,
-                notes: truckForm.notes.trim() || undefined,
+                notes: truckNotes,
               }
             : t
         );
@@ -464,9 +466,9 @@ export const PopcornManagement: React.FC = () => {
           plateNumber: truckForm.plateNumber.trim(),
           tonsCarried: tons,
           driverName: truckForm.driverName.trim(),
-          destination: truckForm.destination.trim(),
+          destination: dest,
           dispatchDate: truckForm.dispatchDate,
-          notes: truckForm.notes.trim() || undefined,
+          notes: truckNotes,
         };
         updatedTrucks = [newTruck, ...current.trucks];
       }
@@ -553,8 +555,9 @@ export const PopcornManagement: React.FC = () => {
     }
 
     const usd = Number(expenseForm.amountUSD) || 0;
-    const local = expenseForm.amountLocal ? Number(expenseForm.amountLocal) : undefined;
-    const exRate = expenseForm.exchangeRate ? Number(expenseForm.exchangeRate) : undefined;
+    const local = expenseForm.amountLocal ? Number(expenseForm.amountLocal) : 0;
+    const exRate = expenseForm.exchangeRate ? Number(expenseForm.exchangeRate) : 0;
+    const expNotes = expenseForm.notes.trim() || '';
 
     updateActiveTransaction((current) => {
       let updatedExpenses: PopcornExpense[];
@@ -571,7 +574,7 @@ export const PopcornManagement: React.FC = () => {
                 exchangeRate: exRate,
                 date: expenseForm.date,
                 paidBy: expenseForm.paidBy,
-                notes: expenseForm.notes.trim() || undefined,
+                notes: expNotes,
               }
             : ex
         );
@@ -586,7 +589,7 @@ export const PopcornManagement: React.FC = () => {
           exchangeRate: exRate,
           date: expenseForm.date,
           paidBy: expenseForm.paidBy,
-          notes: expenseForm.notes.trim() || undefined,
+          notes: expNotes,
         };
         updatedExpenses = [newExpense, ...current.expenses];
       }
