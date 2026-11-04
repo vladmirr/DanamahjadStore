@@ -1208,7 +1208,7 @@ ${
                     className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-colors cursor-pointer shadow-sm"
                   >
                     <Plus className="w-4 h-4 stroke-[2.5]" />
-                    <span>فۆڕمی بارهەڵگری نوێ</span>
+                    <span>زیادکردنی بارهەڵگرتنی نوێ</span>
                   </button>
                   <button
                     onClick={() => setIsTruckSectionOpen(false)}
