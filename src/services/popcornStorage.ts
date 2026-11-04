@@ -10,6 +10,53 @@ import { db } from '../firebase';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 export const POPCORN_STORAGE_KEY = 'floderm_popcorn_multitrans_v1';
+export const POPCORN_DELETED_KEY = 'floderm_popcorn_deleted_ids_v1';
+
+/**
+ * Retrieve the set of locally tombstoned / deleted transaction IDs
+ */
+export function getDeletedTransactionIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(POPCORN_DELETED_KEY);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) {
+        return new Set(arr);
+      }
+    }
+  } catch (e) {
+    console.error('Failed to parse deleted transaction IDs:', e);
+  }
+  return new Set();
+}
+
+/**
+ * Mark a transaction ID as permanently deleted so it cannot be resurrected
+ */
+export function recordDeletedTransactionId(id: string): void {
+  try {
+    const deleted = getDeletedTransactionIds();
+    deleted.add(id);
+    localStorage.setItem(POPCORN_DELETED_KEY, JSON.stringify(Array.from(deleted)));
+  } catch (e) {
+    console.error('Failed to record deleted transaction ID:', e);
+  }
+}
+
+/**
+ * Unmark an ID from the deleted set (e.g. if newly created with same ID)
+ */
+export function unmarkDeletedTransactionId(id: string): void {
+  try {
+    const deleted = getDeletedTransactionIds();
+    if (deleted.has(id)) {
+      deleted.delete(id);
+      localStorage.setItem(POPCORN_DELETED_KEY, JSON.stringify(Array.from(deleted)));
+    }
+  } catch (e) {
+    console.error('Failed to unmark deleted transaction ID:', e);
+  }
+}
 
 export function sanitizeTransaction(trans: PopcornTransaction): PopcornTransaction {
   const cleanStr = (s?: string) =>
@@ -213,18 +260,25 @@ export const DEFAULT_POPCORN_DATA: PopcornProjectData = {
  */
 export function loadLocalPopcornStore(): PopcornStoreState {
   try {
+    const deletedIds = getDeletedTransactionIds();
     const raw = localStorage.getItem(POPCORN_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
       if (parsed && Array.isArray(parsed.transactions) && parsed.transactions.length > 0) {
-        const sanitized = parsed.transactions.map(sanitizeTransaction);
-        const state: PopcornStoreState = {
-          activeTransactionId: parsed.activeTransactionId || sanitized[0].id,
-          transactions: sanitized,
-          lastSyncedAt: parsed.lastSyncedAt || new Date().toISOString(),
-        };
-        saveLocalPopcornStore(state);
-        return state;
+        const remaining: PopcornTransaction[] = parsed.transactions.filter(
+          (t: any) => t && t.id && !deletedIds.has(t.id)
+        );
+        if (remaining.length > 0) {
+          const sanitized: PopcornTransaction[] = remaining.map(sanitizeTransaction);
+          const activeValid = sanitized.some((t: PopcornTransaction) => t.id === parsed.activeTransactionId);
+          const state: PopcornStoreState = {
+            activeTransactionId: activeValid ? parsed.activeTransactionId : sanitized[0].id,
+            transactions: sanitized,
+            lastSyncedAt: parsed.lastSyncedAt || new Date().toISOString(),
+          };
+          saveLocalPopcornStore(state);
+          return state;
+        }
       }
     }
 
@@ -286,19 +340,59 @@ export function stripUndefined<T>(value: T): T {
  */
 export async function syncPopcornStoreToCloud(state: PopcornStoreState): Promise<boolean> {
   try {
+    const deletedIds = getDeletedTransactionIds();
+    const cleanTransactions = (state.transactions || [])
+      .filter((t) => t && t.id && !deletedIds.has(t.id));
+
     const cleanState = stripUndefined({
       activeTransactionId: state.activeTransactionId || '',
-      transactions: state.transactions || [],
+      transactions: cleanTransactions,
       lastSyncedAt: new Date().toISOString(),
     });
 
     const docRef = doc(db, 'popcorn', 'multitrans_shipments');
-    await setDoc(docRef, cleanState, { merge: true });
+    await setDoc(docRef, cleanState);
     return true;
   } catch (error) {
     console.error('Firestore multi-transaction sync error:', error);
     return false;
   }
+}
+
+/**
+ * Permanently delete a transaction from local state and Cloud Firestore
+ */
+export async function deleteTransactionFromStore(
+  id: string,
+  currentStore: PopcornStoreState
+): Promise<PopcornStoreState | null> {
+  if (currentStore.transactions.length <= 1) {
+    return null;
+  }
+
+  // 1. Mark ID in tombstone set so incoming Firestore snapshots never resurrect it
+  recordDeletedTransactionId(id);
+
+  // 2. Filter out deleted transaction
+  const remaining = currentStore.transactions.filter((t) => t.id !== id);
+  const nextActiveId =
+    currentStore.activeTransactionId === id
+      ? remaining[0]?.id || ''
+      : currentStore.activeTransactionId;
+
+  const updatedStore: PopcornStoreState = {
+    activeTransactionId: nextActiveId,
+    transactions: remaining,
+    lastSyncedAt: new Date().toISOString(),
+  };
+
+  // 3. Immediately save clean store locally
+  saveLocalPopcornStore(updatedStore);
+
+  // 4. Overwrite cloud document with clean remaining transactions
+  await syncPopcornStoreToCloud(updatedStore);
+
+  return updatedStore;
 }
 
 /**
@@ -314,27 +408,40 @@ export function subscribeToCloudPopcornStore(
       (docSnap) => {
         if (docSnap.exists()) {
           const cloudData = docSnap.data() as PopcornStoreState;
-          if (cloudData && Array.isArray(cloudData.transactions) && cloudData.transactions.length > 0) {
-            const sanitized = cloudData.transactions.map(sanitizeTransaction);
-            const cloudIds = new Set(sanitized.map((t) => t.id));
+          if (cloudData && Array.isArray(cloudData.transactions)) {
+            const deletedIds = getDeletedTransactionIds();
 
-            // Preserve any local transactions not yet reflected in cloud
+            // Filter out tombstoned deleted transactions
+            const validCloudTransactions = cloudData.transactions
+              .filter((t) => t && t.id && !deletedIds.has(t.id))
+              .map(sanitizeTransaction);
+
+            if (validCloudTransactions.length === 0) {
+              return;
+            }
+
+            const cloudIds = new Set(validCloudTransactions.map((t) => t.id));
+
+            // Preserve local transactions not yet reflected in cloud, ignoring deleted
             let localTransactions: PopcornTransaction[] = [];
             try {
               const rawLocal = localStorage.getItem(POPCORN_STORAGE_KEY);
               if (rawLocal) {
                 const parsedLocal = JSON.parse(rawLocal);
                 if (Array.isArray(parsedLocal.transactions)) {
-                  localTransactions = parsedLocal.transactions.map(sanitizeTransaction);
+                  localTransactions = parsedLocal.transactions
+                    .filter((lt: any) => lt && lt.id && !deletedIds.has(lt.id))
+                    .map(sanitizeTransaction);
                 }
               }
             } catch {}
 
             const unSyncedLocal = localTransactions.filter((lt) => !cloudIds.has(lt.id));
-            const mergedTransactions = [...unSyncedLocal, ...sanitized];
+            const mergedTransactions = [...unSyncedLocal, ...validCloudTransactions];
 
+            const activeValid = mergedTransactions.some((t) => t.id === cloudData.activeTransactionId);
             const mergedStore: PopcornStoreState = {
-              activeTransactionId: cloudData.activeTransactionId || mergedTransactions[0]?.id || '',
+              activeTransactionId: activeValid ? cloudData.activeTransactionId : mergedTransactions[0]?.id || '',
               transactions: mergedTransactions,
               lastSyncedAt: new Date().toISOString(),
             };
@@ -342,8 +449,9 @@ export function subscribeToCloudPopcornStore(
             saveLocalPopcornStore(mergedStore);
             onData(mergedStore);
 
-            // If there were unsynced local transactions, push merged state back to cloud immediately!
-            if (unSyncedLocal.length > 0) {
+            // If cloud still has tombstoned/deleted transactions or we have unsynced local ones, purge cloud!
+            const cloudHadDeleted = cloudData.transactions.length !== validCloudTransactions.length;
+            if (cloudHadDeleted || unSyncedLocal.length > 0) {
               syncPopcornStoreToCloud(mergedStore).catch(() => {});
             }
           }

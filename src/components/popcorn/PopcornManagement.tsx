@@ -45,6 +45,8 @@ import {
   saveLocalPopcornStore,
   syncPopcornStoreToCloud,
   subscribeToCloudPopcornStore,
+  deleteTransactionFromStore,
+  unmarkDeletedTransactionId,
   DEFAULT_TRANSACTION,
 } from '../../services/popcornStorage';
 import { formatUSD, formatIQD, formatNumber, playSound } from '../../utils/formatters';
@@ -96,6 +98,7 @@ export const PopcornManagement: React.FC = () => {
   const [isNewTransactionModalOpen, setIsNewTransactionModalOpen] = useState<boolean>(false);
   const [isEditTransactionModalOpen, setIsEditTransactionModalOpen] = useState<boolean>(false);
   const [transactionToDelete, setTransactionToDelete] = useState<PopcornTransaction | null>(null);
+  const [isDeletingTransaction, setIsDeletingTransaction] = useState<boolean>(false);
 
   const [isTruckModalOpen, setIsTruckModalOpen] = useState<boolean>(false);
   const [editingTruck, setEditingTruck] = useState<PopcornTruck | null>(null);
@@ -312,6 +315,7 @@ export const PopcornManagement: React.FC = () => {
     }
 
     const newId = `trans-${Date.now()}`;
+    unmarkDeletedTransactionId(newId);
     const newConfig: PopcornShipmentConfig = {
       id: `config-${Date.now()}`,
       title: cleanName,
@@ -381,27 +385,28 @@ export const PopcornManagement: React.FC = () => {
     playSound('success');
   };
 
-  const handleDeleteTransaction = (id: string) => {
+  const handleDeleteTransaction = async (id: string) => {
     if (store.transactions.length <= 1) {
       alert('ناتوانیت تەنها مامەڵەی ماوە بسڕیتەوە!');
       return;
     }
 
-    const remaining = store.transactions.filter((t) => t.id !== id);
-    const nextActiveId = remaining[0].id;
-
-    persistStore({
-      ...store,
-      activeTransactionId: nextActiveId,
-      transactions: remaining,
-    });
-
-    if (selectedTransactionId === id) {
-      setSelectedTransactionId(null);
+    try {
+      setIsDeletingTransaction(true);
+      const updated = await deleteTransactionFromStore(id, store);
+      if (updated) {
+        setStore(updated);
+        if (selectedTransactionId === id) {
+          setSelectedTransactionId(null);
+        }
+        playSound('delete');
+      }
+    } catch (err) {
+      console.error('Failed to delete transaction:', err);
+    } finally {
+      setIsDeletingTransaction(false);
+      setTransactionToDelete(null);
     }
-
-    setTransactionToDelete(null);
-    playSound('delete');
   };
 
   // ----------------------------------------------------
@@ -842,14 +847,16 @@ ${
 
                       {store.transactions.length > 1 && (
                         <button
+                          type="button"
                           onClick={(e) => {
+                            e.preventDefault();
                             e.stopPropagation();
                             setTransactionToDelete(trans);
                           }}
-                          className="p-1.5 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          className="p-2 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                           title="سڕینەوەی ئەم مامەڵەیە"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       )}
                     </div>
@@ -966,6 +973,7 @@ ${
               {/* Delete Transaction (if more than 1) */}
               {store.transactions.length > 1 && (
                 <button
+                  type="button"
                   onClick={() => setTransactionToDelete(activeTransaction)}
                   className="p-2 rounded-lg hover:bg-rose-500/10 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
                   title="سڕینەوەی ئەم مامەڵەیە"
@@ -2559,16 +2567,27 @@ ${
               </div>
               <div className="flex items-center justify-center gap-2 pt-2">
                 <button
+                  type="button"
+                  disabled={isDeletingTransaction}
                   onClick={() => setTransactionToDelete(null)}
-                  className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 text-xs font-semibold border border-white/[0.08]"
+                  className="px-4 py-2 rounded-xl bg-white/[0.05] hover:bg-white/10 text-neutral-300 text-xs font-semibold border border-white/[0.08] cursor-pointer disabled:opacity-50"
                 >
                   نەخێر، پەشیمانم
                 </button>
                 <button
+                  type="button"
+                  disabled={isDeletingTransaction}
                   onClick={() => handleDeleteTransaction(transactionToDelete.id)}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md"
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white text-xs font-bold shadow-md cursor-pointer flex items-center justify-center gap-1.5 min-w-[110px]"
                 >
-                  بەڵێ، بیسڕەوە
+                  {isDeletingTransaction ? (
+                    <>
+                      <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span>دەسڕدرێتەوە...</span>
+                    </>
+                  ) : (
+                    <span>بەڵێ، بیسڕەوە</span>
+                  )}
                 </button>
               </div>
             </motion.div>
