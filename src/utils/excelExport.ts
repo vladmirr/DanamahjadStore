@@ -1,7 +1,7 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Product, Sale, PaymentVoucher, CustomerDebtSummary } from '../types';
-import { PopcornProjectData, PopcornTransaction } from '../types/popcorn';
+import { PopcornProjectData, PopcornTransaction, PopcornTruck } from '../types/popcorn';
 import { loadLocalPopcornData, loadLocalPopcornStore, DEFAULT_TRANSACTION } from '../services/popcornStorage';
 import { formatShortDate } from './formatters';
 
@@ -997,5 +997,163 @@ export async function exportPopcornToExcel(data?: PopcornProjectData | PopcornTr
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
     `Popcorn_Shipment_${dateStr}.xlsx`
+  );
+}
+
+/**
+ * Export Drivers & Trucks log specifically to Excel
+ */
+export async function exportTrucksToExcel(
+  trucks: PopcornTruck[],
+  transactionName: string = 'مامەڵە'
+) {
+  const workbook = new ExcelJS.Workbook();
+  workbook.creator = 'DanaMahjadStore';
+  workbook.created = new Date();
+
+  const ws = workbook.addWorksheet('بارهەڵگرەکان و شۆفێران', {
+    views: [{ rightToLeft: true }],
+  });
+
+  const thinBorder: Partial<ExcelJS.Borders> = {
+    top: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    left: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    bottom: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+    right: { style: 'thin', color: { argb: 'FFD1D5DB' } },
+  };
+
+  // Title Banner
+  const titleRow = ws.addRow([`تۆماری زانیاری شۆفێران و بارهەڵگرەکان - ${transactionName}`]);
+  ws.mergeCells('A1:I1');
+  titleRow.height = 34;
+  const titleCell = ws.getCell('A1');
+  titleCell.font = { name: 'Calibri', bold: true, size: 14, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F172A' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  // Subtitle info row
+  const infoRow = ws.addRow([
+    `کۆی بارهەڵگرەکان: ${trucks.length} بار | بەرواری دەرهێنان: ${new Date().toISOString().split('T')[0]}`,
+  ]);
+  ws.mergeCells('A2:I2');
+  infoRow.height = 22;
+  const infoCell = ws.getCell('A2');
+  infoCell.font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } };
+  infoCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+  infoCell.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  ws.addRow([]); // Blank line
+
+  // Column Headers
+  const headers = [
+    'ڕیزبەندی',
+    'ژمارەی تابلۆی بارهەڵگر',
+    'ناوی شۆفێر',
+    'ژمارەی مۆبایل',
+    'بڕی بار (تۆن)',
+    'شوێنی گەیاندن / مەبەست',
+    'بەرواری بارکردن',
+    'دۆخی بار',
+    'تێبینی',
+  ];
+
+  const headRow = ws.addRow(headers);
+  headRow.height = 26;
+  headRow.font = { name: 'Calibri', bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+  headRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+  headRow.alignment = { horizontal: 'center', vertical: 'middle' };
+
+  for (let c = 1; c <= headers.length; c++) {
+    headRow.getCell(c).border = thinBorder;
+  }
+
+  // Populate Truck Rows
+  let totalTons = 0;
+  trucks.forEach((trk, idx) => {
+    const tons = Number(trk.tonsCarried) || 0;
+    totalTons += tons;
+
+    const statusLabel =
+      trk.status === 'delivered'
+        ? 'گەیشتووە'
+        : trk.status === 'at_border'
+        ? 'لە سنورە'
+        : 'لە ڕێگایە';
+
+    const row = ws.addRow([
+      idx + 1,
+      trk.plateNumber || '—',
+      trk.driverName || '—',
+      trk.driverPhone || '—',
+      tons,
+      trk.destination || 'سلێمانی',
+      trk.dispatchDate || '—',
+      statusLabel,
+      trk.notes || '',
+    ]);
+    row.height = 22;
+    row.font = { name: 'Calibri', size: 10 };
+
+    if (idx % 2 === 1) {
+      row.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFF8FAFC' } };
+    }
+
+    for (let c = 1; c <= headers.length; c++) {
+      const cell = row.getCell(c);
+      cell.border = thinBorder;
+      if ([1, 2, 4, 5, 7, 8].includes(c)) {
+        cell.alignment = { horizontal: 'center', vertical: 'middle' };
+      } else {
+        cell.alignment = { horizontal: 'right', vertical: 'middle' };
+      }
+    }
+  });
+
+  // Summary Row at Bottom
+  const summaryRow = ws.addRow([
+    'کۆی گشتی',
+    `${trucks.length} بارهەڵگر`,
+    '—',
+    '—',
+    totalTons,
+    '—',
+    '—',
+    '—',
+    '',
+  ]);
+  summaryRow.height = 26;
+  summaryRow.font = { name: 'Calibri', bold: true, size: 11, color: { argb: 'FF0F172A' } };
+  summaryRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDCFCE7' } };
+  for (let c = 1; c <= headers.length; c++) {
+    const cell = summaryRow.getCell(c);
+    cell.border = thinBorder;
+    if ([1, 2, 4, 5, 7, 8].includes(c)) {
+      cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    } else {
+      cell.alignment = { horizontal: 'right', vertical: 'middle' };
+    }
+  }
+
+  // Auto-fit column widths
+  ws.columns = [
+    { width: 10 },
+    { width: 22 },
+    { width: 24 },
+    { width: 18 },
+    { width: 16 },
+    { width: 24 },
+    { width: 18 },
+    { width: 16 },
+    { width: 30 },
+  ];
+
+  const buffer = await workbook.xlsx.writeBuffer();
+  const dateStr = new Date().toISOString().split('T')[0];
+  const cleanName = transactionName.replace(/[/\\?%*:|"<>]/g, '_');
+  saveAs(
+    new Blob([buffer], {
+      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    }),
+    `Barhalgrakany_${cleanName}_${dateStr}.xlsx`
   );
 }

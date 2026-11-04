@@ -48,7 +48,7 @@ import {
   DEFAULT_TRANSACTION,
 } from '../../services/popcornStorage';
 import { formatUSD, formatIQD, formatNumber, playSound } from '../../utils/formatters';
-import { exportPopcornToExcel } from '../../utils/excelExport';
+import { exportPopcornToExcel, exportTrucksToExcel } from '../../utils/excelExport';
 import { TiltCard } from '../common/TiltCard';
 import confetti from 'canvas-confetti';
 
@@ -1202,17 +1202,31 @@ ${
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+                  {/* Export Driver & Truck Information to Excel */}
+                  <button
+                    onClick={() => {
+                      exportTrucksToExcel(truckSearch.trim() ? filteredTrucks : trucks, safeTransaction.name);
+                      playSound('success');
+                    }}
+                    disabled={trucks.length === 0}
+                    className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-emerald-400 border border-white/10 hover:border-emerald-500/30 text-xs font-semibold transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed select-none shadow-sm"
+                    title="داگرتنی داتای شۆفێر و بارهەڵگرەکان بە فایلی ئێکسڵ"
+                  >
+                    <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                    <span>ئێکسڵی شۆفێران</span>
+                  </button>
+
                   <button
                     onClick={handleOpenAddTruck}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-colors cursor-pointer shadow-sm"
+                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-colors cursor-pointer shadow-sm select-none"
                   >
                     <Plus className="w-4 h-4 stroke-[2.5]" />
                     <span>زیادکردنی بارهەڵگرتنی نوێ</span>
                   </button>
                   <button
                     onClick={() => setIsTruckSectionOpen(false)}
-                    className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border border-white/10 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="px-3 py-2 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] text-neutral-300 hover:text-white border border-white/10 text-xs font-medium flex items-center gap-1.5 transition-colors cursor-pointer select-none"
                     title="داخستنی بەشەکە"
                   >
                     <ChevronUp className="w-4 h-4" />
