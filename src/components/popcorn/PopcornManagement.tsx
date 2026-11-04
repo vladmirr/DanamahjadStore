@@ -31,6 +31,7 @@ import {
   Layers,
   ArrowRightLeft,
   UserCheck,
+  ArrowRight,
 } from 'lucide-react';
 import {
   PopcornStoreState,
@@ -57,14 +58,33 @@ export const PopcornManagement: React.FC = () => {
   const [isCloudSyncing, setIsCloudSyncing] = useState<boolean>(false);
   const [copiedSummary, setCopiedSummary] = useState<boolean>(false);
 
+  // Active Transaction ID (null = prompts user with transaction selection screen)
+  const [selectedTransactionId, setSelectedTransactionId] = useState<string | null>(null);
+  const [transactionSearchQuery, setTransactionSearchQuery] = useState<string>('');
+
   // Active Transaction Resolver
-  const activeTransaction: PopcornTransaction = useMemo(() => {
-    return (
-      store.transactions.find((t) => t.id === store.activeTransactionId) ||
-      store.transactions[0] ||
-      DEFAULT_TRANSACTION
+  const activeTransaction = useMemo(() => {
+    if (!selectedTransactionId) return null;
+    return store.transactions.find((t) => t.id === selectedTransactionId) || null;
+  }, [store.transactions, selectedTransactionId]);
+
+  // Safe fallback transaction to ensure hooks calculate without crashing
+  const safeTransaction: PopcornTransaction = useMemo(() => {
+    return activeTransaction || store.transactions[0] || DEFAULT_TRANSACTION;
+  }, [activeTransaction, store.transactions]);
+
+  // Filtered transactions for the selection screen
+  const filteredTransactions = useMemo(() => {
+    if (!transactionSearchQuery.trim()) return store.transactions;
+    const q = transactionSearchQuery.toLowerCase();
+    return store.transactions.filter(
+      (t) =>
+        t.name.toLowerCase().includes(q) ||
+        t.config?.originCountry?.toLowerCase().includes(q) ||
+        t.config?.destinationCity?.toLowerCase().includes(q) ||
+        (t.config?.hasPartner && t.config?.partnerName?.toLowerCase().includes(q))
     );
-  }, [store]);
+  }, [store.transactions, transactionSearchQuery]);
 
   // Filters & Tabs for Active Transaction
   const [truckSearch, setTruckSearch] = useState<string>('');
@@ -102,15 +122,17 @@ export const PopcornManagement: React.FC = () => {
 
   // Form: Edit Current Transaction
   const [editTransactionForm, setEditTransactionForm] = useState<PopcornShipmentConfig>(
-    activeTransaction.config
+    safeTransaction.config
   );
-  const [editTransactionName, setEditTransactionName] = useState<string>(activeTransaction.name);
+  const [editTransactionName, setEditTransactionName] = useState<string>(safeTransaction.name);
 
   // Sync edit form whenever active transaction switches
   useEffect(() => {
-    setEditTransactionForm(activeTransaction.config);
-    setEditTransactionName(activeTransaction.name);
-  }, [activeTransaction.id, activeTransaction.name]);
+    if (activeTransaction) {
+      setEditTransactionForm(activeTransaction.config);
+      setEditTransactionName(activeTransaction.name);
+    }
+  }, [activeTransaction?.id, activeTransaction?.name]);
 
   // Form: Truck
   const [truckForm, setTruckForm] = useState({
@@ -153,6 +175,7 @@ export const PopcornManagement: React.FC = () => {
 
   // Helper to mutate the active transaction inside the store
   const updateActiveTransaction = (updater: (current: PopcornTransaction) => PopcornTransaction) => {
+    if (!activeTransaction) return;
     const updatedTransactions = store.transactions.map((t) => {
       if (t.id === activeTransaction.id) {
         return {
@@ -172,7 +195,7 @@ export const PopcornManagement: React.FC = () => {
   // ----------------------------------------------------
   // ACTIVE TRANSACTION CALCULATIONS & KPIS
   // ----------------------------------------------------
-  const { config, trucks, expenses } = activeTransaction;
+  const { config, trucks, expenses } = safeTransaction;
 
   // 1. Buying & Selling details
   const totalCargoTons = Number(config.totalTons) || 0;
@@ -322,6 +345,7 @@ export const PopcornManagement: React.FC = () => {
       transactions: [newTrans, ...store.transactions],
     });
 
+    setSelectedTransactionId(newId);
     setIsNewTransactionModalOpen(false);
     confetti({
       particleCount: 70,
@@ -371,6 +395,10 @@ export const PopcornManagement: React.FC = () => {
       activeTransactionId: nextActiveId,
       transactions: remaining,
     });
+
+    if (selectedTransactionId === id) {
+      setSelectedTransactionId(null);
+    }
 
     setTransactionToDelete(null);
     playSound('delete');
@@ -583,6 +611,7 @@ export const PopcornManagement: React.FC = () => {
 
   // Copy Summary to Clipboard
   const handleCopySummary = () => {
+    if (!activeTransaction) return;
     const text = `📊 مامەڵەی: ${activeTransaction.name}
 ----------------------------------------
 📍 سەرچاوە: ${config.originCountry} | 🎯 مەبەست: ${config.destinationCity}
@@ -618,41 +647,266 @@ ${
 
   return (
     <div className="space-y-6 pb-16">
-      {/* ====================================================
-          TOP HERO & TRANSACTION SWITCHER BAR (MINIMALIST DARK)
-          ==================================================== */}
-      <div className="rounded-2xl bg-[#0f1115] border border-white/[0.08] p-5 md:p-6 shadow-lg">
-        <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
-          {/* Left: Transaction Brand */}
-          <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-              {activeTransaction.name}
-            </h1>
+      {!activeTransaction ? (
+        /* ====================================================
+           TRANSACTION SELECTION VIEW (کام مامەڵە دەتەوێت ببینیت؟)
+           ==================================================== */
+        <div className="space-y-6">
+          {/* Header Banner */}
+          <div className="rounded-2xl bg-[#0f1115] border border-white/[0.08] p-5 sm:p-7 shadow-lg">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-5">
+              <div>
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-neutral-300 mb-3">
+                  <Layers className="w-3.5 h-3.5 text-neutral-400" />
+                  <span>مامەڵەکردنی کاڵا</span>
+                </div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  کام مامەڵە دەتەوێت ببینیت؟
+                </h1>
+                <p className="text-xs sm:text-sm text-neutral-400 mt-1.5 max-w-xl leading-relaxed">
+                  تکایە ئەو مامەڵەیە هەڵبژێرە کە دەتەوێت چاودێری و وردەکاریی حیسابات و بارهەڵگرەکانی بکەیت.
+                </p>
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 w-full sm:w-auto">
+                <button
+                  onClick={handleOpenCreateTransaction}
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer w-full sm:w-auto select-none"
+                >
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                  <span>مامەڵەی نوێ</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Search Input (if multiple transactions) */}
+            {store.transactions.length > 1 && (
+              <div className="mt-5 pt-5 border-t border-white/[0.06]">
+                <div className="relative max-w-md">
+                  <Search className="w-4 h-4 absolute right-3.5 top-1/2 -translate-y-1/2 text-neutral-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={transactionSearchQuery}
+                    onChange={(e) => setTransactionSearchQuery(e.target.value)}
+                    placeholder="گەڕان بەپێی ناوی مامەڵە، وڵات یان هاوبەش..."
+                    className="w-full bg-[#050505] border border-white/10 focus:border-white/30 rounded-xl pr-10 pl-9 py-2.5 text-xs sm:text-sm text-white placeholder-neutral-500 focus:outline-none transition-colors"
+                  />
+                  {transactionSearchQuery && (
+                    <button
+                      onClick={() => setTransactionSearchQuery('')}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-white cursor-pointer"
+                      title="سڕینەوە"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
-          {/* Right: Modern Command Toolbar */}
-          <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
-            {/* Transaction Dropdown Switcher */}
-            <div className="relative flex items-center bg-[#050505] hover:bg-[#12141a] border border-white/10 hover:border-white/20 rounded-xl px-3 py-2 transition-colors">
-              <Layers className="w-4 h-4 text-neutral-400 ml-2 shrink-0" />
-              <select
-                value={store.activeTransactionId}
-                onChange={(e) => {
-                  persistStore({
-                    ...store,
-                    activeTransactionId: e.target.value,
-                  });
-                  playSound('click');
-                }}
-                className="bg-transparent text-xs font-semibold text-white pr-2 pl-4 focus:outline-none cursor-pointer"
-              >
-                {store.transactions.map((trans) => (
-                  <option key={trans.id} value={trans.id} className="bg-[#0f1115] text-white">
-                    {trans.name} ({trans.config.totalTons} تۆن)
-                  </option>
-                ))}
-              </select>
+          {/* Transactions Grid */}
+          {filteredTransactions.length === 0 ? (
+            <div className="rounded-2xl bg-[#0f1115] border border-white/[0.08] p-12 text-center">
+              <div className="w-12 h-12 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mx-auto mb-4 text-neutral-400">
+                <Truck className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-white mb-1">هیچ مامەڵەیەک نەدۆزرایەوە</h3>
+              <p className="text-xs text-neutral-400 max-w-sm mx-auto mb-5">
+                {transactionSearchQuery
+                  ? 'هیچ مامەڵەیەک بەم ناوە یان وڵاتە نەدۆزرایەوە، دەتوانیت وشەی گەڕان پاکبکەیتەوە.'
+                  : 'تۆ تا ئێستا هیچ مامەڵەیەکت تۆمار نەکردووە، یەکەمین مامەڵەت دروست بکە.'}
+              </p>
+              {transactionSearchQuery ? (
+                <button
+                  onClick={() => setTransactionSearchQuery('')}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  <span>سڕینەوەی گەڕان</span>
+                </button>
+              ) : (
+                <button
+                  onClick={handleOpenCreateTransaction}
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-colors cursor-pointer"
+                >
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                  <span>مامەڵەی نوێ</span>
+                </button>
+              )}
             </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+              {filteredTransactions.map((trans) => {
+                const totalTons = Number(trans.config.totalTons) || 0;
+                const buyPrice = Number(trans.config.buyPricePerTonUSD) || 0;
+                const sellPrice = Number(trans.config.sellingPricePerTonUSD) || 0;
+                const truckCount = trans.trucks?.length || 0;
+                const expenseCount = trans.expenses?.length || 0;
+
+                return (
+                  <div
+                    key={trans.id}
+                    onClick={() => {
+                      setSelectedTransactionId(trans.id);
+                      playSound('click');
+                    }}
+                    className="rounded-2xl bg-[#0f1115] border border-white/[0.08] hover:border-white/25 hover:bg-[#13161e] p-5 shadow-lg group cursor-pointer flex flex-col justify-between transition-all duration-150 relative"
+                  >
+                    <div>
+                      {/* Card Header: Icon, Name & Status */}
+                      <div className="flex items-start justify-between gap-3 mb-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2.5 rounded-xl bg-white/[0.04] text-white border border-white/[0.08] group-hover:bg-white group-hover:text-black transition-colors shrink-0">
+                            <Truck className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h2 className="text-base sm:text-lg font-bold text-white group-hover:text-white transition-colors line-clamp-1">
+                              {trans.name}
+                            </h2>
+                            <div className="text-[11px] text-neutral-400 flex items-center gap-1.5 mt-0.5">
+                              {trans.config.originCountry && trans.config.destinationCity ? (
+                                <span>
+                                  {trans.config.originCountry} ← {trans.config.destinationCity}
+                                </span>
+                              ) : (
+                                <span>هاوردەکردن و بارکردن</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                          چالاک
+                        </span>
+                      </div>
+
+                      {/* 4 Metrics Grid */}
+                      <div className="grid grid-cols-2 gap-2 my-4 pt-3 border-t border-white/[0.06] text-xs">
+                        <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
+                          <span className="text-[10px] text-neutral-400 block mb-0.5">کۆی بار</span>
+                          <span className="font-bold text-white">
+                            {formatNumber(totalTons)} <span className="text-[10px] font-normal text-neutral-400">تۆن</span>
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
+                          <span className="text-[10px] text-neutral-400 block mb-0.5">بارهەڵگرەکان</span>
+                          <span className="font-bold text-white">
+                            {truckCount} <span className="text-[10px] font-normal text-neutral-400">بار</span>
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
+                          <span className="text-[10px] text-neutral-400 block mb-0.5">نرخی کڕین</span>
+                          <span className="font-bold text-white">
+                            ${formatNumber(buyPrice)} <span className="text-[10px] font-normal text-neutral-400">/ تۆن</span>
+                          </span>
+                        </div>
+
+                        <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
+                          <span className="text-[10px] text-neutral-400 block mb-0.5">نرخی فرۆشتن</span>
+                          <span className="font-bold text-white">
+                            ${formatNumber(sellPrice)} <span className="text-[10px] font-normal text-neutral-400">/ تۆن</span>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Partner info and expenses badge */}
+                      <div className="text-[11px] text-neutral-400 flex items-center justify-between pb-3">
+                        <span className="flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5 text-neutral-500" />
+                          <span>
+                            {trans.config.hasPartner ? (
+                              trans.config.partnerName ? `${trans.config.partnerName} (${trans.config.partnerSharePercent}%)` : `هاوبەش (${trans.config.partnerSharePercent}%)`
+                            ) : (
+                              'بێ هاوبەش (تایبەت)'
+                            )}
+                          </span>
+                        </span>
+                        <span>{expenseCount} خەرجی تۆمارکراو</span>
+                      </div>
+                    </div>
+
+                    {/* Card Footer: Open CTA */}
+                    <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between mt-auto">
+                      <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:text-neutral-200 transition-colors">
+                        <span>بینینی ئەم مامەڵەیە</span>
+                        <ArrowRight className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
+                      </div>
+
+                      {store.transactions.length > 1 && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setTransactionToDelete(trans);
+                          }}
+                          className="p-1.5 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                          title="سڕینەوەی ئەم مامەڵەیە"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : (
+        /* ====================================================
+           ACTIVE TRANSACTION DASHBOARD VIEW
+           ==================================================== */
+        <>
+          {/* ====================================================
+              TOP HERO & TRANSACTION SWITCHER BAR (MINIMALIST DARK)
+              ==================================================== */}
+          <div className="rounded-2xl bg-[#0f1115] border border-white/[0.08] p-5 md:p-6 shadow-lg">
+            <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+              {/* Left: Transaction Brand & Back Button */}
+              <div className="flex items-center gap-3 flex-wrap">
+                <button
+                  onClick={() => {
+                    setSelectedTransactionId(null);
+                    playSound('click');
+                  }}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/25 text-xs font-semibold transition-colors cursor-pointer select-none"
+                  title="گەڕانەوە بۆ هەڵبژاردنی مامەڵە"
+                >
+                  <ArrowRight className="w-4 h-4 ml-0.5" />
+                  <span>هەڵبژاردنی مامەڵە</span>
+                </button>
+
+                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                  {activeTransaction.name}
+                </h1>
+              </div>
+
+              {/* Right: Modern Command Toolbar */}
+              <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
+                {/* Transaction Dropdown Switcher */}
+                <div className="relative flex items-center bg-[#050505] hover:bg-[#12141a] border border-white/10 hover:border-white/20 rounded-xl px-3 py-2 transition-colors">
+                  <Layers className="w-4 h-4 text-neutral-400 ml-2 shrink-0" />
+                  <select
+                    value={activeTransaction.id}
+                    onChange={(e) => {
+                      setSelectedTransactionId(e.target.value);
+                      persistStore({
+                        ...store,
+                        activeTransactionId: e.target.value,
+                      });
+                      playSound('click');
+                    }}
+                    className="bg-transparent text-xs font-semibold text-white pr-2 pl-4 focus:outline-none cursor-pointer"
+                  >
+                    {store.transactions.map((trans) => (
+                      <option key={trans.id} value={trans.id} className="bg-[#0f1115] text-white">
+                        {trans.name} ({trans.config.totalTons} تۆن)
+                      </option>
+                    ))}
+                  </select>
+                </div>
 
             {/* CREATE NEW TRANSACTION BUTTON */}
             <button
@@ -1481,6 +1735,8 @@ ${
           )}
         </AnimatePresence>
       </div>
+      </>
+      )}
 
       {/* ====================================================
           MODAL: CREATE NEW TRANSACTION
@@ -1896,7 +2152,7 @@ ${
                     <h3 className="text-base font-bold text-white">
                       {editingTruck ? 'دەستکاریکردنی بارهەڵگر' : 'زیادکردنی بارهەڵگری نوێ'}
                     </h3>
-                    <p className="text-xs text-neutral-400">بۆ مامەڵەی: {activeTransaction.name}</p>
+                    <p className="text-xs text-neutral-400">بۆ مامەڵەی: {safeTransaction.name}</p>
                   </div>
                 </div>
 
@@ -2047,7 +2303,7 @@ ${
                         {expenseForm.region === 'iran' ? '🇮🇷 لقی ئێران' : '🇮🇶 لقی عێراق'}
                       </span>
                     </h3>
-                    <p className="text-xs text-neutral-400">بۆ مامەڵەی: {activeTransaction.name}</p>
+                    <p className="text-xs text-neutral-400">بۆ مامەڵەی: {safeTransaction.name}</p>
                   </div>
                 </div>
 
