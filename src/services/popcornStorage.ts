@@ -7,7 +7,15 @@ import {
   PopcornExpense,
 } from '../types/popcorn';
 import { db } from '../firebase';
-import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
+import {
+  doc,
+  collection,
+  onSnapshot,
+  setDoc,
+  getDoc,
+  getDocs,
+  deleteDoc,
+} from 'firebase/firestore';
 
 export const POPCORN_STORAGE_KEY = 'floderm_popcorn_multitrans_v1';
 export const POPCORN_DELETED_KEY = 'floderm_popcorn_deleted_ids_v1';
@@ -336,6 +344,118 @@ export function stripUndefined<T>(value: T): T {
 }
 
 /**
+ * Save / Create an individual transaction directly to Cloud Firestore collection "transactions"
+ * Zero localStorage fallback - writes directly to Firestore
+ */
+export async function saveTransactionToCloud(trans: PopcornTransaction): Promise<void> {
+  const clean = stripUndefined(sanitizeTransaction(trans));
+  const docRef = doc(db, 'transactions', clean.id);
+  await setDoc(docRef, clean, { merge: true });
+
+  // Update localStorage as offline read cache only
+  try {
+    const rawStore = loadLocalPopcornStore();
+    const exists = rawStore.transactions.some((t) => t.id === clean.id);
+    const updated = exists
+      ? rawStore.transactions.map((t) => (t.id === clean.id ? clean : t))
+      : [clean, ...rawStore.transactions];
+    saveLocalPopcornStore({ ...rawStore, transactions: updated });
+  } catch {}
+}
+
+/**
+ * Delete an individual transaction directly from Cloud Firestore collection "transactions"
+ */
+export async function deleteTransactionFromCloud(id: string): Promise<void> {
+  recordDeletedTransactionId(id);
+  const docRef = doc(db, 'transactions', id);
+  await deleteDoc(docRef);
+
+  // Update localStorage cache
+  try {
+    const rawStore = loadLocalPopcornStore();
+    const remaining = rawStore.transactions.filter((t) => t.id !== id);
+    saveLocalPopcornStore({ ...rawStore, transactions: remaining });
+  } catch {}
+}
+
+/**
+ * Real-time listener for the Firestore "transactions" collection
+ * Replaces one-time getDocs() with real-time multi-device onSnapshot()
+ */
+export function subscribeToCloudTransactions(
+  onData: (transactions: PopcornTransaction[]) => void,
+  onError?: (error: Error) => void,
+  onStatusChange?: (status: PopcornDbStatus) => void
+): () => void {
+  try {
+    const colRef = collection(db, 'transactions');
+    const unsubscribe = onSnapshot(
+      colRef,
+      (snapshot) => {
+        const deletedIds = getDeletedTransactionIds();
+        const list: PopcornTransaction[] = [];
+        snapshot.forEach((docSnap) => {
+          if (!deletedIds.has(docSnap.id)) {
+            const raw = docSnap.data();
+            list.push(sanitizeTransaction({ ...raw, id: docSnap.id } as PopcornTransaction));
+          }
+        });
+
+        // Sort descending by createdAt so latest added deals always render at the top across all connected screens
+        list.sort(
+          (a, b) =>
+            new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+
+        if (onStatusChange) {
+          onStatusChange({
+            connected: true,
+            latencyMs: 0,
+            lastSyncedAt: new Date().toISOString(),
+            transactionCount: list.length,
+            fromCache: snapshot.metadata.fromCache,
+          });
+        }
+
+        // Cache locally for offline read access only
+        if (list.length > 0) {
+          try {
+            const current = loadLocalPopcornStore();
+            saveLocalPopcornStore({
+              ...current,
+              transactions: list,
+              lastSyncedAt: new Date().toISOString(),
+            });
+          } catch {}
+        }
+
+        onData(list);
+      },
+      (error) => {
+        console.error('Firestore real-time subscription error on transactions:', error);
+        if (onError) onError(error);
+        if (onStatusChange) {
+          onStatusChange({
+            connected: false,
+            latencyMs: 0,
+            lastSyncedAt: '',
+            transactionCount: 0,
+            fromCache: true,
+            error: error.message,
+          });
+        }
+      }
+    );
+    return unsubscribe;
+  } catch (err: any) {
+    console.error('Failed to initialize Firestore listener on transactions:', err);
+    if (onError) onError(err);
+    return () => {};
+  }
+}
+
+/**
  * Sync entire Multi-Transaction store to Cloud Firestore
  */
 export async function syncPopcornStoreToCloud(state: PopcornStoreState): Promise<boolean> {
@@ -343,6 +463,11 @@ export async function syncPopcornStoreToCloud(state: PopcornStoreState): Promise
     const deletedIds = getDeletedTransactionIds();
     const cleanTransactions = (state.transactions || [])
       .filter((t) => t && t.id && !deletedIds.has(t.id));
+
+    // Write all transactions individually to the transactions collection for multi-device sync
+    await Promise.all(
+      cleanTransactions.map((t) => saveTransactionToCloud(t).catch(() => {}))
+    );
 
     const cleanState = stripUndefined({
       activeTransactionId: state.activeTransactionId || '',
@@ -373,7 +498,10 @@ export async function deleteTransactionFromStore(
   // 1. Mark ID in tombstone set so incoming Firestore snapshots never resurrect it
   recordDeletedTransactionId(id);
 
-  // 2. Filter out deleted transaction
+  // 2. Delete from individual Firestore collection document
+  await deleteTransactionFromCloud(id).catch(() => {});
+
+  // 3. Filter out deleted transaction
   const remaining = currentStore.transactions.filter((t) => t.id !== id);
   const nextActiveId =
     currentStore.activeTransactionId === id
@@ -386,10 +514,10 @@ export async function deleteTransactionFromStore(
     lastSyncedAt: new Date().toISOString(),
   };
 
-  // 3. Immediately save clean store locally
+  // 4. Immediately save clean store locally
   saveLocalPopcornStore(updatedStore);
 
-  // 4. Overwrite cloud document with clean remaining transactions
+  // 5. Overwrite legacy cloud document with clean remaining transactions
   await syncPopcornStoreToCloud(updatedStore);
 
   return updatedStore;
@@ -408,34 +536,22 @@ export interface PopcornDbStatus {
 }
 
 /**
- * Perform a live ping / test read directly against Cloud Firestore
+ * Perform a live ping / test read directly against Cloud Firestore collection "transactions"
  */
 export async function testPopcornDatabaseConnection(): Promise<PopcornDbStatus> {
   const startTime = performance.now();
   try {
-    const docRef = doc(db, 'popcorn', 'multitrans_shipments');
-    const docSnap = await getDoc(docRef);
+    const colRef = collection(db, 'transactions');
+    const snap = await getDocs(colRef);
     const latencyMs = Math.round(performance.now() - startTime);
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      const count = Array.isArray(data?.transactions) ? data.transactions.length : 0;
-      return {
-        connected: true,
-        latencyMs,
-        lastSyncedAt: data?.lastSyncedAt || new Date().toISOString(),
-        transactionCount: count,
-        fromCache: docSnap.metadata?.fromCache ?? false,
-      };
-    } else {
-      return {
-        connected: true,
-        latencyMs,
-        lastSyncedAt: new Date().toISOString(),
-        transactionCount: 0,
-        fromCache: false,
-      };
-    }
+    return {
+      connected: true,
+      latencyMs,
+      lastSyncedAt: new Date().toISOString(),
+      transactionCount: snap.size,
+      fromCache: snap.metadata?.fromCache ?? false,
+    };
   } catch (err: any) {
     const latencyMs = Math.round(performance.now() - startTime);
     return {

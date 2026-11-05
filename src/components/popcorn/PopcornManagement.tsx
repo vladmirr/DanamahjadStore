@@ -51,6 +51,9 @@ import {
   saveLocalPopcornStore,
   syncPopcornStoreToCloud,
   subscribeToCloudPopcornStore,
+  saveTransactionToCloud,
+  deleteTransactionFromCloud,
+  subscribeToCloudTransactions,
   deleteTransactionFromStore,
   unmarkDeletedTransactionId,
   testPopcornDatabaseConnection,
@@ -107,6 +110,16 @@ export const PopcornManagement: React.FC = () => {
   const [isEditTransactionModalOpen, setIsEditTransactionModalOpen] = useState<boolean>(false);
   const [transactionToDelete, setTransactionToDelete] = useState<PopcornTransaction | null>(null);
   const [isDeletingTransaction, setIsDeletingTransaction] = useState<boolean>(false);
+  const [isCreatingTransaction, setIsCreatingTransaction] = useState<boolean>(false);
+
+  // Toast notification state for explicit error and success feedback
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+    setToast({ type, message });
+    setTimeout(() => {
+      setToast((cur) => (cur?.message === message ? null : cur));
+    }, 4500);
+  };
 
   // Database Connectivity Status
   const [dbStatus, setDbStatus] = useState<'connected' | 'syncing' | 'offline' | 'from_cache'>('syncing');
@@ -190,12 +203,20 @@ export const PopcornManagement: React.FC = () => {
       if (res.error) setDbErrorMessage(res.error);
     });
 
-    const unsubscribe = subscribeToCloudPopcornStore(
-      (cloudStore) => {
-        setStore(cloudStore);
+    const unsubscribe = subscribeToCloudTransactions(
+      (transactions) => {
+        setStore((prev) => ({
+          ...prev,
+          transactions,
+          lastSyncedAt: new Date().toISOString(),
+        }));
+      },
+      (error) => {
+        showToast(`هەڵە لە هاوکاتکردنی داتابەیس: ${error.message}`, 'error');
       },
       (status) => {
         setDbStatus(status.connected ? (status.fromCache ? 'from_cache' : 'connected') : 'offline');
+        if (status.latencyMs > 0) setDbLatency(status.latencyMs);
         if (status.lastSyncedAt) {
           try {
             setLastSyncedTime(new Date(status.lastSyncedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
@@ -283,23 +304,28 @@ export const PopcornManagement: React.FC = () => {
     syncPopcornStoreToCloud(updatedStore).finally(() => setIsCloudSyncing(false));
   };
 
-  // Helper to mutate the active transaction inside the store
-  const updateActiveTransaction = (updater: (current: PopcornTransaction) => PopcornTransaction) => {
+  // Helper to mutate the active transaction inside the store and save directly to Firestore
+  const updateActiveTransaction = async (updater: (current: PopcornTransaction) => PopcornTransaction) => {
     if (!activeTransaction) return;
-    const updatedTransactions = store.transactions.map((t) => {
-      if (t.id === activeTransaction.id) {
-        return {
-          ...updater(t),
-          updatedAt: new Date().toISOString(),
-        };
-      }
-      return t;
-    });
+    const updated: PopcornTransaction = {
+      ...updater(activeTransaction),
+      updatedAt: new Date().toISOString(),
+    };
 
-    persistStore({
-      ...store,
-      transactions: updatedTransactions,
-    });
+    setStore((prev) => ({
+      ...prev,
+      transactions: prev.transactions.map((t) => (t.id === updated.id ? updated : t)),
+    }));
+
+    try {
+      setIsCloudSyncing(true);
+      await saveTransactionToCloud(updated);
+    } catch (err: any) {
+      console.error('Failed to update deal in Firestore:', err);
+      showToast(`هەڵە لە نوێکردنەوە لە داتابەیس: ${err?.message || 'پەیوەندی نییە'}`, 'error');
+    } finally {
+      setIsCloudSyncing(false);
+    }
   };
 
   // ----------------------------------------------------
@@ -413,7 +439,7 @@ export const PopcornManagement: React.FC = () => {
     setIsNewTransactionModalOpen(true);
   };
 
-  const handleCreateTransaction = (e: React.FormEvent) => {
+  const handleCreateTransaction = async (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = newTransactionForm.name.trim();
     if (!cleanName) {
@@ -450,20 +476,27 @@ export const PopcornManagement: React.FC = () => {
       expenses: [],
     };
 
-    persistStore({
-      ...store,
-      activeTransactionId: newId,
-      transactions: [newTrans, ...store.transactions],
-    });
+    try {
+      setIsCreatingTransaction(true);
+      // DIRECT WRITE TO FIRESTORE "transactions" COLLECTION
+      await saveTransactionToCloud(newTrans);
 
-    setSelectedTransactionId(newId);
-    setIsNewTransactionModalOpen(false);
-    confetti({
-      particleCount: 70,
-      spread: 70,
-      origin: { y: 0.6 },
-    });
-    playSound('success');
+      setSelectedTransactionId(newId);
+      setIsNewTransactionModalOpen(false);
+      confetti({
+        particleCount: 70,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+      playSound('success');
+      showToast(`مامەڵەی «${cleanName}» بە سەرکەوتوویی لە داتابەیس تۆمارکرا.`, 'success');
+    } catch (err: any) {
+      console.error('Failed to create transaction in Firestore:', err);
+      playSound('error');
+      showToast(`هەڵە لە تۆمارکردن لە داتابەیس: ${err?.message || 'پەیوەندی نەبەسترا'}. تکایە ئینتەرنێت بپشکنە.`, 'error');
+    } finally {
+      setIsCreatingTransaction(false);
+    }
   };
 
   const handleSaveEditTransaction = (e: React.FormEvent) => {
@@ -490,6 +523,7 @@ export const PopcornManagement: React.FC = () => {
 
     setIsEditTransactionModalOpen(false);
     playSound('success');
+    showToast('گۆڕانکارییەکانی مامەڵە لە داتابەیس نوێکرانەوە.', 'success');
   };
 
   const handleDeleteTransaction = async (id: string) => {
@@ -500,16 +534,17 @@ export const PopcornManagement: React.FC = () => {
 
     try {
       setIsDeletingTransaction(true);
-      const updated = await deleteTransactionFromStore(id, store);
-      if (updated) {
-        setStore(updated);
-        if (selectedTransactionId === id) {
-          setSelectedTransactionId(null);
-        }
-        playSound('delete');
+      // DIRECT DELETION FROM FIRESTORE "transactions" COLLECTION
+      await deleteTransactionFromCloud(id);
+      if (selectedTransactionId === id) {
+        setSelectedTransactionId(null);
       }
-    } catch (err) {
-      console.error('Failed to delete transaction:', err);
+      playSound('delete');
+      showToast('مامەڵەکە بە سەرکەوتوویی لە داتابەیس سڕایەوە.', 'success');
+    } catch (err: any) {
+      console.error('Failed to delete transaction from Firestore:', err);
+      playSound('error');
+      showToast(`هەڵە لە سڕینەوە لە داتابەیس: ${err?.message || 'پەیوەندی نەبەسترا'}`, 'error');
     } finally {
       setIsDeletingTransaction(false);
       setTransactionToDelete(null);
@@ -2148,9 +2183,17 @@ ${
                   </button>
                   <button
                     type="submit"
-                    className="px-5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold transition-colors shadow-sm cursor-pointer"
+                    disabled={isCreatingTransaction}
+                    className="px-5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 disabled:opacity-50 font-bold transition-colors shadow-sm cursor-pointer flex items-center gap-2"
                   >
-                    دروستکردن و تۆمارکردن
+                    {isCreatingTransaction ? (
+                      <>
+                        <span className="w-3.5 h-3.5 border-2 border-black/30 border-t-black rounded-full animate-spin" />
+                        <span>تۆمارکردن لە داتابەیس...</span>
+                      </>
+                    ) : (
+                      <span>دروستکردن و تۆمارکردن</span>
+                    )}
                   </button>
                 </div>
               </form>
@@ -3025,6 +3068,41 @@ ${
               </div>
             </motion.div>
           </div>
+        )}
+      </AnimatePresence>
+      {/* ====================================================
+          REAL-TIME TOAST NOTIFICATION
+          ==================================================== */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.95 }}
+            className={`fixed top-5 left-1/2 -translate-x-1/2 z-[100] px-4 py-3 rounded-2xl shadow-2xl border backdrop-blur-md flex items-center gap-3 text-xs sm:text-sm font-semibold max-w-md w-[90%] sm:w-auto ${
+              toast.type === 'error'
+                ? 'bg-rose-950/90 border-rose-500/40 text-rose-200 shadow-rose-950/50'
+                : toast.type === 'success'
+                ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-950/50'
+                : 'bg-neutral-900/90 border-white/20 text-neutral-200'
+            }`}
+          >
+            {toast.type === 'error' ? (
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
+            ) : toast.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : (
+              <Cloud className="w-4 h-4 text-blue-400 shrink-0" />
+            )}
+            <span className="flex-1">{toast.message}</span>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              className="p-1 rounded-lg hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
