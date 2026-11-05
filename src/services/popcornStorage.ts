@@ -7,7 +7,7 @@ import {
   PopcornExpense,
 } from '../types/popcorn';
 import { db } from '../firebase';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc, getDoc } from 'firebase/firestore';
 
 export const POPCORN_STORAGE_KEY = 'floderm_popcorn_multitrans_v1';
 export const POPCORN_DELETED_KEY = 'floderm_popcorn_deleted_ids_v1';
@@ -396,16 +396,83 @@ export async function deleteTransactionFromStore(
 }
 
 /**
+ * Database connectivity information
+ */
+export interface PopcornDbStatus {
+  connected: boolean;
+  latencyMs: number;
+  lastSyncedAt: string;
+  transactionCount: number;
+  fromCache: boolean;
+  error?: string;
+}
+
+/**
+ * Perform a live ping / test read directly against Cloud Firestore
+ */
+export async function testPopcornDatabaseConnection(): Promise<PopcornDbStatus> {
+  const startTime = performance.now();
+  try {
+    const docRef = doc(db, 'popcorn', 'multitrans_shipments');
+    const docSnap = await getDoc(docRef);
+    const latencyMs = Math.round(performance.now() - startTime);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const count = Array.isArray(data?.transactions) ? data.transactions.length : 0;
+      return {
+        connected: true,
+        latencyMs,
+        lastSyncedAt: data?.lastSyncedAt || new Date().toISOString(),
+        transactionCount: count,
+        fromCache: docSnap.metadata?.fromCache ?? false,
+      };
+    } else {
+      return {
+        connected: true,
+        latencyMs,
+        lastSyncedAt: new Date().toISOString(),
+        transactionCount: 0,
+        fromCache: false,
+      };
+    }
+  } catch (err: any) {
+    const latencyMs = Math.round(performance.now() - startTime);
+    return {
+      connected: false,
+      latencyMs,
+      lastSyncedAt: '',
+      transactionCount: 0,
+      fromCache: true,
+      error: err?.message || 'نەتوانرا پەیوەندی بە داتابەیسەوە ببەسترێت',
+    };
+  }
+}
+
+/**
  * Real-time listener for Multi-Transaction store
  */
 export function subscribeToCloudPopcornStore(
-  onData: (state: PopcornStoreState) => void
+  onData: (state: PopcornStoreState) => void,
+  onStatusChange?: (status: {
+    connected: boolean;
+    fromCache: boolean;
+    lastSyncedAt: string;
+    error?: string;
+  }) => void
 ): () => void {
   try {
     const docRef = doc(db, 'popcorn', 'multitrans_shipments');
     const unsubscribe = onSnapshot(
       docRef,
       (docSnap) => {
+        if (onStatusChange) {
+          onStatusChange({
+            connected: true,
+            fromCache: docSnap.metadata.fromCache ?? false,
+            lastSyncedAt: new Date().toISOString(),
+          });
+        }
         if (docSnap.exists()) {
           const cloudData = docSnap.data() as PopcornStoreState;
           if (cloudData && Array.isArray(cloudData.transactions)) {
@@ -413,7 +480,7 @@ export function subscribeToCloudPopcornStore(
 
             // Filter out tombstoned deleted transactions
             const validCloudTransactions = cloudData.transactions
-              .filter((t) => t && t.id && !deletedIds.has(t.id))
+              .filter((t: any) => t && t.id && !deletedIds.has(t.id))
               .map(sanitizeTransaction);
 
             if (validCloudTransactions.length === 0) {
@@ -439,7 +506,7 @@ export function subscribeToCloudPopcornStore(
             const unSyncedLocal = localTransactions.filter((lt) => !cloudIds.has(lt.id));
             const mergedTransactions = [...unSyncedLocal, ...validCloudTransactions];
 
-            const activeValid = mergedTransactions.some((t) => t.id === cloudData.activeTransactionId);
+            const activeValid = mergedTransactions.some((t: PopcornTransaction) => t.id === cloudData.activeTransactionId);
             const mergedStore: PopcornStoreState = {
               activeTransactionId: activeValid ? cloudData.activeTransactionId : mergedTransactions[0]?.id || '',
               transactions: mergedTransactions,
@@ -459,11 +526,27 @@ export function subscribeToCloudPopcornStore(
       },
       (error) => {
         console.warn('Popcorn Firestore multi-transaction subscription warning:', error);
+        if (onStatusChange) {
+          onStatusChange({
+            connected: false,
+            fromCache: true,
+            lastSyncedAt: '',
+            error: error.message,
+          });
+        }
       }
     );
     return unsubscribe;
   } catch (err) {
     console.warn('Error setting up cloud popcorn multi-transaction subscription:', err);
+    if (onStatusChange) {
+      onStatusChange({
+        connected: false,
+        fromCache: true,
+        lastSyncedAt: '',
+        error: String(err),
+      });
+    }
     return () => {};
   }
 }

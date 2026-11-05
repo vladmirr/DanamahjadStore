@@ -32,6 +32,12 @@ import {
   ArrowRightLeft,
   UserCheck,
   ArrowRight,
+  Database,
+  Cloud,
+  RefreshCw,
+  AlertTriangle,
+  Wifi,
+  WifiOff,
 } from 'lucide-react';
 import {
   PopcornStoreState,
@@ -47,6 +53,8 @@ import {
   subscribeToCloudPopcornStore,
   deleteTransactionFromStore,
   unmarkDeletedTransactionId,
+  testPopcornDatabaseConnection,
+  PopcornDbStatus,
   DEFAULT_TRANSACTION,
 } from '../../services/popcornStorage';
 import { formatUSD, formatIQD, formatNumber, playSound } from '../../utils/formatters';
@@ -99,6 +107,14 @@ export const PopcornManagement: React.FC = () => {
   const [isEditTransactionModalOpen, setIsEditTransactionModalOpen] = useState<boolean>(false);
   const [transactionToDelete, setTransactionToDelete] = useState<PopcornTransaction | null>(null);
   const [isDeletingTransaction, setIsDeletingTransaction] = useState<boolean>(false);
+
+  // Database Connectivity Status
+  const [dbStatus, setDbStatus] = useState<'connected' | 'syncing' | 'offline' | 'from_cache'>('syncing');
+  const [dbLatency, setDbLatency] = useState<number | null>(null);
+  const [lastSyncedTime, setLastSyncedTime] = useState<string>('');
+  const [dbErrorMessage, setDbErrorMessage] = useState<string>('');
+  const [isDbModalOpen, setIsDbModalOpen] = useState<boolean>(false);
+  const [isTestingDb, setIsTestingDb] = useState<boolean>(false);
 
   const [isTruckModalOpen, setIsTruckModalOpen] = useState<boolean>(false);
   const [editingTruck, setEditingTruck] = useState<PopcornTruck | null>(null);
@@ -160,13 +176,104 @@ export const PopcornManagement: React.FC = () => {
     notes: '',
   });
 
-  // Real-time Cloud Synchronization
+  // Real-time Cloud Synchronization & Diagnostic Ping
   useEffect(() => {
-    const unsubscribe = subscribeToCloudPopcornStore((cloudStore) => {
-      setStore(cloudStore);
+    // Initial quick test
+    testPopcornDatabaseConnection().then((res) => {
+      setDbLatency(res.latencyMs);
+      setDbStatus(res.connected ? (res.fromCache ? 'from_cache' : 'connected') : 'offline');
+      if (res.lastSyncedAt) {
+        try {
+          setLastSyncedTime(new Date(res.lastSyncedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+        } catch {}
+      }
+      if (res.error) setDbErrorMessage(res.error);
     });
-    return () => unsubscribe();
+
+    const unsubscribe = subscribeToCloudPopcornStore(
+      (cloudStore) => {
+        setStore(cloudStore);
+      },
+      (status) => {
+        setDbStatus(status.connected ? (status.fromCache ? 'from_cache' : 'connected') : 'offline');
+        if (status.lastSyncedAt) {
+          try {
+            setLastSyncedTime(new Date(status.lastSyncedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+          } catch {}
+        }
+        if (status.error) {
+          setDbErrorMessage(status.error);
+        } else {
+          setDbErrorMessage('');
+        }
+      }
+    );
+
+    const handleOnline = () => {
+      setDbStatus('syncing');
+      testPopcornDatabaseConnection().then((res) => {
+        setDbLatency(res.latencyMs);
+        setDbStatus(res.connected ? (res.fromCache ? 'from_cache' : 'connected') : 'offline');
+      });
+    };
+    const handleOffline = () => {
+      setDbStatus('offline');
+    };
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    return () => {
+      unsubscribe();
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
   }, []);
+
+  const handleTestConnection = async () => {
+    setIsTestingDb(true);
+    try {
+      const res = await testPopcornDatabaseConnection();
+      setDbLatency(res.latencyMs);
+      if (res.connected) {
+        setDbStatus(res.fromCache ? 'from_cache' : 'connected');
+        if (res.lastSyncedAt) {
+          try {
+            setLastSyncedTime(new Date(res.lastSyncedAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }));
+          } catch {}
+        }
+        setDbErrorMessage('');
+        playSound('success');
+      } else {
+        setDbStatus('offline');
+        setDbErrorMessage(res.error || 'پەیوەندی بەستن سەرکەوتوو نەبوو');
+        playSound('error');
+      }
+    } catch (e: any) {
+      setDbStatus('offline');
+      setDbErrorMessage(e?.message || 'هەڵەی نەزانراو');
+      playSound('error');
+    } finally {
+      setIsTestingDb(false);
+    }
+  };
+
+  const handleForceCloudSync = async () => {
+    setIsTestingDb(true);
+    setIsCloudSyncing(true);
+    try {
+      const ok = await syncPopcornStoreToCloud(store);
+      if (ok) {
+        await handleTestConnection();
+        playSound('success');
+      } else {
+        playSound('error');
+      }
+    } finally {
+      setIsTestingDb(false);
+      setIsCloudSyncing(false);
+    }
+  };
 
   // Save changes locally and sync with Firestore
   const persistStore = (updatedStore: PopcornStoreState) => {
@@ -677,10 +784,51 @@ ${
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-3 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                {/* Database Connectivity Badge Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsDbModalOpen(true);
+                    handleTestConnection();
+                  }}
+                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 text-xs transition-all cursor-pointer select-none group"
+                  title="پشکنینی دۆخی پەیوەندی بە داتابەیس (Google Cloud Firestore)"
+                >
+                  <span className="relative flex h-2 w-2">
+                    {dbStatus === 'connected' ? (
+                      <>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                      </>
+                    ) : dbStatus === 'syncing' ? (
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500 animate-pulse" />
+                    ) : dbStatus === 'from_cache' ? (
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                    ) : (
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                    )}
+                  </span>
+                  <span className="text-neutral-300 font-medium group-hover:text-white transition-colors">
+                    {dbStatus === 'connected'
+                      ? 'داتابەیس: پەیوەستە'
+                      : dbStatus === 'syncing'
+                      ? 'هاوکاتکردن...'
+                      : dbStatus === 'from_cache'
+                      ? 'کاشی ناوخۆیی'
+                      : 'داتابەیس: ناچالاک'}
+                  </span>
+                  {dbLatency !== null && dbStatus === 'connected' && (
+                    <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
+                      {dbLatency}ms
+                    </span>
+                  )}
+                  <Database className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white transition-colors" />
+                </button>
+
                 <button
                   onClick={handleOpenCreateTransaction}
-                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer w-full sm:w-auto select-none"
+                  className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer select-none"
                 >
                   <Plus className="w-4 h-4 stroke-[2.5]" />
                   <span>مامەڵەی نوێ</span>
@@ -919,6 +1067,41 @@ ${
                     ))}
                   </select>
                 </div>
+
+            {/* Database Connectivity Badge */}
+            <button
+              type="button"
+              onClick={() => {
+                setIsDbModalOpen(true);
+                handleTestConnection();
+              }}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#050505] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 text-xs transition-colors cursor-pointer select-none group"
+              title="پشکنینی دۆخی پەیوەندی بە داتابەیس"
+            >
+              <span className="relative flex h-2 w-2">
+                {dbStatus === 'connected' ? (
+                  <>
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </>
+                ) : dbStatus === 'syncing' ? (
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500 animate-pulse" />
+                ) : dbStatus === 'from_cache' ? (
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
+                ) : (
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
+                )}
+              </span>
+              <span className="text-neutral-300 font-medium group-hover:text-white transition-colors hidden sm:inline">
+                {dbStatus === 'connected' ? 'داتابەیس پەیوەستە' : dbStatus === 'syncing' ? 'هاوکاتکردن...' : 'ئۆفلاین'}
+              </span>
+              {dbLatency !== null && dbStatus === 'connected' && (
+                <span className="text-[10px] text-emerald-400 font-mono font-bold hidden md:inline">
+                  {dbLatency}ms
+                </span>
+              )}
+              <Database className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white transition-colors" />
+            </button>
 
             {/* CREATE NEW TRANSACTION BUTTON */}
             <button
@@ -2678,6 +2861,166 @@ ${
                   className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-md"
                 >
                   بەڵێ، بیسڕەوە
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+      {/* ====================================================
+          DATABASE CONNECTIVITY & CLOUD DIAGNOSTICS MODAL
+          ==================================================== */}
+      <AnimatePresence>
+        {isDbModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsDbModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 space-y-5"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-white/[0.08]">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-white/[0.05] border border-white/10 text-white">
+                    <Database className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">پشکنینی پەیوەندی داتابەیس</h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">
+                      دۆخی پەیوەندی ڕاستەوخۆ لەگەڵ Google Cloud Firestore
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setIsDbModalOpen(false)}
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Live Status Card */}
+              <div
+                className={`p-4 rounded-xl border flex items-center justify-between ${
+                  dbStatus === 'connected'
+                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-300'
+                    : dbStatus === 'syncing'
+                    ? 'bg-blue-500/10 border-blue-500/20 text-blue-300'
+                    : dbStatus === 'from_cache'
+                    ? 'bg-amber-500/10 border-amber-500/20 text-amber-300'
+                    : 'bg-rose-500/10 border-rose-500/20 text-rose-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="relative flex h-3 w-3 shrink-0">
+                    {dbStatus === 'connected' && (
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    )}
+                    <span
+                      className={`relative inline-flex rounded-full h-3 w-3 ${
+                        dbStatus === 'connected'
+                          ? 'bg-emerald-500'
+                          : dbStatus === 'syncing'
+                          ? 'bg-blue-500 animate-pulse'
+                          : dbStatus === 'from_cache'
+                          ? 'bg-amber-500'
+                          : 'bg-rose-500'
+                      }`}
+                    />
+                  </span>
+                  <div>
+                    <h4 className="text-sm font-bold">
+                      {dbStatus === 'connected'
+                        ? 'پەیوەندی بەستراوە و چالاکە (Connected)'
+                        : dbStatus === 'syncing'
+                        ? 'لە دۆخی هاوکاتکردندایە... (Syncing)'
+                        : dbStatus === 'from_cache'
+                        ? 'خوێندنەوە لە کاشی ناوخۆیی (Offline Cache)'
+                        : 'پەیوەندی نەبەستراوە (Offline / Error)'}
+                    </h4>
+                    <p className="text-xs opacity-80 mt-0.5">
+                      {dbStatus === 'connected'
+                        ? 'سەرجەم تۆمارەکان بە ڕاستەوخۆیی لە هەورەوە دەخوێندرێنەوە و هاوکات دەکرێن.'
+                        : dbStatus === 'from_cache'
+                        ? 'دەستڕاگەیشتن بە ئینتەرنێت هێواشە یان کاشی ئامێر بەکاردەهێنرێت.'
+                        : 'تکایە هێڵی ئینتەرنێت بپشکنە یان دوگمەی پشکنین دابگرە.'}
+                    </p>
+                  </div>
+                </div>
+                {dbLatency !== null && dbStatus === 'connected' && (
+                  <div className="text-left font-mono text-xs font-bold px-2.5 py-1 rounded bg-black/40 border border-emerald-500/30 shrink-0">
+                    {dbLatency} ms
+                  </div>
+                )}
+              </div>
+
+              {/* Database Technical Details Grid */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="p-3 rounded-xl bg-[#050505] border border-white/[0.06]">
+                  <span className="text-[11px] text-neutral-400 block mb-0.5">پڕۆژەی فایەربەیس (Project ID)</span>
+                  <span className="font-mono text-white font-medium">mystore-51968</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#050505] border border-white/[0.06]">
+                  <span className="text-[11px] text-neutral-400 block mb-0.5">داتابەیس (Database ID)</span>
+                  <span className="font-mono text-white font-medium">default</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#050505] border border-white/[0.06]">
+                  <span className="text-[11px] text-neutral-400 block mb-0.5">بەڵگەنامە (Firestore Document)</span>
+                  <span className="font-mono text-white font-medium">popcorn/multitrans_shipments</span>
+                </div>
+
+                <div className="p-3 rounded-xl bg-[#050505] border border-white/[0.06]">
+                  <span className="text-[11px] text-neutral-400 block mb-0.5">مامەڵەکان لە داتابەیس</span>
+                  <span className="text-white font-bold">{store.transactions.length} مامەڵە</span>
+                </div>
+              </div>
+
+              {lastSyncedTime && (
+                <div className="flex items-center justify-between text-xs text-neutral-400 px-1">
+                  <span>دواین کاتی هاوکاتکردنی سەركەوتوو:</span>
+                  <span className="text-white font-mono">{lastSyncedTime}</span>
+                </div>
+              )}
+
+              {dbErrorMessage && (
+                <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs">
+                  <span className="font-bold">هەڵەی تۆمارکراو: </span>
+                  {dbErrorMessage}
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="pt-2 flex flex-col sm:flex-row items-center gap-2">
+                <button
+                  type="button"
+                  disabled={isTestingDb}
+                  onClick={handleTestConnection}
+                  className="w-full sm:flex-1 py-2.5 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 select-none"
+                >
+                  <RefreshCw className={`w-3.5 h-3.5 ${isTestingDb ? 'animate-spin' : ''}`} />
+                  <span>{isTestingDb ? 'پشکنین لە جێبەجێکردندایە...' : 'پشکنینی پەیوەندی ئێستا'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  disabled={isTestingDb || isCloudSyncing}
+                  onClick={handleForceCloudSync}
+                  className="w-full sm:w-auto py-2.5 px-4 rounded-xl bg-white/[0.05] hover:bg-white/10 text-white font-semibold text-xs border border-white/10 flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50 select-none"
+                  title="ناردن و هاوکاتکردنەوەی تەواوی داتاکان بۆ هەور"
+                >
+                  <Cloud className="w-3.5 h-3.5 text-blue-400" />
+                  <span>هاوکاتکردنی دەستی</span>
                 </button>
               </div>
             </motion.div>
