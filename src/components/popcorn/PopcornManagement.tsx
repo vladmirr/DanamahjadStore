@@ -764,8 +764,7 @@ export const PopcornManagement: React.FC = () => {
     if (!activeTransaction) return;
     const text = `📊 مامەڵەی: ${activeTransaction.name}
 ----------------------------------------
-${config.originCountry ? `📍 سەرچاوە: ${config.originCountry} | ` : ''}🎯 مەبەست: ${config.destinationCity}
-⚖️ بڕی بار: ${totalCargoTons} تۆن
+${config.originCountry ? `📍 سەرچاوە: ${config.originCountry}\n` : ''}⚖️ بڕی بار: ${totalCargoTons} تۆن
 💵 نرخی کڕین: $${buyPricePerTon}/تۆن | کۆی کڕین: ${formatUSD(totalBuyingCost)}
 📈 نرخی فرۆشتن: $${sellPricePerTon}/تۆن | کۆی داهات: ${formatUSD(expectedTotalRevenue)}
 ----------------------------------------
