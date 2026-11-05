@@ -60,7 +60,7 @@ import {
   PopcornDbStatus,
   DEFAULT_TRANSACTION,
 } from '../../services/popcornStorage';
-import { formatUSD, formatIQD, formatNumber, playSound } from '../../utils/formatters';
+import { formatUSD, formatNumber, playSound } from '../../utils/formatters';
 import { exportPopcornToExcel, exportTrucksToExcel, exportExpensesToExcel } from '../../utils/excelExport';
 import { TiltCard } from '../common/TiltCard';
 import confetti from 'canvas-confetti';
@@ -778,7 +778,7 @@ ${config.originCountry ? `📍 سەرچاوە: ${config.originCountry} | ` : ''}
 - خەرجییەکانی ناوخۆی عێراق و گومرگ: ${formatUSD(totalIraqSpending)}
 - کۆی گشتی تێچووی هەموو مامەڵەکە: ${formatUSD(totalOverallProjectCost)}
 ----------------------------------------
-💎 قازانجی پوختەی گشتی (Net): ${formatUSD(finalNetProfit)} (${formatIQD(finalNetProfit * exchangeRate)})
+💎 قازانجی پوختەی گشتی (Net): ${formatUSD(finalNetProfit)}
 ${
   hasPartner
     ? `🤝 حیساباتی شەراکەت (${config.partnerName}):
