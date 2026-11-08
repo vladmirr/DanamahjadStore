@@ -129,6 +129,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     const unitsPerCarton = Number(formData.unitsPerCarton) || 1;
     const sellingPricePerUnit = Number(formData.sellingPricePerUnit) || costPricePerUnit * 1.25;
     const minStockThreshold = Number(formData.minStockThreshold) || 20;
+    const totalUnits = Math.round(cartons * unitsPerCarton * 100) / 100;
 
     if (editingProduct) {
       updateProduct(editingProduct.id, {
@@ -138,7 +139,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
         costPricePerUnit,
         cartons,
         unitsPerCarton,
-        totalUnits: cartons * unitsPerCarton,
+        totalUnits,
         sellingPricePerUnit,
         minStockThreshold,
       });
@@ -161,7 +162,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // Calculated preview in modal
   const calcCartons = Number(formData.cartons) || 0;
   const calcUnitsPerCarton = Number(formData.unitsPerCarton) || 0;
-  const calcTotalUnits = calcCartons * calcUnitsPerCarton;
+  const calcTotalUnits = Math.round(calcCartons * calcUnitsPerCarton * 100) / 100;
   const calcCostUnit = Number(formData.costPricePerUnit) || 0;
 
   return (
@@ -421,6 +422,8 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                       </label>
                       <input
                         type="number"
+                        step="any"
+                        inputMode="decimal"
                         min="0"
                         value={formData.cartons}
                         onChange={(e) => setFormData({ ...formData, cartons: e.target.value })}
@@ -436,6 +439,8 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                       </label>
                       <input
                         type="number"
+                        step="any"
+                        inputMode="decimal"
                         min="1"
                         value={formData.unitsPerCarton}
                         onChange={(e) =>

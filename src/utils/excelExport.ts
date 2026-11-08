@@ -378,7 +378,7 @@ export async function exportAllDataToExcel(
           const c =
             i.unitType === 'carton'
               ? i.quantity
-              : Math.floor(i.quantityInUnits / (p.unitsPerCarton || 1));
+              : Math.round((i.quantityInUnits / (p.unitsPerCarton || 1)) * 100) / 100;
           return sum + c;
         }, 0);
 
@@ -491,7 +491,7 @@ export async function exportAllDataToExcel(
       const cartonsSold =
         item.unitType === 'carton'
           ? item.quantity
-          : Math.floor(item.quantityInUnits / (item.unitsPerCarton || 1));
+          : Math.round((item.quantityInUnits / (item.unitsPerCarton || 1)) * 100) / 100;
       const unitsPerCarton = item.unitsPerCarton || 1;
 
       styleCell(worksheet.getCell(rowNum, 18), {});
@@ -501,7 +501,7 @@ export async function exportAllDataToExcel(
       worksheet.getCell(rowNum, 19).value = item.productName;
 
       // Col T (20): کارتۆن (Cartons sold)
-      styleCell(worksheet.getCell(rowNum, 20), { numFmt: '#,##0' });
+      styleCell(worksheet.getCell(rowNum, 20), { numFmt: '#,##0.##' });
       worksheet.getCell(rowNum, 20).value = cartonsSold;
 
       // Col U (21): دانە (Units per carton)

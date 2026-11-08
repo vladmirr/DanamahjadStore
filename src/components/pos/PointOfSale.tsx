@@ -77,8 +77,8 @@ export const PointOfSale: React.FC = () => {
   const handleAddToCart = () => {
     if (!currentProduct) return;
 
-    const qty = parseInt(selectedQuantity);
-    if (!qty || qty < 1) {
+    const qty = parseFloat(selectedQuantity);
+    if (!qty || qty <= 0) {
       alert('تکایە ژمارە / بڕی فرۆشتن بنووسە');
       return;
     }
@@ -371,7 +371,9 @@ export const PointOfSale: React.FC = () => {
                     </label>
                     <input
                       type="number"
-                      min="1"
+                      step="any"
+                      inputMode="decimal"
+                      min="0.001"
                       value={selectedQuantity}
                       onChange={(e) => setSelectedQuantity(e.target.value)}
                       onFocus={(e) => e.target.select()}
@@ -388,6 +390,8 @@ export const PointOfSale: React.FC = () => {
                     </label>
                     <input
                       type="number"
+                      step="any"
+                      inputMode="decimal"
                       value={customPrice}
                       onChange={(e) => setCustomPrice(e.target.value)}
                       onFocus={(e) => e.target.select()}
@@ -405,12 +409,12 @@ export const PointOfSale: React.FC = () => {
                     <span className="text-sm font-bold text-amber-300 font-numeric">
                       {formatIQD(
                         selectedUnitType === 'carton'
-                          ? (parseInt(selectedQuantity) || 0) * (currentProduct.unitsPerCarton || 1) * (Number(customPrice) || defaultPrice)
-                          : (parseInt(selectedQuantity) || 0) * (Number(customPrice) || defaultPrice)
+                          ? (parseFloat(selectedQuantity) || 0) * (currentProduct.unitsPerCarton || 1) * (Number(customPrice) || defaultPrice)
+                          : (parseFloat(selectedQuantity) || 0) * (Number(customPrice) || defaultPrice)
                       )}
                     </span>
                     <span className="text-[11px] text-slate-500 block">
-                      کۆی دانەی کەمکراوە: {selectedUnitType === 'carton' ? (parseInt(selectedQuantity) || 0) * currentProduct.unitsPerCarton : (parseInt(selectedQuantity) || 0)} دانە
+                      کۆی دانەی کەمکراوە: {selectedUnitType === 'carton' ? Math.round(((parseFloat(selectedQuantity) || 0) * currentProduct.unitsPerCarton) * 100) / 100 : (parseFloat(selectedQuantity) || 0)} دانە
                     </span>
                   </div>
 
