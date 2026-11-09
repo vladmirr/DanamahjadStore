@@ -30,15 +30,16 @@ const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-neutral-100 flex flex-col antialiased selection:bg-white/20 selection:text-white relative">
       {/* Top Right Floating Action Buttons */}
-      <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-40 flex items-center gap-2 select-none">
-        {/* Menu Button */}
+      <div className="fixed top-3.5 right-3.5 sm:top-5 sm:right-6 z-40 flex items-center gap-2 select-none">
+        {/* Menu Button Styled as Pill Island */}
         <button
           onClick={() => setIsSidebarOpen(true)}
-          className="flex items-center justify-center p-2.5 rounded-2xl bg-[#0b0e14]/90 hover:bg-[#121620] border border-white/10 hover:border-white/25 text-white shadow-2xl backdrop-blur-xl transition-all cursor-pointer group"
+          className="flex items-center gap-2 px-3.5 py-1.5 sm:px-4 sm:py-2 rounded-full bg-[#0b0e14]/90 hover:bg-[#121620]/95 border border-white/10 hover:border-white/20 text-neutral-200 hover:text-white shadow-2xl shadow-black/80 backdrop-blur-xl transition-all cursor-pointer group"
           title="مێنۆ"
           aria-label="مێنۆ"
         >
-          <Menu className="w-5 h-5 text-neutral-300 group-hover:text-white transition-colors" />
+          <span className="text-xs sm:text-sm font-semibold">مێنۆ</span>
+          <Menu className="w-4 h-4 text-neutral-300 group-hover:text-white transition-colors" />
         </button>
       </div>
 
