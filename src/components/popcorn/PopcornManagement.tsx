@@ -821,47 +821,6 @@ ${
 
               {/* Actions */}
               <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
-                {/* Database Connectivity Badge Button */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsDbModalOpen(true);
-                    handleTestConnection();
-                  }}
-                  className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-white/20 text-xs transition-all cursor-pointer select-none group"
-                  title="پشکنینی دۆخی پەیوەندی بە داتابەیس (Google Cloud Firestore)"
-                >
-                  <span className="relative flex h-2 w-2">
-                    {dbStatus === 'connected' ? (
-                      <>
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                      </>
-                    ) : dbStatus === 'syncing' ? (
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500 animate-pulse" />
-                    ) : dbStatus === 'from_cache' ? (
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-                    ) : (
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                    )}
-                  </span>
-                  <span className="text-neutral-300 font-medium group-hover:text-white transition-colors">
-                    {dbStatus === 'connected'
-                      ? 'داتابەیس: پەیوەستە'
-                      : dbStatus === 'syncing'
-                      ? 'هاوکاتکردن...'
-                      : dbStatus === 'from_cache'
-                      ? 'کاشی ناوخۆیی'
-                      : 'داتابەیس: ناچالاک'}
-                  </span>
-                  {dbLatency !== null && dbStatus === 'connected' && (
-                    <span className="text-[10px] text-emerald-400 font-mono font-bold bg-emerald-500/10 px-1.5 py-0.5 rounded border border-emerald-500/20">
-                      {dbLatency}ms
-                    </span>
-                  )}
-                  <Database className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white transition-colors" />
-                </button>
-
                 {/* Export All Transactions to Excel */}
                 <button
                   type="button"
@@ -1140,41 +1099,6 @@ ${
                     ))}
                   </select>
                 </div>
-
-            {/* Database Connectivity Badge */}
-            <button
-              type="button"
-              onClick={() => {
-                setIsDbModalOpen(true);
-                handleTestConnection();
-              }}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#050505] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 text-xs transition-colors cursor-pointer select-none group"
-              title="پشکنینی دۆخی پەیوەندی بە داتابەیس"
-            >
-              <span className="relative flex h-2 w-2">
-                {dbStatus === 'connected' ? (
-                  <>
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                  </>
-                ) : dbStatus === 'syncing' ? (
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500 animate-pulse" />
-                ) : dbStatus === 'from_cache' ? (
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500" />
-                ) : (
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500" />
-                )}
-              </span>
-              <span className="text-neutral-300 font-medium group-hover:text-white transition-colors hidden sm:inline">
-                {dbStatus === 'connected' ? 'داتابەیس پەیوەستە' : dbStatus === 'syncing' ? 'هاوکاتکردن...' : 'ئۆفلاین'}
-              </span>
-              {dbLatency !== null && dbStatus === 'connected' && (
-                <span className="text-[10px] text-emerald-400 font-mono font-bold hidden md:inline">
-                  {dbLatency}ms
-                </span>
-              )}
-              <Database className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white transition-colors" />
-            </button>
 
             {/* CREATE NEW TRANSACTION BUTTON */}
             <button
