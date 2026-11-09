@@ -66,13 +66,13 @@ export const BottomNav: React.FC = () => {
   ];
 
   return (
-    <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] sm:w-auto max-w-lg select-none">
+    <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-max max-w-[calc(100%-1.5rem)] select-none">
       <nav
         aria-label="خوارەوەی پەڕە - پێڕستی سەرەکی"
         className="bg-[#0b0e14]/90 hover:bg-[#121620]/95 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl sm:rounded-full shadow-2xl shadow-black/80 p-1.5 flex items-center transition-all duration-200"
       >
-        {/* Navigation Items: Strictly 1 Single Row (No Wrapping) */}
-        <div className="grid grid-cols-3 gap-1 sm:gap-1.5 w-full">
+        {/* Navigation Items: Single Row with Natural Widths */}
+        <div className="flex items-center gap-1 sm:gap-2 w-auto">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
@@ -81,7 +81,7 @@ export const BottomNav: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-xl sm:rounded-full transition-all duration-150 cursor-pointer min-w-0 select-none group ${
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-2 rounded-xl sm:rounded-full transition-all duration-150 cursor-pointer shrink-0 select-none group ${
                   isActive
                     ? 'bg-white/10 text-white border border-white/20 font-bold shadow-sm'
                     : 'text-neutral-400 hover:text-white hover:bg-white/[0.04] border border-transparent font-medium'
@@ -94,12 +94,11 @@ export const BottomNav: React.FC = () => {
                   </span>
                 )}
 
-                <span className="text-xs sm:text-sm whitespace-nowrap truncate">
-                  <span className="sm:hidden">{item.shortLabel}</span>
-                  <span className="hidden sm:inline">{item.label}</span>
+                <span className="text-xs sm:text-sm whitespace-nowrap">
+                  {item.label}
                 </span>
 
-                <div className="relative shrink-0 flex items-center gap-1">
+                <div className="relative shrink-0 flex items-center gap-1.5">
                   <Icon
                     className={`w-4 h-4 transition-colors ${
                       isActive ? 'text-white' : 'text-neutral-400 group-hover:text-white'
