@@ -54,13 +54,9 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
   const [notes, setNotes] = useState('');
 
   // Open modal with preselected customer
-  const handleOpenForCustomer = (name: string, debt?: number) => {
+  const handleOpenForCustomer = (name: string) => {
     setTargetCustomer(name);
-    if (debt && debt > 0) {
-      setAmount(debt.toString());
-    } else {
-      setAmount('');
-    }
+    setAmount('');
     setNotes('وەرگیرا بە کاش');
     setIsPaymentModalOpen(true);
   };
@@ -291,7 +287,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                         <div className="flex items-center justify-center gap-2">
                           {hasDebt && (
                             <button
-                              onClick={() => handleOpenForCustomer(cust.name, cust.outstandingDebt)}
+                              onClick={() => handleOpenForCustomer(cust.name)}
                               className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-medium cursor-pointer"
                             >
                               وەرگرتنی پارە
@@ -408,7 +404,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                     min="1"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
-                    placeholder="10000"
+                    placeholder="0"
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 font-numeric"
                   />
                   {/* Quick amount shortcuts */}
