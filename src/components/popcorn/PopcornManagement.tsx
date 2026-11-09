@@ -768,7 +768,7 @@ export const PopcornManagement: React.FC = () => {
 ----------------------------------------
 ${config.originCountry ? `📍 سەرچاوە: ${config.originCountry}\n` : ''}⚖️ بڕی بار: ${totalCargoTons} تۆن
 💵 نرخی کڕین: $${buyPricePerTon}/تۆن | کۆی کڕین: ${formatUSD(totalBuyingCost)}
-📈 نرخی فرۆشتن: $${sellPricePerTon}/تۆن | کۆی داهات: ${formatUSD(expectedTotalRevenue)}
+${sellPricePerTon > 0 ? `📈 نرخی فرۆشتن: $${sellPricePerTon}/تۆن | کۆی داهات: ${formatUSD(expectedTotalRevenue)}` : '📈 نرخی فرۆشتن: دیاری نەکراوە (None)'}
 ----------------------------------------
 🚚 بارهەڵگرەکانی ئێران:
 - بڕی باری هاتووی تۆمارکراو: ${totalTonsCarried} تۆن (${trucks.length} بارهەڵگر)
@@ -779,12 +779,12 @@ ${config.originCountry ? `📍 سەرچاوە: ${config.originCountry}\n` : ''}�
 - خەرجییەکانی ناوخۆی عێراق و گومرگ: ${formatUSD(totalIraqSpending)}
 - کۆی گشتی تێچووی هەموو مامەڵەکە: ${formatUSD(totalOverallProjectCost)}
 ----------------------------------------
-💎 قازانجی پوختەی گشتی (Net): ${formatUSD(finalNetProfit)}
+${sellPricePerTon > 0 ? `💎 قازانجی پوختەی گشتی (Net): ${formatUSD(finalNetProfit)}` : '💎 قازانجی پوختەی گشتی: چاوەڕوانی فرۆشتن (Pending)'}
 ${
   hasPartner
     ? `🤝 حیساباتی شەراکەت (${config.partnerName}):
-- پشکی من (%${myPercent}): ${formatUSD(myProfitShare)}
-- پشکی هاوبەش (%${partnerPercent}): ${formatUSD(partnerProfitShare)}`
+- پشکی من (%${myPercent}): ${sellPricePerTon > 0 ? formatUSD(myProfitShare) : '—'}
+- پشکی هاوبەش (%${partnerPercent}): ${sellPricePerTon > 0 ? formatUSD(partnerProfitShare) : '—'}`
     : `👤 مامەڵەی تەواو تایبەت (بێ هاوبەش - ١٠٠٪ قازانج بۆ خۆت)`
 }
 ----------------------------------------
@@ -1015,7 +1015,14 @@ ${
                         <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
                           <span className="text-[10px] text-neutral-400 block mb-0.5">نرخی فرۆشتن</span>
                           <span className="font-bold text-white">
-                            ${formatNumber(sellPrice)} <span className="text-[10px] font-normal text-neutral-400">/ تۆن</span>
+                            {sellPrice > 0 ? (
+                              <>
+                                ${formatNumber(sellPrice)}{' '}
+                                <span className="text-[10px] font-normal text-neutral-400">/ تۆن</span>
+                              </>
+                            ) : (
+                              <span className="text-neutral-400 text-xs font-medium">دیاری نەکراوە (None)</span>
+                            )}
                           </span>
                         </div>
                       </div>
@@ -2132,7 +2139,7 @@ ${
                     <input
                       type="number"
                       step="any"
-                      placeholder="ئارەزوومەندانە (نموونە: 302)"
+                      placeholder="دیاری نەکراوە (بەتاڵ بێت = None)"
                       value={newTransactionForm.sellingPricePerTonUSD}
                       onChange={(e) =>
                         setNewTransactionForm({
@@ -2327,7 +2334,7 @@ ${
                   <input
                     type="number"
                     step="any"
-                    placeholder="ئارەزوومەندانە (نموونە: 302)"
+                    placeholder="دیاری نەکراوە (بەتاڵ بێت = None)"
                     value={editTransactionForm.sellingPricePerTonUSD || ''}
                     onChange={(e) =>
                       setEditTransactionForm({

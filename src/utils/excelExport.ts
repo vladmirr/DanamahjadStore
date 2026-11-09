@@ -696,9 +696,9 @@ function renderSinglePopcornWorksheet(
 ) {
   const { config, trucks, expenses } = data;
 
-  const totalCargoTons = Number(config.totalTons) || 200;
-  const buyPricePerTon = Number(config.buyPricePerTonUSD) || 220;
-  const sellPricePerTon = Number(config.sellingPricePerTonUSD) || 302;
+  const totalCargoTons = Number(config.totalTons) || 0;
+  const buyPricePerTon = Number(config.buyPricePerTonUSD) || 0;
+  const sellPricePerTon = Number(config.sellingPricePerTonUSD) || 0;
   const exchangeRate = Number(config.exchangeRateIQD) || 1530;
 
   const totalBuyingCost = totalCargoTons * buyPricePerTon;
@@ -762,7 +762,9 @@ function renderSinglePopcornWorksheet(
 
   // Sub-banner
   ws.addRow([
-    `کڕینی ${totalCargoTons} تۆن دانەوێڵە ${config.originCountry ? `لە ${config.originCountry} ` : ''}بە نرخی $${buyPricePerTon} و فرۆشتن بە $${sellPricePerTon} لە ${config.destinationCity} ${
+    `کڕینی ${totalCargoTons} تۆن دانەوێڵە ${config.originCountry ? `لە ${config.originCountry} ` : ''}بە نرخی $${buyPricePerTon} ${
+      sellPricePerTon > 0 ? `و فرۆشتن بە $${sellPricePerTon} ` : '(فرۆشتن: دیاری نەکراوە) '
+    }لە ${config.destinationCity} ${
       hasPartner ? `(شەراکەت: %${partnerPercent} - ${config.partnerName})` : '(مامەڵەی تایبەت - بێ هاوبەش)'
     }`
   ]);
@@ -795,20 +797,50 @@ function renderSinglePopcornWorksheet(
     ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', config.originCountry ? `سەرچاوە: ${config.originCountry}` : `مەبەست: ${config.destinationCity}`],
     ['نرخی کڕینی ١ تۆن', `$${buyPricePerTon}`, `${(buyPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی کڕینی گرێبەست'],
     ['کۆی تێچووی کڕین (سەرمایە)', `$${totalBuyingCost.toLocaleString()}`, `${(totalBuyingCost * exchangeRate).toLocaleString()} د.ع`, `${totalCargoTons} تۆن × $${buyPricePerTon}`],
-    ['نرخی پێشبینیکراوی فرۆشتنی ١ تۆن', `$${sellPricePerTon}`, `${(sellPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'لە بازاڕی سلێمانی'],
-    ['کۆی پێشبینیکراوی داهاتی فرۆش', `$${expectedTotalRevenue.toLocaleString()}`, `${(expectedTotalRevenue * exchangeRate).toLocaleString()} د.ع`, `${totalCargoTons} تۆن × $${sellPricePerTon}`],
+    [
+      'نرخی پێشبینیکراوی فرۆشتنی ١ تۆن',
+      sellPricePerTon > 0 ? `$${sellPricePerTon}` : 'دیاری نەکراوە (None)',
+      sellPricePerTon > 0 ? `${(sellPricePerTon * exchangeRate).toLocaleString()} د.ع` : '—',
+      sellPricePerTon > 0 ? 'لە بازاڕی سلێمانی' : 'هێشتا نەفرۆشراوە',
+    ],
+    [
+      'کۆی پێشبینیکراوی داهاتی فرۆش',
+      sellPricePerTon > 0 ? `$${expectedTotalRevenue.toLocaleString()}` : '—',
+      sellPricePerTon > 0 ? `${(expectedTotalRevenue * exchangeRate).toLocaleString()} د.ع` : '—',
+      sellPricePerTon > 0 ? `${totalCargoTons} تۆن × $${sellPricePerTon}` : 'چاوەڕوانی فرۆشتن',
+    ],
     ['خەرجییەکانی گواستنەوەی ئێران', `$${totalIranSpending.toLocaleString()}`, `${(totalIranSpending * exchangeRate).toLocaleString()} د.ع`, 'کرێی بارهەڵگر، مەرز و ترانزێت'],
     ['خەرجییەکانی ناوخۆی عێراق و گومرگ', `$${totalIraqSpending.toLocaleString()}`, `${(totalIraqSpending * exchangeRate).toLocaleString()} د.ع`, 'گومرگی باشماخ، داگرتن و عەمبار'],
     ['کۆی گشتی هەموو خەرجییەکان', `$${totalOverallCost.toLocaleString()}`, `${(totalOverallCost * exchangeRate).toLocaleString()} د.ع`, 'کڕین + خەرجی ئێران + خەرجی عێراق'],
-    ['قازانجی پوختەی مامەڵە (Net Profit)', `$${finalNetProfit.toLocaleString()}`, `${(finalNetProfit * exchangeRate).toLocaleString()} د.ع`, 'داهاتی فرۆش - سەرجەم خەرجییەکان'],
+    [
+      'قازانجی پوختەی مامەڵە (Net Profit)',
+      sellPricePerTon > 0 ? `$${finalNetProfit.toLocaleString()}` : 'چاوەڕوانی فرۆشتن (Pending)',
+      sellPricePerTon > 0 ? `${(finalNetProfit * exchangeRate).toLocaleString()} د.ع` : '—',
+      sellPricePerTon > 0 ? 'داهاتی فرۆش - سەرجەم خەرجییەکان' : 'دوای فرۆشتن دیاری دەکرێت',
+    ],
     ...(hasPartner
       ? [
-          [`پشکی هاوبەش (${config.partnerName} - %${partnerPercent})`, `$${partnerProfitShare.toLocaleString()}`, `${(partnerProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی شەراکەت'],
-          [`پشکی من (%${myPercent})`, `$${myProfitShare.toLocaleString()}`, `${(myProfitShare * exchangeRate).toLocaleString()} د.ع`, 'پوختەی قازانجی من'],
+          [
+            `پشکی هاوبەش (${config.partnerName} - %${partnerPercent})`,
+            sellPricePerTon > 0 ? `$${partnerProfitShare.toLocaleString()}` : '—',
+            sellPricePerTon > 0 ? `${(partnerProfitShare * exchangeRate).toLocaleString()} د.ع` : '—',
+            'پوختەی قازانجی شەراکەت',
+          ],
+          [
+            `پشکی من (%${myPercent})`,
+            sellPricePerTon > 0 ? `$${myProfitShare.toLocaleString()}` : '—',
+            sellPricePerTon > 0 ? `${(myProfitShare * exchangeRate).toLocaleString()} د.ع` : '—',
+            'پوختەی قازانجی من',
+          ],
         ]
       : [
           ['شەراکەت', 'مامەڵەی تایبەت (بێ هاوبەش)', '—', '١٠٠٪ بۆ خاوەنکار'],
-          ['قازانجی تەواوی من (١٠٠٪)', `$${myProfitShare.toLocaleString()}`, `${(myProfitShare * exchangeRate).toLocaleString()} د.ع`, 'تەواوی قازانجی پوخت'],
+          [
+            'قازانجی تەواوی من (١٠٠٪)',
+            sellPricePerTon > 0 ? `$${myProfitShare.toLocaleString()}` : '—',
+            sellPricePerTon > 0 ? `${(myProfitShare * exchangeRate).toLocaleString()} د.ع` : '—',
+            'تەواوی قازانجی پوخت',
+          ],
         ]),
   ];
 
@@ -1069,8 +1101,9 @@ export function renderPopcornSummaryWorksheet(
     const tons = Number(cfg.totalTons) || 0;
     const buyPrice = Number(cfg.buyPricePerTonUSD) || 0;
     const sellPrice = Number(cfg.sellingPricePerTonUSD) || 0;
+    const hasSellingPrice = sellPrice > 0;
     const buyingCost = tons * buyPrice;
-    const revenue = tons * sellPrice;
+    const revenue = hasSellingPrice ? tons * sellPrice : 0;
 
     const truckTransit = (trans.trucks || []).reduce(
       (sum, tr) => sum + (Number(tr.transitCostUSD) || 0),
@@ -1087,24 +1120,26 @@ export function renderPopcornSummaryWorksheet(
 
     const totalExp = iranExp + iraqExp;
     const overallCost = buyingCost + totalExp;
-    const netProfit = revenue - overallCost;
+    const netProfit = hasSellingPrice ? revenue - overallCost : 0;
 
     const hasPartner = cfg.hasPartner !== false;
     const partnerPercent = hasPartner ? Number(cfg.partnerSharePercent) || 50 : 0;
     const myPercent = 100 - partnerPercent;
-    const partnerShare = hasPartner ? (netProfit * partnerPercent) / 100 : 0;
-    const myShare = hasPartner ? (netProfit * myPercent) / 100 : netProfit;
+    const partnerShare = hasPartner && hasSellingPrice ? (netProfit * partnerPercent) / 100 : 0;
+    const myShare = hasSellingPrice ? (hasPartner ? (netProfit * myPercent) / 100 : netProfit) : 0;
 
     sumTons += tons;
     sumBuyingCost += buyingCost;
-    sumRevenue += revenue;
+    if (hasSellingPrice) {
+      sumRevenue += revenue;
+      sumNetProfit += netProfit;
+      sumMyShare += myShare;
+      sumPartnerShare += partnerShare;
+    }
     sumIranExpenses += iranExp;
     sumIraqExpenses += iraqExp;
     sumTotalExpenses += totalExp;
     sumOverallCost += overallCost;
-    sumNetProfit += netProfit;
-    sumMyShare += myShare;
-    sumPartnerShare += partnerShare;
 
     const partnerLabel = hasPartner
       ? `%${partnerPercent} (${cfg.partnerName || 'هاوبەش'})`
@@ -1115,17 +1150,17 @@ export function renderPopcornSummaryWorksheet(
       trans.name || `مامەڵەی ${idx + 1}`,
       tons,
       buyPrice,
-      sellPrice,
+      hasSellingPrice ? sellPrice : 'دیاری نەکراوە (None)',
       buyingCost,
-      revenue,
+      hasSellingPrice ? revenue : '—',
       iranExp,
       iraqExp,
       totalExp,
       overallCost,
-      netProfit,
+      hasSellingPrice ? netProfit : 'چاوەڕوانی فرۆشتن',
       partnerLabel,
-      myShare,
-      partnerShare,
+      hasSellingPrice ? myShare : '—',
+      hasSellingPrice ? partnerShare : '—',
       cfg.destinationCity || 'سلێمانی',
     ];
 
@@ -1146,21 +1181,42 @@ export function renderPopcornSummaryWorksheet(
       // Number formatting
       if (c === 3) {
         cell.numFmt = '#,##0.00';
-      } else if (c === 4 || c === 5) {
+      } else if (c === 4) {
         cell.numFmt = '"$"#,##0';
-      } else if ([6, 7, 8, 9, 10, 11, 14, 15].includes(c)) {
+      } else if (c === 5) {
+        if (hasSellingPrice) {
+          cell.numFmt = '"$"#,##0';
+        } else {
+          cell.font = { name: 'Arial', size: 9, italic: true, color: { argb: 'FF64748B' } };
+        }
+      } else if ([6, 8, 9, 10, 11].includes(c)) {
         cell.numFmt = '"$"#,##0';
+      } else if ([7, 14, 15].includes(c)) {
+        if (hasSellingPrice) {
+          cell.numFmt = '"$"#,##0';
+        } else {
+          cell.font = { name: 'Arial', size: 10, color: { argb: 'FF94A3B8' } };
+        }
       }
 
       // Net profit color
       if (c === 12) {
-        cell.numFmt = '"$"#,##0;[Red]("$"#,##0);"-"';
-        cell.font = {
-          name: 'Arial',
-          size: 10,
-          bold: true,
-          color: { argb: netProfit >= 0 ? 'FF059669' : 'FFE11D48' },
-        };
+        if (hasSellingPrice) {
+          cell.numFmt = '"$"#,##0;[Red]("$"#,##0);"-"';
+          cell.font = {
+            name: 'Arial',
+            size: 10,
+            bold: true,
+            color: { argb: netProfit >= 0 ? 'FF059669' : 'FFE11D48' },
+          };
+        } else {
+          cell.font = {
+            name: 'Arial',
+            size: 9,
+            italic: true,
+            color: { argb: 'FF64748B' },
+          };
+        }
       }
     }
   });
