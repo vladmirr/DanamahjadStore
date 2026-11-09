@@ -56,12 +56,7 @@ export const BottomNav: React.FC = () => {
       label: 'پارەدان و قەرزەکان',
       shortLabel: 'قەرزەکان',
       icon: Wallet,
-      badge:
-        metrics.totalOutstandingDebt > 0 ? (
-          <span className="text-[10px] text-amber-400 font-mono font-bold bg-amber-500/15 px-1.5 py-0.5 rounded-full border border-amber-500/30">
-            قەرز
-          </span>
-        ) : null,
+      badge: null,
     },
   ];
 
