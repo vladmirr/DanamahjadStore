@@ -14,6 +14,7 @@ import { BackupManager } from './components/backup/BackupManager';
 import { PopcornManagement } from './components/popcorn/PopcornManagement';
 import { InvoiceModal } from './components/modals/InvoiceModal';
 import { StatementModal } from './components/modals/StatementModal';
+import { Lightning } from './components/ui/Lightning';
 
 const MainLayout: React.FC = () => {
   const { adminUser, activeTab, setIsSidebarOpen } = useApp();
@@ -24,11 +25,41 @@ const MainLayout: React.FC = () => {
 
   // If user is not logged in, render ONLY the Login screen centered on the page
   if (!adminUser || !adminUser.isLoggedIn) {
-    return <Login />;
+    return (
+      <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 relative overflow-hidden">
+        <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[#0a0a0a]">
+          <Lightning
+            color="#D4AF37"
+            glow={1.3}
+            intensity={1.1}
+            speed={0.65}
+            opacity={0.8}
+            bolts={2}
+            branches={3}
+            flicker={0.4}
+          />
+        </div>
+        <Login />
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-[#050505] text-neutral-100 flex flex-col antialiased selection:bg-white/20 selection:text-white relative">
+    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 flex flex-col antialiased selection:bg-amber-500/20 selection:text-amber-200 relative">
+      {/* Fullscreen Animated Lightning Background (Warm Gold #D4AF37 on Deep Charcoal #0a0a0a) */}
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[#0a0a0a]">
+        <Lightning
+          color="#D4AF37"
+          glow={1.3}
+          intensity={1.1}
+          speed={0.65}
+          opacity={0.8}
+          bolts={2}
+          branches={3}
+          flicker={0.4}
+        />
+      </div>
+
       {/* Top Right Floating Action Buttons */}
       <div className="fixed top-3.5 right-3.5 sm:top-5 sm:right-6 z-40 flex items-center gap-2 select-none">
         {/* Menu Button Styled as Pill Island */}
