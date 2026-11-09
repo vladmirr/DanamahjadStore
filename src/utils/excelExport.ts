@@ -923,7 +923,6 @@ function renderSinglePopcornWorksheet(
   const expHeaders = [
     'لق / وڵات',
     'بڕ بە دۆلار ($ USD)',
-    'بڕ بە دراوی ناوخۆ',
     'بەروار',
     'دراوە لەلایەن',
     'تێبینی و پسوولە',
@@ -931,26 +930,22 @@ function renderSinglePopcornWorksheet(
   const expHeadRow = ws.addRow(expHeaders);
   expHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   expHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
-  for (let c = 1; c <= 6; c++) {
+  for (let c = 1; c <= 5; c++) {
     expHeadRow.getCell(c).border = thinBorder;
   }
 
   expenses.forEach((e) => {
     const regText = e.region === 'iran' ? '🇮🇷 ئێران' : '🇮🇶 عێراق';
     const payerText = e.paidBy === 'partner' ? 'شەریک / هاوبەش' : e.paidBy === 'me' ? 'لەلایەن منەوە' : 'هاوبەش';
-    const localText = e.amountLocal
-      ? `${Number(e.amountLocal).toLocaleString()} ${e.region === 'iran' ? 'تمەن' : 'دینار'}${e.exchangeRate ? ` (صەرف: ${Number(e.exchangeRate).toLocaleString()})` : ''}`
-      : '—';
     const r = ws.addRow([
       regText,
       Number(e.amountUSD) || 0,
-      localText,
       e.date,
       payerText,
       e.notes || '',
     ]);
     r.font = { size: 10 };
-    for (let c = 1; c <= 6; c++) {
+    for (let c = 1; c <= 5; c++) {
       r.getCell(c).border = thinBorder;
     }
   });
@@ -962,11 +957,10 @@ function renderSinglePopcornWorksheet(
     '—',
     '—',
     '—',
-    '—',
   ]);
   expTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
   expTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
-  for (let c = 1; c <= 6; c++) {
+  for (let c = 1; c <= 5; c++) {
     expTotalRow.getCell(c).border = thinBorder;
   }
 
