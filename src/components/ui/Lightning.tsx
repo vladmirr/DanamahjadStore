@@ -329,9 +329,6 @@ const compile = (gl: WebGL2RenderingContext, type: number, source: string) => {
   const shader = gl.createShader(type) as WebGLShader;
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
-  if (!gl.getShaderParameter(shader, gl.COMPILE_STATUS)) {
-    console.error('Lightning Shader compile error:', gl.getShaderInfoLog(shader));
-  }
   return shader;
 };
 
@@ -422,20 +419,12 @@ const Lightning = ({
     gl.attachShader(program, compile(gl, gl.VERTEX_SHADER, VERTEX));
     gl.attachShader(program, compile(gl, gl.FRAGMENT_SHADER, FRAGMENT));
     gl.linkProgram(program);
-    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-      console.error('Lightning Program link error:', gl.getProgramInfoLog(program));
-      return;
-    }
+    if (!gl.getProgramParameter(program, gl.LINK_STATUS)) return;
     const uniforms = Object.fromEntries(UNIFORMS.map(name => [name, gl.getUniformLocation(program, name)]));
-    const vao = gl.createVertexArray();
-    gl.bindVertexArray(vao);
     const buffer = gl.createBuffer();
     gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
     gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, 1, -1, -1, 1, 1, 1]), gl.STATIC_DRAW);
     const position = gl.getAttribLocation(program, 'aPosition');
-    gl.enableVertexAttribArray(position);
-    gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
-    gl.bindVertexArray(null);
 
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     const view = { width: 1, height: 1, left: 0, top: 0 };
@@ -510,7 +499,9 @@ const Lightning = ({
       gl.clearColor(0, 0, 0, 0);
       gl.clear(gl.COLOR_BUFFER_BIT);
       gl.useProgram(program);
-      gl.bindVertexArray(vao);
+      gl.bindBuffer(gl.ARRAY_BUFFER, buffer);
+      gl.enableVertexAttribArray(position);
+      gl.vertexAttribPointer(position, 2, gl.FLOAT, false, 0, 0);
       gl.uniform2f(uniforms.uResolution, canvas.width, canvas.height);
       gl.uniform1f(uniforms.uPhase, phase);
       gl.uniform3f(uniforms.uColor, rgb[0], rgb[1], rgb[2]);
@@ -655,7 +646,6 @@ const Lightning = ({
       window.removeEventListener('pointerdown', onDown);
       window.removeEventListener('pointerout', onLeave);
       document.removeEventListener('visibilitychange', onVisibility);
-      if (vao) gl.deleteVertexArray(vao);
       gl.deleteBuffer(buffer);
       gl.deleteProgram(program);
       engineRef.current = null;

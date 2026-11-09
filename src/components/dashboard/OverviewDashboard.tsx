@@ -44,7 +44,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
   return (
     <div className="space-y-6">
       {/* Welcome Bar Centered with Logo */}
-      <div className="flex flex-col items-center justify-center text-center p-6 md:p-7 rounded-2xl bg-[#0f1115]/90 backdrop-blur-md border border-white/[0.08] shadow-md">
+      <div className="flex flex-col items-center justify-center text-center p-6 md:p-7 rounded-2xl bg-[#0f1115] border border-white/[0.08] shadow-md">
         <div className="flex items-center justify-center gap-3">
           <div className="w-11 h-11 rounded-xl bg-white/[0.05] border border-white/10 p-1.5 flex items-center justify-center shrink-0">
             <img
@@ -177,7 +177,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
       </div>
 
       {/* Indebted Customers Snapshot */}
-      <div className="rounded-2xl p-5 md:p-6 bg-[#0f1115]/90 backdrop-blur-md border border-white/[0.08] shadow-md">
+      <div className="rounded-2xl p-5 md:p-6 bg-[#0f1115] border border-white/[0.08] shadow-md">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5 pb-4 border-b border-white/[0.08]">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300">
