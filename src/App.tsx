@@ -26,36 +26,40 @@ const MainLayout: React.FC = () => {
   // If user is not logged in, render ONLY the Login screen centered on the page
   if (!adminUser || !adminUser.isLoggedIn) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 relative overflow-hidden">
-        <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[#0a0a0a]">
+      <div className="min-h-screen text-neutral-100 relative overflow-hidden">
+        <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a0a0a]">
           <Lightning
-            color="#D4AF37"
-            glow={1.3}
-            intensity={1.1}
-            speed={0.65}
-            opacity={0.8}
-            bolts={2}
-            branches={3}
+            color="#FFD700"
+            glow={1.6}
+            intensity={1.5}
+            speed={0.7}
+            opacity={0.9}
+            bolts={3}
+            spread={1.2}
+            branches={4}
             flicker={0.4}
           />
         </div>
-        <Login />
+        <div className="relative z-10">
+          <Login />
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-neutral-100 flex flex-col antialiased selection:bg-amber-500/20 selection:text-amber-200 relative">
-      {/* Fullscreen Animated Lightning Background (Warm Gold #D4AF37 on Deep Charcoal #0a0a0a) */}
-      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[#0a0a0a]">
+    <div className="min-h-screen text-neutral-100 flex flex-col antialiased selection:bg-amber-500/20 selection:text-amber-200 relative overflow-x-hidden">
+      {/* Fullscreen Animated Lightning Background (Warm Gold #FFD700 on Deep Charcoal #0a0a0a) */}
+      <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden bg-[#0a0a0a]">
         <Lightning
-          color="#D4AF37"
-          glow={1.3}
-          intensity={1.1}
-          speed={0.65}
-          opacity={0.8}
-          bolts={2}
-          branches={3}
+          color="#FFD700"
+          glow={1.6}
+          intensity={1.5}
+          speed={0.7}
+          opacity={0.9}
+          bolts={3}
+          spread={1.2}
+          branches={4}
           flicker={0.4}
         />
       </div>
@@ -75,7 +79,7 @@ const MainLayout: React.FC = () => {
       </div>
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col min-w-0 pb-24 lg:pb-20">
+      <div className="relative z-10 flex-1 flex flex-col min-w-0 pb-24 lg:pb-20">
         {/* Page Container */}
         <main className="flex-1 p-4 lg:p-8 max-w-7xl w-full mx-auto">
           <AnimatePresence mode="wait">

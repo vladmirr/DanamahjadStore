@@ -12,7 +12,7 @@ export const TiltCard: React.FC<TiltCardProps> = ({
 }) => {
   return (
     <div
-      className={`rounded-2xl p-5 bg-[#0f1115] border border-white/[0.08] hover:border-white/20 transition-colors duration-200 shadow-md ${className}`}
+      className={`rounded-2xl p-5 bg-[#0f1115]/90 backdrop-blur-md border border-white/[0.08] hover:border-white/20 transition-all duration-200 shadow-md ${className}`}
     >
       <div className="relative z-10">
         {children}
