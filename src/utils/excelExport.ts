@@ -729,9 +729,9 @@ function renderSinglePopcornWorksheet(
   });
 
   ws.columns = [
-    { width: 22 }, // A
-    { width: 25 }, // B
-    { width: 22 }, // C
+    { width: 28 }, // A: بڕگە / وەسف
+    { width: 24 }, // B: بڕ بە دۆلار ($ USD)
+    { width: 34 }, // C: تێبینی
     { width: 16 }, // D
     { width: 30 }, // E
     { width: 15 }, // F
@@ -779,43 +779,40 @@ function renderSinglePopcornWorksheet(
 
   // SECTION 1: Financial Waterfall
   ws.addRow(['١. پوختەی دارایی مامەڵە (Buying Details & Selling Information)']);
-  ws.mergeCells('A4:D4');
+  ws.mergeCells('A4:C4');
   const sec1Cell = ws.getCell('A4');
   sec1Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
   sec1Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF475569' } };
   sec1Cell.alignment = { horizontal: 'right', vertical: 'middle' };
 
-  ws.addRow(['بڕگە / وەسف', 'بڕ بە دۆلار ($ USD)', 'بە دیناری عێراقی (IQD)', 'تێبینی']);
+  ws.addRow(['بڕگە / وەسف', 'بڕ بە دۆلار ($ USD)', 'تێبینی']);
   const h1 = ws.getRow(5);
   h1.font = { bold: true, color: { argb: 'FFFFFFFF' } };
   h1.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF334155' } };
-  for (let c = 1; c <= 4; c++) {
+  for (let c = 1; c <= 3; c++) {
     h1.getCell(c).border = thinBorder;
   }
 
   const kpis = [
-    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, '—', config.originCountry ? `سەرچاوە: ${config.originCountry}` : `مەبەست: ${config.destinationCity}`],
-    ['نرخی کڕینی ١ تۆن', `$${buyPricePerTon}`, `${(buyPricePerTon * exchangeRate).toLocaleString()} د.ع`, 'نرخی کڕینی گرێبەست'],
-    ['کۆی تێچووی کڕین (سەرمایە)', `$${totalBuyingCost.toLocaleString()}`, `${(totalBuyingCost * exchangeRate).toLocaleString()} د.ع`, `${totalCargoTons} تۆن × $${buyPricePerTon}`],
+    ['بڕی گشتی بار (تۆن)', `${totalCargoTons} تۆن`, config.originCountry ? `سەرچاوە: ${config.originCountry}` : `مەبەست: ${config.destinationCity}`],
+    ['نرخی کڕینی ١ تۆن', `$${buyPricePerTon}`, 'نرخی کڕینی گرێبەست'],
+    ['کۆی تێچووی کڕین (سەرمایە)', `$${totalBuyingCost.toLocaleString()}`, `${totalCargoTons} تۆن × $${buyPricePerTon}`],
     [
       'نرخی پێشبینیکراوی فرۆشتنی ١ تۆن',
       sellPricePerTon > 0 ? `$${sellPricePerTon}` : 'دیاری نەکراوە (None)',
-      sellPricePerTon > 0 ? `${(sellPricePerTon * exchangeRate).toLocaleString()} د.ع` : '—',
       sellPricePerTon > 0 ? 'لە بازاڕی سلێمانی' : 'هێشتا نەفرۆشراوە',
     ],
     [
       'کۆی پێشبینیکراوی داهاتی فرۆش',
       sellPricePerTon > 0 ? `$${expectedTotalRevenue.toLocaleString()}` : '—',
-      sellPricePerTon > 0 ? `${(expectedTotalRevenue * exchangeRate).toLocaleString()} د.ع` : '—',
       sellPricePerTon > 0 ? `${totalCargoTons} تۆن × $${sellPricePerTon}` : 'چاوەڕوانی فرۆشتن',
     ],
-    ['خەرجییەکانی گواستنەوەی ئێران', `$${totalIranSpending.toLocaleString()}`, `${(totalIranSpending * exchangeRate).toLocaleString()} د.ع`, 'کرێی بارهەڵگر، مەرز و ترانزێت'],
-    ['خەرجییەکانی ناوخۆی عێراق و گومرگ', `$${totalIraqSpending.toLocaleString()}`, `${(totalIraqSpending * exchangeRate).toLocaleString()} د.ع`, 'گومرگی باشماخ، داگرتن و عەمبار'],
-    ['کۆی گشتی هەموو خەرجییەکان', `$${totalOverallCost.toLocaleString()}`, `${(totalOverallCost * exchangeRate).toLocaleString()} د.ع`, 'کڕین + خەرجی ئێران + خەرجی عێراق'],
+    ['خەرجییەکانی گواستنەوەی ئێران', `$${totalIranSpending.toLocaleString()}`, 'کرێی بارهەڵگر، مەرز و ترانزێت'],
+    ['خەرجییەکانی ناوخۆی عێراق و گومرگ', `$${totalIraqSpending.toLocaleString()}`, 'گومرگی باشماخ، داگرتن و عەمبار'],
+    ['کۆی گشتی هەموو خەرجییەکان', `$${totalOverallCost.toLocaleString()}`, 'کڕین + خەرجی ئێران + خەرجی عێراق'],
     [
       'قازانجی پوختەی مامەڵە (Net Profit)',
       sellPricePerTon > 0 ? `$${finalNetProfit.toLocaleString()}` : 'چاوەڕوانی فرۆشتن (Pending)',
-      sellPricePerTon > 0 ? `${(finalNetProfit * exchangeRate).toLocaleString()} د.ع` : '—',
       sellPricePerTon > 0 ? 'داهاتی فرۆش - سەرجەم خەرجییەکان' : 'دوای فرۆشتن دیاری دەکرێت',
     ],
     ...(hasPartner
@@ -823,22 +820,19 @@ function renderSinglePopcornWorksheet(
           [
             `پشکی هاوبەش (${config.partnerName} - %${partnerPercent})`,
             sellPricePerTon > 0 ? `$${partnerProfitShare.toLocaleString()}` : '—',
-            sellPricePerTon > 0 ? `${(partnerProfitShare * exchangeRate).toLocaleString()} د.ع` : '—',
             'پوختەی قازانجی شەراکەت',
           ],
           [
             `پشکی من (%${myPercent})`,
             sellPricePerTon > 0 ? `$${myProfitShare.toLocaleString()}` : '—',
-            sellPricePerTon > 0 ? `${(myProfitShare * exchangeRate).toLocaleString()} د.ع` : '—',
             'پوختەی قازانجی من',
           ],
         ]
       : [
-          ['شەراکەت', 'مامەڵەی تایبەت (بێ هاوبەش)', '—', '١٠٠٪ بۆ خاوەنکار'],
+          ['شەراکەت', 'مامەڵەی تایبەت (بێ هاوبەش)', '١٠٠٪ بۆ خاوەنکار'],
           [
             'قازانجی تەواوی من (١٠٠٪)',
             sellPricePerTon > 0 ? `$${myProfitShare.toLocaleString()}` : '—',
-            sellPricePerTon > 0 ? `${(myProfitShare * exchangeRate).toLocaleString()} د.ع` : '—',
             'تەواوی قازانجی پوخت',
           ],
         ]),
@@ -851,7 +845,7 @@ function renderSinglePopcornWorksheet(
     if (isHighlight) {
       r.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: idx === 8 ? 'FFDCFCE7' : 'FFFEF3C7' } };
     }
-    for (let c = 1; c <= 4; c++) {
+    for (let c = 1; c <= 3; c++) {
       r.getCell(c).border = thinBorder;
     }
   });
