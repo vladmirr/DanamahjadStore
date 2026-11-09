@@ -127,11 +127,8 @@ export const Sidebar: React.FC = () => {
                     />
                   </div>
                   <div>
-                    <h1 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
-                      <span>DanaMahjadStore</span>
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 font-mono font-bold border border-emerald-500/20">
-                        PRO
-                      </span>
+                    <h1 className="text-base font-bold text-white tracking-wide">
+                      DanaMahjadStore
                     </h1>
                     <p className="text-[10px] text-neutral-400 mt-0.5">مێنۆی سەرەکی سیستەم</p>
                   </div>
