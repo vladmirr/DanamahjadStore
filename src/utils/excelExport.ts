@@ -912,56 +912,156 @@ function renderSinglePopcornWorksheet(
 
   ws.addRow([]); // Blank row
 
-  // SECTION 3: Expenses Table
-  ws.addRow(['٣. خەرجییەکانی ئێران و عێراق (Cost Iran Side & Cost Iraq Side)']);
-  ws.mergeCells(`A${ws.rowCount}:H${ws.rowCount}`);
+  // =========================================================
+  // SECTION 3: Iran Expenses Table (خەرجییەکانی ئێران)
+  // =========================================================
+  ws.addRow(['٣. خەرجییەکانی ئێران (Cost Iran Side - Transport, Border & Transit)']);
+  ws.mergeCells(`A${ws.rowCount}:E${ws.rowCount}`);
   const sec3Cell = ws.getCell(`A${ws.rowCount}`);
   sec3Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
-  sec3Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } };
+  sec3Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }; // Deep teal
   sec3Cell.alignment = { horizontal: 'right', vertical: 'middle' };
 
-  const expHeaders = [
-    'لق / وڵات',
+  const iranHeaders = [
+    'ناونیشان / وەسفی خەرجی (ئێران)',
     'بڕ بە دۆلار ($ USD)',
     'بەروار',
     'دراوە لەلایەن',
     'تێبینی و پسوولە',
   ];
-  const expHeadRow = ws.addRow(expHeaders);
-  expHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
-  expHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+  const iranHeadRow = ws.addRow(iranHeaders);
+  iranHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  iranHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
   for (let c = 1; c <= 5; c++) {
-    expHeadRow.getCell(c).border = thinBorder;
+    iranHeadRow.getCell(c).border = thinBorder;
   }
 
-  expenses.forEach((e) => {
-    const regText = e.region === 'iran' ? '🇮🇷 ئێران' : '🇮🇶 عێراق';
-    const payerText = e.paidBy === 'partner' ? 'شەریک / هاوبەش' : e.paidBy === 'me' ? 'لەلایەن منەوە' : 'هاوبەش';
-    const r = ws.addRow([
-      regText,
-      Number(e.amountUSD) || 0,
-      e.date,
-      payerText,
-      e.notes || '',
-    ]);
-    r.font = { size: 10 };
+  if (iranExpenses.length === 0) {
+    const emptyRow = ws.addRow(['هیچ خەرجییەکی ئێران تۆمار نەکراوە', 0, '—', '—', '—']);
+    emptyRow.font = { italic: true, size: 10, color: { argb: 'FF94A3B8' } };
     for (let c = 1; c <= 5; c++) {
-      r.getCell(c).border = thinBorder;
+      emptyRow.getCell(c).border = thinBorder;
+      if (c === 2) emptyRow.getCell(c).numFmt = '"$"#,##0';
     }
-  });
+  } else {
+    iranExpenses.forEach((e) => {
+      const payerText = e.paidBy === 'partner' ? 'شەریک / هاوبەش' : e.paidBy === 'me' ? 'لەلایەن منەوە' : 'هاوبەش';
+      const r = ws.addRow([
+        e.title || e.category || 'خەرجی ئێران',
+        Number(e.amountUSD) || 0,
+        e.date || '—',
+        payerText,
+        e.notes || '',
+      ]);
+      r.font = { size: 10 };
+      for (let c = 1; c <= 5; c++) {
+        r.getCell(c).border = thinBorder;
+        if (c === 2) r.getCell(c).numFmt = '"$"#,##0';
+      }
+    });
+  }
 
-  // Expenses Total Row
-  const expTotalRow = ws.addRow([
-    `کۆی گشتی خەرجییەکان (${expenses.length} خەرجی)`,
+  // Iran Expenses Subtotal Row
+  const iranTotalRow = ws.addRow([
+    `کۆی خەرجییەکانی ئێران (${iranExpenses.length} خەرجی)`,
+    totalIranSpending,
+    '—',
+    '—',
+    '—',
+  ]);
+  iranTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
+  iranTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
+  for (let c = 1; c <= 5; c++) {
+    iranTotalRow.getCell(c).border = thinBorder;
+    if (c === 2) iranTotalRow.getCell(c).numFmt = '"$"#,##0';
+  }
+
+  ws.addRow([]); // Blank row between the two tables
+
+  // =========================================================
+  // SECTION 4: Iraq Expenses Table (خەرجییەکانی عێراق)
+  // =========================================================
+  ws.addRow(['٤. خەرجییەکانی ناوخۆی عێراق و گومرگ (Cost Iraq Side - Customs & Clearance)']);
+  ws.mergeCells(`A${ws.rowCount}:E${ws.rowCount}`);
+  const sec4Cell = ws.getCell(`A${ws.rowCount}`);
+  sec4Cell.font = { bold: true, size: 11, color: { argb: 'FFFFFFFF' } };
+  sec4Cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E40AF' } }; // Deep blue
+  sec4Cell.alignment = { horizontal: 'right', vertical: 'middle' };
+
+  const iraqHeaders = [
+    'ناونیشان / وەسفی خەرجی (عێراق)',
+    'بڕ بە دۆلار ($ USD)',
+    'بەروار',
+    'دراوە لەلایەن',
+    'تێبینی و پسوولە',
+  ];
+  const iraqHeadRow = ws.addRow(iraqHeaders);
+  iraqHeadRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  iraqHeadRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1F2937' } };
+  for (let c = 1; c <= 5; c++) {
+    iraqHeadRow.getCell(c).border = thinBorder;
+  }
+
+  if (iraqExpenses.length === 0) {
+    const emptyRow = ws.addRow(['هیچ خەرجییەکی عێراق تۆمار نەکراوە', 0, '—', '—', '—']);
+    emptyRow.font = { italic: true, size: 10, color: { argb: 'FF94A3B8' } };
+    for (let c = 1; c <= 5; c++) {
+      emptyRow.getCell(c).border = thinBorder;
+      if (c === 2) emptyRow.getCell(c).numFmt = '"$"#,##0';
+    }
+  } else {
+    iraqExpenses.forEach((e) => {
+      const payerText = e.paidBy === 'partner' ? 'شەریک / هاوبەش' : e.paidBy === 'me' ? 'لەلایەن منەوە' : 'هاوبەش';
+      const r = ws.addRow([
+        e.title || e.category || 'خەرجی عێراق',
+        Number(e.amountUSD) || 0,
+        e.date || '—',
+        payerText,
+        e.notes || '',
+      ]);
+      r.font = { size: 10 };
+      for (let c = 1; c <= 5; c++) {
+        r.getCell(c).border = thinBorder;
+        if (c === 2) r.getCell(c).numFmt = '"$"#,##0';
+      }
+    });
+  }
+
+  // Iraq Expenses Subtotal Row
+  const iraqTotalRow = ws.addRow([
+    `کۆی خەرجییەکانی عێراق (${iraqExpenses.length} خەرجی)`,
+    totalIraqSpending,
+    '—',
+    '—',
+    '—',
+  ]);
+  iraqTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
+  iraqTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFDBEAFE' } };
+  for (let c = 1; c <= 5; c++) {
+    iraqTotalRow.getCell(c).border = thinBorder;
+    if (c === 2) iraqTotalRow.getCell(c).numFmt = '"$"#,##0';
+  }
+
+  ws.addRow([]); // Blank row
+
+  // Overall Combined Total Row (Iran + Iraq)
+  const combinedTotalRow = ws.addRow([
+    `کۆی گشتی سەرجەم خەرجییەکان (ئێران + عێراق: ${expenses.length} خەرجی)`,
     totalOperatingExpenses,
     '—',
     '—',
     '—',
   ]);
-  expTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
-  expTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFCCFBF1' } };
+  combinedTotalRow.font = { bold: true, color: { argb: 'FF0F172A' }, size: 10 };
+  combinedTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // Warm gold
   for (let c = 1; c <= 5; c++) {
-    expTotalRow.getCell(c).border = thinBorder;
+    combinedTotalRow.getCell(c).border = {
+      top: { style: 'medium', color: { argb: 'FF0F172A' } },
+      bottom: { style: 'double', color: { argb: 'FF0F172A' } },
+      left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+      right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    };
+    if (c === 2) combinedTotalRow.getCell(c).numFmt = '"$"#,##0';
   }
 
   return ws;
