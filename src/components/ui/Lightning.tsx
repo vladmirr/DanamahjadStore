@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, type CSSProperties } from 'react';
+import { cn } from '@/lib/utils';
 
 const MAX_BOLTS = 4;
 const MAX_STRIKES = 4;
@@ -673,7 +674,7 @@ const Lightning = ({
     dpr
   ]);
 
-  return <canvas ref={canvasRef} className={`relative block h-full w-full ${className}`.trim()} style={style} />;
+  return <canvas ref={canvasRef} className={cn('relative block h-full w-full', className)} style={style} />;
 };
 
 export interface LightningBackgroundProps extends LightningProps {
@@ -689,8 +690,8 @@ export const LightningBackground: React.FC<LightningBackgroundProps> = ({
   ...props
 }) => {
   return (
-    <div className={`relative min-h-screen w-full overflow-hidden bg-[#0a0a0a] ${containerClassName}`}>
-      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden">
+    <div className={cn('relative min-h-screen w-full overflow-hidden bg-[#0a0a0a]', containerClassName)}>
+      <div className="fixed inset-0 -z-10 pointer-events-none overflow-hidden bg-[#0a0a0a]">
         <Lightning color={color} className={className} {...props} />
       </div>
       {children}
