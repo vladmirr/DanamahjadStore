@@ -9,23 +9,29 @@ import { useApp } from '../../context/AppContext';
 export const BottomNav: React.FC = () => {
   const { activeTab, setActiveTab, metrics } = useApp();
 
-  // When on the Popcorn page, show ONLY "داشبۆردی سەرەکی"
+  // When on the Popcorn page, show ONLY floating pill "داشبۆردی سەرەکی"
   if (activeTab === 'popcorn') {
     return (
-      <nav
-        aria-label="خوارەوەی پەڕە - گەڕانەوە بۆ داشبۆرد"
-        className="fixed bottom-0 inset-x-0 z-40 bg-[#0f1115]/95 backdrop-blur-xl border-t border-white/[0.08] shadow-2xl py-2 select-none"
-      >
-        <div className="w-full max-w-md mx-auto px-4 flex items-center justify-center">
+      <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 select-none">
+        <nav
+          aria-label="خوارەوەی پەڕە - گەڕانەوە بۆ داشبۆرد"
+          className="bg-[#0b0e14]/90 hover:bg-[#121620]/95 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl sm:rounded-full shadow-2xl shadow-black/80 p-1.5 transition-all duration-200"
+        >
           <button
             onClick={() => setActiveTab('dashboard')}
-            className="flex items-center justify-center gap-2 px-6 py-2 rounded-xl bg-white/10 hover:bg-white/15 text-white border border-white/15 shadow-sm font-semibold transition-colors cursor-pointer"
+            className="flex items-center gap-2.5 px-4 sm:px-6 py-2 rounded-xl sm:rounded-full bg-white/[0.06] hover:bg-white/10 text-white border border-white/10 hover:border-white/20 shadow-sm transition-all cursor-pointer group"
           >
-            <LayoutDashboard className="w-4 h-4 text-neutral-300" />
-            <span className="text-xs sm:text-sm font-semibold">داشبۆردی سەرەکی</span>
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <span className="text-xs sm:text-sm font-bold text-neutral-200 group-hover:text-white transition-colors">
+              داشبۆردی سەرەکی
+            </span>
+            <LayoutDashboard className="w-4 h-4 text-neutral-400 group-hover:text-white transition-colors shrink-0" />
           </button>
-        </div>
-      </nav>
+        </nav>
+      </div>
     );
   }
 
@@ -52,19 +58,21 @@ export const BottomNav: React.FC = () => {
       icon: Wallet,
       badge:
         metrics.totalOutstandingDebt > 0 ? (
-          <span className="w-2 h-2 rounded-full bg-amber-400" />
+          <span className="text-[10px] text-amber-400 font-mono font-bold bg-amber-500/15 px-1.5 py-0.5 rounded-full border border-amber-500/30">
+            قەرز
+          </span>
         ) : null,
     },
   ];
 
   return (
-    <nav
-      aria-label="خوارەوەی پەڕە - پێڕستی سەرەکی"
-      className="fixed bottom-0 inset-x-0 z-40 bg-[#0f1115]/95 backdrop-blur-xl border-t border-white/[0.08] shadow-2xl py-2 select-none"
-    >
-      <div className="w-full max-w-lg mx-auto px-2 sm:px-4">
+    <div className="fixed bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] sm:w-auto max-w-lg select-none">
+      <nav
+        aria-label="خوارەوەی پەڕە - پێڕستی سەرەکی"
+        className="bg-[#0b0e14]/90 hover:bg-[#121620]/95 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-2xl sm:rounded-full shadow-2xl shadow-black/80 p-1.5 flex items-center transition-all duration-200"
+      >
         {/* Navigation Items: Strictly 1 Single Row (No Wrapping) */}
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-2.5 w-full">
+        <div className="grid grid-cols-3 gap-1 sm:gap-1.5 w-full">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
@@ -73,34 +81,37 @@ export const BottomNav: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-1.5 sm:px-3 py-2 rounded-xl transition-colors duration-150 cursor-pointer min-w-0 ${
+                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2 sm:px-4 py-2 rounded-xl sm:rounded-full transition-all duration-150 cursor-pointer min-w-0 select-none group ${
                   isActive
                     ? 'bg-white/10 text-white border border-white/20 font-bold shadow-sm'
                     : 'text-neutral-400 hover:text-white hover:bg-white/[0.04] border border-transparent font-medium'
                 }`}
               >
-                <div className="relative shrink-0">
-                  <Icon
-                    className={`w-4 h-4 ${
-                      isActive ? 'text-white' : 'text-neutral-400'
-                    }`}
-                  />
-                  {item.badge && (
-                    <span className="absolute -top-1 -right-1">
-                      {item.badge}
-                    </span>
-                  )}
-                </div>
+                {isActive && (
+                  <span className="relative flex h-2 w-2 shrink-0">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  </span>
+                )}
 
                 <span className="text-xs sm:text-sm whitespace-nowrap truncate">
                   <span className="sm:hidden">{item.shortLabel}</span>
                   <span className="hidden sm:inline">{item.label}</span>
                 </span>
+
+                <div className="relative shrink-0 flex items-center gap-1">
+                  <Icon
+                    className={`w-4 h-4 transition-colors ${
+                      isActive ? 'text-white' : 'text-neutral-400 group-hover:text-white'
+                    }`}
+                  />
+                  {item.badge && item.badge}
+                </div>
               </button>
             );
           })}
         </div>
-      </div>
-    </nav>
+      </nav>
+    </div>
   );
 };

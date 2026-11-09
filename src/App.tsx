@@ -30,15 +30,15 @@ const MainLayout: React.FC = () => {
   return (
     <div className="min-h-screen bg-[#050505] text-neutral-100 flex flex-col antialiased selection:bg-white/20 selection:text-white relative">
       {/* Top Right Floating Action Buttons */}
-      <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-40 flex items-center gap-2">
+      <div className="fixed top-4 right-4 sm:top-5 sm:right-6 z-40 flex items-center gap-2 select-none">
         {/* Menu Button */}
         <button
           onClick={() => setIsSidebarOpen(true)}
-          className="flex items-center justify-center p-2.5 rounded-xl bg-[#0f1115] hover:bg-[#181a20] border border-white/10 hover:border-white/25 text-white shadow-lg backdrop-blur-md transition-colors cursor-pointer select-none"
+          className="flex items-center justify-center p-2.5 rounded-2xl bg-[#0b0e14]/90 hover:bg-[#121620] border border-white/10 hover:border-white/25 text-white shadow-2xl backdrop-blur-xl transition-all cursor-pointer group"
           title="مێنۆ"
           aria-label="مێنۆ"
         >
-          <Menu className="w-5 h-5 text-neutral-300" />
+          <Menu className="w-5 h-5 text-neutral-300 group-hover:text-white transition-colors" />
         </button>
       </div>
 
