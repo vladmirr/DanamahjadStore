@@ -672,13 +672,6 @@ export async function exportAllDataToExcel(
   });
   worksheet.getCell(summaryRow, 16).border = thinBorder;
 
-  // Append new dedicated Popcorn page / worksheet to the main Excel file
-  try {
-    appendPopcornSheetToWorkbook(workbook);
-  } catch (err) {
-    console.error('Failed to append Popcorn sheet to main report:', err);
-  }
-
   // Generate buffer and trigger immediate download
   const buffer = await workbook.xlsx.writeBuffer();
   const dateStr = new Date().toISOString().split('T')[0];
