@@ -31,7 +31,7 @@ export const Sidebar: React.FC = () => {
   const primaryMenuItems = [
     {
       id: 'popcorn',
-      label: 'مامەڵەکردنی کاڵا',
+      label: 'مامەڵکردنی کاڵا',
       sublabel: '',
       icon: Truck,
       badge: (

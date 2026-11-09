@@ -726,7 +726,7 @@ function renderSinglePopcornWorksheet(
   const myProfitShare = hasPartner ? (finalNetProfit * myPercent) / 100 : finalNetProfit;
 
   // Clean sheet name (Excel max length is 31 chars and no forbidden symbols)
-  const cleanSheetName = (sheetName || 'پۆپکورن')
+  const cleanSheetName = (sheetName || 'مامەڵکردنی کاڵا')
     .replace(/[*?:/[\]]/g, '')
     .trim()
     .slice(0, 31);
@@ -757,8 +757,8 @@ function renderSinglePopcornWorksheet(
 
   // Title Banner
   const titleText = (data as PopcornTransaction).name
-    ? `مامەڵەی: ${(data as PopcornTransaction).name} (Popcorn Import)`
-    : 'پڕۆژەی هاوردەکردنی پۆپکورن (Popcorn Import & Partnership)';
+    ? `مامەڵەی: ${(data as PopcornTransaction).name}`
+    : 'مامەڵکردنی کاڵا و شەراکەت';
   ws.addRow([titleText]);
   ws.mergeCells('A1:J1');
   const titleCell = ws.getCell('A1');
@@ -962,7 +962,7 @@ export function appendPopcornSheetToWorkbook(
   customData?: PopcornProjectData | PopcornTransaction
 ) {
   if (customData) {
-    const name = (customData as PopcornTransaction).name || 'پۆپکورن';
+    const name = (customData as PopcornTransaction).name || 'مامەڵکردنی کاڵا';
     renderSinglePopcornWorksheet(workbook, customData, name);
     return;
   }
@@ -970,7 +970,7 @@ export function appendPopcornSheetToWorkbook(
   const store = loadLocalPopcornStore();
   if (store.transactions.length <= 1) {
     const single = store.transactions[0] || DEFAULT_TRANSACTION;
-    renderSinglePopcornWorksheet(workbook, single, single.name || 'پۆپکورن');
+    renderSinglePopcornWorksheet(workbook, single, single.name || 'مامەڵکردنی کاڵا');
   } else {
     // If there are multiple transactions, create a dedicated worksheet for each!
     store.transactions.forEach((trans, idx) => {
@@ -996,7 +996,7 @@ export async function exportPopcornToExcel(data?: PopcornProjectData | PopcornTr
     new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
-    `Popcorn_Shipment_${dateStr}.xlsx`
+    `Mamala_${dateStr}.xlsx`
   );
 }
 

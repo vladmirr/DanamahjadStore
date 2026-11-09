@@ -244,7 +244,7 @@ export const DEFAULT_TRANSACTION: PopcornTransaction = {
       amountLocal: 336600,
       date: '2026-10-29',
       paidBy: 'shared',
-      notes: 'پشتڕاستکردنەوەی ستانداردی کوالیتی پۆپکورن',
+      notes: 'پشتڕاستکردنەوەی ستانداردی کوالیتی کاڵا',
     },
   ],
 };

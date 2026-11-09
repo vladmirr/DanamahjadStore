@@ -807,7 +807,7 @@ ${
               <div>
                 <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/5 border border-white/10 text-neutral-300 mb-3">
                   <Layers className="w-3.5 h-3.5 text-neutral-400" />
-                  <span>مامەڵەکردنی کاڵا</span>
+                  <span>مامەڵکردنی کاڵا</span>
                 </div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
                   کام مامەڵە دەتەوێت ببینیت؟
@@ -1141,7 +1141,7 @@ ${
             <button
               onClick={handleOpenCreateTransaction}
               className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold shadow-sm transition-colors cursor-pointer"
-              title="دروستکردنی مامەڵەی نوێ بۆ پۆپکورن"
+              title="دروستکردنی مامەڵەی نوێ بۆ مامەڵکردنی کاڵا"
             >
               <Plus className="w-4 h-4 stroke-[2.5]" />
               <span>مامەڵەی نوێ</span>
@@ -2045,7 +2045,7 @@ ${
                     type="text"
                     required
                     autoFocus
-                    placeholder="ناوی کاڵا بنووسە (نموونە: پۆپکۆرن، وەجبەی دووەم)"
+                    placeholder="ناوی کاڵا بنووسە (نموونە: گەنمەشامی، وەجبەی دووەم)"
                     value={newTransactionForm.name}
                     onChange={(e) =>
                       setNewTransactionForm({ ...newTransactionForm, name: e.target.value })
@@ -3018,8 +3018,8 @@ ${
                 </div>
 
                 <div className="p-3 rounded-xl bg-[#050505] border border-white/[0.06]">
-                  <span className="text-[11px] text-neutral-400 block mb-0.5">بەڵگەنامە (Firestore Document)</span>
-                  <span className="font-mono text-white font-medium">popcorn/multitrans_shipments</span>
+                  <span className="text-[11px] text-neutral-400 block mb-0.5">کۆڵێکشن (Firestore Collection)</span>
+                  <span className="font-mono text-white font-medium">transactions</span>
                 </div>
 
                 <div className="p-3 rounded-xl bg-[#050505] border border-white/[0.06]">

@@ -67,7 +67,7 @@ export const BackupManager: React.FC = () => {
               داگرتنی داتاکان بە شێوەی ئێکسڵ (Excel Export)
             </h3>
             <p className="text-xs text-slate-400 mt-2 leading-relaxed">
-              بە یەک کلیک، فایلی XLSX بە فۆرماتی ڕاستەوخۆ (RTL) دادەبەزێت کە بەشە سەرەکییەکان و پەڕەی نوێی پۆپکورن لەخۆدەگرێت:
+              بە یەک کلیک، فایلی XLSX بە فۆرماتی ڕاستەوخۆ (RTL) دادەبەزێت کە بەشە سەرەکییەکان و پەڕەی نوێی مامەڵکردنی کاڵا لەخۆدەگرێت:
             </p>
             <ul className="text-xs text-slate-300 space-y-1.5 mt-3 pr-4 list-disc list-inside">
               <li>کۆگای کاڵاکان (Inventory / کۆگا) - {products.length} کاڵا</li>
@@ -75,7 +75,7 @@ export const BackupManager: React.FC = () => {
               <li>مێژووی پارەدانەکان (Payments / پارەدان) - {payments.length} پسوولە</li>
               <li>حسابی کڕیاران و قەرزەکان (Customer Balances) - {customers.length} کڕیار</li>
               <li className="text-amber-300 font-bold">
-                پەڕەی نوێ: پۆپکورن و شەراکەت (Popcorn & Partnership)
+                پەڕەی نوێ: مامەڵکردنی کاڵا و شەراکەت
               </li>
             </ul>
           </div>
@@ -88,7 +88,7 @@ export const BackupManager: React.FC = () => {
               className="w-full py-3 px-4 rounded-xl font-bold text-xs btn-gold flex items-center justify-center gap-2 cursor-pointer shadow-lg"
             >
               <Download className="w-4 h-4" />
-              <span>داگرتنی فایلی تەواوی ئێکسڵ (.xlsx) [کۆگا + پۆپکورن]</span>
+              <span>داگرتنی فایلی تەواوی ئێکسڵ (.xlsx) [کۆگا + مامەڵکردنی کاڵا]</span>
             </motion.button>
 
             <motion.button
@@ -98,7 +98,7 @@ export const BackupManager: React.FC = () => {
               className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs bg-slate-900 hover:bg-slate-800 text-amber-300 border border-amber-500/30 hover:border-amber-500/50 flex items-center justify-center gap-2 cursor-pointer transition-all"
             >
               <Truck className="w-4 h-4 text-amber-400" />
-              <span>داگرتنی تەنها فایلی ئێکسڵی پۆپکورن (Popcorn Only)</span>
+              <span>داگرتنی تەنها فایلی ئێکسڵی مامەڵکردنی کاڵا</span>
             </motion.button>
           </div>
         </div>
