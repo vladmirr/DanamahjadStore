@@ -455,7 +455,7 @@ export const PopcornManagement: React.FC = () => {
       id: `config-${Date.now()}`,
       title: cleanName,
       originCountry: newTransactionForm.originCountry.trim() || '',
-      destinationCity: newTransactionForm.destinationCity.trim() || 'سلێمانی',
+      destinationCity: newTransactionForm.destinationCity.trim() || '',
       totalTons: Number(newTransactionForm.totalTons) || 0,
       buyPricePerTonUSD: Number(newTransactionForm.buyPricePerTonUSD) || 0,
       sellingPricePerTonUSD: Number(newTransactionForm.sellingPricePerTonUSD) || 0,
@@ -929,17 +929,6 @@ ${
                             <h2 className="text-base sm:text-lg font-bold text-white group-hover:text-white transition-colors line-clamp-1">
                               {trans.name}
                             </h2>
-                            <div className="text-[11px] text-neutral-400 flex items-center gap-1.5 mt-0.5">
-                              {trans.config.originCountry && trans.config.destinationCity ? (
-                                <span>
-                                  {trans.config.originCountry} ← {trans.config.destinationCity}
-                                </span>
-                              ) : trans.config.destinationCity ? (
-                                <span>بەرەو {trans.config.destinationCity}</span>
-                              ) : (
-                                <span>هاوردەکردن و بارکردن</span>
-                              )}
-                            </div>
                           </div>
                         </div>
 
