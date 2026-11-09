@@ -566,6 +566,46 @@ export async function testPopcornDatabaseConnection(): Promise<PopcornDbStatus> 
 }
 
 /**
+ * Asynchronously fetch all active transactions from Cloud Firestore
+ * with fallback to local store
+ */
+export async function fetchAllCloudTransactions(): Promise<PopcornTransaction[]> {
+  try {
+    const colRef = collection(db, 'transactions');
+    const snap = await getDocs(colRef);
+    if (!snap.empty) {
+      const deletedIds = getDeletedTransactionIds();
+      const list: PopcornTransaction[] = [];
+      snap.forEach((docSnap) => {
+        if (!deletedIds.has(docSnap.id)) {
+          const raw = docSnap.data();
+          list.push(sanitizeTransaction({ ...raw, id: docSnap.id } as PopcornTransaction));
+        }
+      });
+      if (list.length > 0) {
+        list.sort(
+          (a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime()
+        );
+        // Cache to local store
+        try {
+          const current = loadLocalPopcornStore();
+          saveLocalPopcornStore({
+            ...current,
+            transactions: list,
+            lastSyncedAt: new Date().toISOString(),
+          });
+        } catch {}
+        return list;
+      }
+    }
+  } catch (err) {
+    console.warn('Failed to fetch transactions from cloud:', err);
+  }
+  const local = loadLocalPopcornStore();
+  return local.transactions && local.transactions.length > 0 ? local.transactions : [DEFAULT_TRANSACTION];
+}
+
+/**
  * Real-time listener for Multi-Transaction store
  */
 export function subscribeToCloudPopcornStore(

@@ -137,6 +137,8 @@ export const PopcornManagement: React.FC = () => {
   const [editingExpense, setEditingExpense] = useState<PopcornExpense | null>(null);
   const [expenseToDelete, setExpenseToDelete] = useState<PopcornExpense | null>(null);
 
+  const [isExportOptionsModalOpen, setIsExportOptionsModalOpen] = useState<boolean>(false);
+
   // Form: Create New Transaction
   const [newTransactionForm, setNewTransactionForm] = useState({
     name: '',
@@ -860,6 +862,20 @@ ${
                   <Database className="w-3.5 h-3.5 text-neutral-400 group-hover:text-white transition-colors" />
                 </button>
 
+                {/* Export All Transactions to Excel */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    exportPopcornToExcel(store.transactions);
+                    playSound('success');
+                  }}
+                  className="flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl bg-white/[0.05] hover:bg-white/[0.1] border border-white/10 hover:border-white/20 text-xs sm:text-sm font-semibold text-neutral-200 hover:text-white transition-all cursor-pointer select-none"
+                  title="داگرتنی ئێکسڵی سەرجەم مامەڵەکان (فایلی دەوڵەمەند)"
+                >
+                  <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
+                  <span>داگرتنی ئێکسڵ ({store.transactions.length} مامەڵە)</span>
+                </button>
+
                 <button
                   onClick={handleOpenCreateTransaction}
                   className="flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs sm:text-sm font-bold shadow-sm transition-colors cursor-pointer select-none"
@@ -1027,20 +1043,36 @@ ${
                         <ArrowRight className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
                       </div>
 
-                      {store.transactions.length > 1 && (
+                      <div className="flex items-center gap-1">
                         <button
                           type="button"
                           onClick={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
-                            setTransactionToDelete(trans);
+                            exportPopcornToExcel(trans, { singleOnly: true });
+                            playSound('success');
                           }}
-                          className="p-2 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                          title="سڕینەوەی ئەم مامەڵەیە"
+                          className="p-2 rounded-lg text-neutral-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                          title={`داگرتنی فایلی ئێکسڵی مامەڵەی «${trans.name}»`}
                         >
-                          <Trash2 className="w-4 h-4" />
+                          <FileSpreadsheet className="w-4 h-4" />
                         </button>
-                      )}
+
+                        {store.transactions.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              setTransactionToDelete(trans);
+                            }}
+                            className="p-2 rounded-lg text-neutral-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            title="سڕینەوەی ئەم مامەڵەیە"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 );
@@ -1162,18 +1194,18 @@ ${
                 <Settings className="w-4 h-4" />
               </button>
 
-              {/* Export Excel for this transaction */}
+              {/* Export Excel Button */}
               <button
                 onClick={() => {
-                  exportPopcornToExcel({
-                    config,
-                    trucks,
-                    expenses,
-                  });
+                  if (store.transactions.length > 1) {
+                    setIsExportOptionsModalOpen(true);
+                  } else {
+                    exportPopcornToExcel(safeTransaction);
+                  }
                   playSound('success');
                 }}
                 className="p-2 rounded-lg hover:bg-white/[0.06] text-neutral-400 hover:text-emerald-400 transition-colors cursor-pointer"
-                title="داگرتنی ئێکسڵی ئەم مامەڵەیە"
+                title="داگرتنی فایلی ئێکسڵ (.xlsx)"
               >
                 <FileSpreadsheet className="w-4 h-4" />
               </button>
@@ -3069,6 +3101,125 @@ ${
           </div>
         )}
       </AnimatePresence>
+
+      {/* ====================================================
+          EXCEL EXPORT OPTIONS MODAL
+          ==================================================== */}
+      <AnimatePresence>
+        {isExportOptionsModalOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsExportOptionsModalOpen(false)}
+              className="fixed inset-0 bg-black/80 backdrop-blur-sm"
+            />
+            <motion.div
+              initial={{ scale: 0.96, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.96, opacity: 0 }}
+              className="relative w-full max-w-md bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 space-y-5"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                    <FileSpreadsheet className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">داگرتنی فایلی ئێکسڵ (.xlsx)</h3>
+                    <p className="text-xs text-neutral-400 mt-0.5">شێوازی داگرتنی زانیارییەکان دیاری بکە</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setIsExportOptionsModalOpen(false)}
+                  className="p-1.5 rounded-lg text-neutral-400 hover:text-white hover:bg-white/[0.06] transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="space-y-3">
+                {/* 1. All Transactions */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExportOptionsModalOpen(false);
+                    exportPopcornToExcel(store.transactions);
+                    playSound('success');
+                  }}
+                  className="w-full text-right p-4 rounded-xl bg-white/[0.04] hover:bg-white/[0.08] border border-white/[0.08] hover:border-emerald-500/40 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-sm text-white group-hover:text-emerald-300 transition-colors">
+                      📊 داگرتنی سەرجەم مامەڵەکان ({store.transactions.length} مامەڵە)
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                      پێشنیارکراو
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    فایلی تەواوی ئێکسڵ لەخۆگری پەڕەی پوختەی بەراوردکاری سەرجەم مامەڵەکان ({store.transactions.map((t) => t.name).join('، ')}) و شیتە جیاوازەکانیان.
+                  </p>
+                </button>
+
+                {/* 2. Current Transaction Only */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsExportOptionsModalOpen(false);
+                    exportPopcornToExcel(safeTransaction, { singleOnly: true });
+                    playSound('success');
+                  }}
+                  className="w-full text-right p-4 rounded-xl bg-white/[0.02] hover:bg-white/[0.06] border border-white/[0.06] hover:border-white/20 transition-all cursor-pointer group"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="font-bold text-sm text-neutral-200 group-hover:text-white transition-colors">
+                      📄 تەنها ئەم مامەڵەیە («{safeTransaction.name}»)
+                    </span>
+                    <span className="text-[10px] text-neutral-400">
+                      {safeTransaction.config.totalTons} تۆن
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-400 leading-relaxed">
+                    تەنها زانیاری دارایی، بارهەڵگرەکان و خەرجییەکانی تایبەت بەم مامەڵەیە دەردەهێنرێت.
+                  </p>
+                </button>
+
+                {/* 3. Trucks and Expenses Quick Links */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExportOptionsModalOpen(false);
+                      exportTrucksToExcel(trucks, safeTransaction.name);
+                      playSound('success');
+                    }}
+                    className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-neutral-300 hover:text-white text-xs font-semibold border border-white/10 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <Truck className="w-3.5 h-3.5 text-amber-400" />
+                    <span>تەنها بارهەڵگرەکان ({trucks.length})</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsExportOptionsModalOpen(false);
+                      exportExpensesToExcel(expenses, safeTransaction.name);
+                      playSound('success');
+                    }}
+                    className="p-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-neutral-300 hover:text-white text-xs font-semibold border border-white/10 flex items-center justify-center gap-2 cursor-pointer transition-colors"
+                  >
+                    <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>تەنها خەرجییەکان ({expenses.length})</span>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
       {/* ====================================================
           REAL-TIME TOAST NOTIFICATION
           ==================================================== */}

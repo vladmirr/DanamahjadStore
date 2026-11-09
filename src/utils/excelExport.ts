@@ -1,8 +1,8 @@
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { Product, Sale, PaymentVoucher, CustomerDebtSummary } from '../types';
-import { PopcornProjectData, PopcornTransaction, PopcornTruck, PopcornExpense } from '../types/popcorn';
-import { loadLocalPopcornData, loadLocalPopcornStore, DEFAULT_TRANSACTION } from '../services/popcornStorage';
+import { PopcornProjectData, PopcornTransaction, PopcornTruck, PopcornExpense, PopcornStoreState } from '../types/popcorn';
+import { loadLocalPopcornData, loadLocalPopcornStore, DEFAULT_TRANSACTION, fetchAllCloudTransactions } from '../services/popcornStorage';
 import { formatShortDate } from './formatters';
 
 interface ExportOptions {
@@ -948,15 +948,313 @@ function renderSinglePopcornWorksheet(
 }
 
 /**
+ * Safe sheet name generator that conforms to Excel worksheet rules:
+ * - Max 31 characters
+ * - No forbidden characters: \ / ? * : [ ]
+ * - Unique across workbook
+ */
+function getUniqueSheetName(workbook: ExcelJS.Workbook, desiredName: string): string {
+  const sanitized = desiredName.replace(/[*?:/[\]]/g, '').trim().slice(0, 26) || 'مامەڵە';
+  let name = sanitized;
+  let counter = 1;
+  while (workbook.getWorksheet(name)) {
+    name = `${sanitized.slice(0, 22)} (${counter++})`;
+  }
+  return name;
+}
+
+/**
+ * Render an Overview Summary Worksheet comparing all deals/transactions side-by-side
+ */
+export function renderPopcornSummaryWorksheet(
+  workbook: ExcelJS.Workbook,
+  transactions: PopcornTransaction[]
+) {
+  const ws = workbook.addWorksheet('پوختەی سەرجەم مامەڵەکان', {
+    views: [{ rightToLeft: true }],
+  });
+
+  ws.columns = [
+    { width: 8 },  // A: #
+    { width: 26 }, // B: ناوی مامەڵە
+    { width: 16 }, // C: بڕی بار (تۆن)
+    { width: 16 }, // D: نرخی کڕین ($)
+    { width: 16 }, // E: نرخی فرۆشتن ($)
+    { width: 20 }, // F: سەرمایەی کڕین ($)
+    { width: 22 }, // G: داهاتی فرۆشتن ($)
+    { width: 18 }, // H: خەرجی ئێران ($)
+    { width: 18 }, // I: خەرجی عێراق ($)
+    { width: 20 }, // J: کۆی خەرجییەکان ($)
+    { width: 20 }, // K: کۆی تێچووی گشتی ($)
+    { width: 22 }, // L: قازانجی پوختە ($)
+    { width: 24 }, // M: شەراکەت
+    { width: 18 }, // N: پشکی من ($)
+    { width: 18 }, // O: پشکی هاوبەش ($)
+    { width: 18 }, // P: مەبەست
+  ];
+
+  const thinBorder: Partial<ExcelJS.Borders> = {
+    top: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    bottom: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+  };
+
+  // Row 1: Title Banner
+  ws.addRow(['پوختەی دارایی سەرجەم مامەڵەکان (All Transactions Overview)']);
+  ws.mergeCells('A1:P1');
+  const titleCell = ws.getCell('A1');
+  titleCell.font = { name: 'Arial', size: 14, bold: true, color: { argb: 'FFFFFFFF' } };
+  titleCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFD97706' } };
+  titleCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(1).height = 36;
+
+  // Row 2: Subtitle
+  ws.addRow([
+    `کۆی ${transactions.length} مامەڵەی هاوردەکراو - شیتە جیاوازەکان لە خوارەوە بە تەواوی وردەکارییەوە بەردەستن`
+  ]);
+  ws.mergeCells('A2:P2');
+  const subCell = ws.getCell('A2');
+  subCell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFF1F5F9' } };
+  subCell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF1E293B' } };
+  subCell.alignment = { horizontal: 'center', vertical: 'middle' };
+  ws.getRow(2).height = 22;
+
+  // Row 3: Blank
+  ws.addRow([]);
+
+  // Row 4: Header row
+  const headers = [
+    '#',
+    'ناوی مامەڵە',
+    'بڕی بار (تۆن)',
+    'نرخی کڕین ($)',
+    'نرخی فرۆشتن ($)',
+    'سەرمایەی کڕین ($)',
+    'داهاتی پێشبینیکراو ($)',
+    'خەرجی ئێران ($)',
+    'خەرجی عێراق ($)',
+    'کۆی خەرجییەکان ($)',
+    'کۆی تێچووی گشتی ($)',
+    'قازانجی پوختە (Net)',
+    'شەراکەت',
+    'پشکی من ($)',
+    'پشکی هاوبەش ($)',
+    'مەبەست',
+  ];
+  ws.addRow(headers);
+  const hRow = ws.getRow(4);
+  hRow.height = 28;
+  hRow.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FFFFFFFF' } };
+  for (let c = 1; c <= headers.length; c++) {
+    const cell = hRow.getCell(c);
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF334155' } };
+    cell.alignment = { horizontal: 'center', vertical: 'middle' };
+    cell.border = thinBorder;
+  }
+
+  let sumTons = 0;
+  let sumBuyingCost = 0;
+  let sumRevenue = 0;
+  let sumIranExpenses = 0;
+  let sumIraqExpenses = 0;
+  let sumTotalExpenses = 0;
+  let sumOverallCost = 0;
+  let sumNetProfit = 0;
+  let sumMyShare = 0;
+  let sumPartnerShare = 0;
+
+  transactions.forEach((trans, idx) => {
+    const cfg = trans.config || ({} as any);
+    const tons = Number(cfg.totalTons) || 0;
+    const buyPrice = Number(cfg.buyPricePerTonUSD) || 0;
+    const sellPrice = Number(cfg.sellingPricePerTonUSD) || 0;
+    const buyingCost = tons * buyPrice;
+    const revenue = tons * sellPrice;
+
+    const truckTransit = (trans.trucks || []).reduce(
+      (sum, tr) => sum + (Number(tr.transitCostUSD) || 0),
+      0
+    );
+    const iranExp =
+      (trans.expenses || [])
+        .filter((e) => e.region === 'iran')
+        .reduce((sum, e) => sum + (Number(e.amountUSD) || 0), 0) + truckTransit;
+
+    const iraqExp = (trans.expenses || [])
+      .filter((e) => e.region === 'iraq')
+      .reduce((sum, e) => sum + (Number(e.amountUSD) || 0), 0);
+
+    const totalExp = iranExp + iraqExp;
+    const overallCost = buyingCost + totalExp;
+    const netProfit = revenue - overallCost;
+
+    const hasPartner = cfg.hasPartner !== false;
+    const partnerPercent = hasPartner ? Number(cfg.partnerSharePercent) || 50 : 0;
+    const myPercent = 100 - partnerPercent;
+    const partnerShare = hasPartner ? (netProfit * partnerPercent) / 100 : 0;
+    const myShare = hasPartner ? (netProfit * myPercent) / 100 : netProfit;
+
+    sumTons += tons;
+    sumBuyingCost += buyingCost;
+    sumRevenue += revenue;
+    sumIranExpenses += iranExp;
+    sumIraqExpenses += iraqExp;
+    sumTotalExpenses += totalExp;
+    sumOverallCost += overallCost;
+    sumNetProfit += netProfit;
+    sumMyShare += myShare;
+    sumPartnerShare += partnerShare;
+
+    const partnerLabel = hasPartner
+      ? `%${partnerPercent} (${cfg.partnerName || 'هاوبەش'})`
+      : 'بێ هاوبەش (تایبەت)';
+
+    const rowValues = [
+      idx + 1,
+      trans.name || `مامەڵەی ${idx + 1}`,
+      tons,
+      buyPrice,
+      sellPrice,
+      buyingCost,
+      revenue,
+      iranExp,
+      iraqExp,
+      totalExp,
+      overallCost,
+      netProfit,
+      partnerLabel,
+      myShare,
+      partnerShare,
+      cfg.destinationCity || 'سلێمانی',
+    ];
+
+    ws.addRow(rowValues);
+    const rIdx = 4 + idx + 1;
+    const row = ws.getRow(rIdx);
+    row.height = 24;
+    const isEven = idx % 2 === 0;
+    const bgArgb = isEven ? 'FFFFFFFF' : 'FFF8FAFC';
+
+    for (let c = 1; c <= headers.length; c++) {
+      const cell = row.getCell(c);
+      cell.border = thinBorder;
+      cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: bgArgb } };
+      cell.font = { name: 'Arial', size: 10 };
+      cell.alignment = { vertical: 'middle', horizontal: c === 2 ? 'right' : 'center' };
+
+      // Number formatting
+      if (c === 3) {
+        cell.numFmt = '#,##0.00';
+      } else if (c === 4 || c === 5) {
+        cell.numFmt = '"$"#,##0';
+      } else if ([6, 7, 8, 9, 10, 11, 14, 15].includes(c)) {
+        cell.numFmt = '"$"#,##0';
+      }
+
+      // Net profit color
+      if (c === 12) {
+        cell.numFmt = '"$"#,##0;[Red]("$"#,##0);"-"';
+        cell.font = {
+          name: 'Arial',
+          size: 10,
+          bold: true,
+          color: { argb: netProfit >= 0 ? 'FF059669' : 'FFE11D48' },
+        };
+      }
+    }
+  });
+
+  // Total Summary Row
+  const totalRowValues = [
+    'کۆی گشتی',
+    `${transactions.length} مامەڵە`,
+    sumTons,
+    '—',
+    '—',
+    sumBuyingCost,
+    sumRevenue,
+    sumIranExpenses,
+    sumIraqExpenses,
+    sumTotalExpenses,
+    sumOverallCost,
+    sumNetProfit,
+    '—',
+    sumMyShare,
+    sumPartnerShare,
+    '—',
+  ];
+  ws.addRow(totalRowValues);
+  const totRowIdx = 4 + transactions.length + 1;
+  const totRow = ws.getRow(totRowIdx);
+  totRow.height = 30;
+  for (let c = 1; c <= headers.length; c++) {
+    const cell = totRow.getCell(c);
+    cell.border = {
+      top: { style: 'medium', color: { argb: 'FF0F172A' } },
+      bottom: { style: 'double', color: { argb: 'FF0F172A' } },
+      left: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+      right: { style: 'thin', color: { argb: 'FFCBD5E1' } },
+    };
+    cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFEF3C7' } }; // warm amber gold
+    cell.font = { name: 'Arial', size: 10, bold: true, color: { argb: 'FF0F172A' } };
+    cell.alignment = { vertical: 'middle', horizontal: 'center' };
+
+    if (c === 3) {
+      cell.numFmt = '#,##0.00';
+    } else if ([6, 7, 8, 9, 10, 11, 14, 15].includes(c)) {
+      cell.numFmt = '"$"#,##0';
+    } else if (c === 12) {
+      cell.numFmt = '"$"#,##0;[Red]("$"#,##0);"-"';
+      cell.font = {
+        name: 'Arial',
+        size: 11,
+        bold: true,
+        color: { argb: sumNetProfit >= 0 ? 'FF047857' : 'FFBE123C' },
+      };
+    }
+  }
+
+  return ws;
+}
+
+/**
  * Append dedicated Popcorn worksheet(s) to any workbook
  */
 export function appendPopcornSheetToWorkbook(
   workbook: ExcelJS.Workbook,
-  customData?: PopcornProjectData | PopcornTransaction
+  customData?: PopcornProjectData | PopcornTransaction | PopcornTransaction[] | PopcornStoreState
 ) {
+  if (Array.isArray(customData)) {
+    if (customData.length === 1) {
+      renderSinglePopcornWorksheet(workbook, customData[0], customData[0].name || 'مامەڵکردنی کاڵا');
+    } else if (customData.length > 1) {
+      renderPopcornSummaryWorksheet(workbook, customData);
+      customData.forEach((trans, idx) => {
+        const title = getUniqueSheetName(workbook, `${idx + 1}. ${trans.name || 'مامەڵە'}`);
+        renderSinglePopcornWorksheet(workbook, trans, title);
+      });
+    }
+    return;
+  }
+
+  if (customData && (customData as PopcornStoreState).transactions) {
+    const list = (customData as PopcornStoreState).transactions;
+    if (list.length === 1) {
+      renderSinglePopcornWorksheet(workbook, list[0], list[0].name || 'مامەڵکردنی کاڵا');
+    } else if (list.length > 1) {
+      renderPopcornSummaryWorksheet(workbook, list);
+      list.forEach((trans, idx) => {
+        const title = getUniqueSheetName(workbook, `${idx + 1}. ${trans.name || 'مامەڵە'}`);
+        renderSinglePopcornWorksheet(workbook, trans, title);
+      });
+    }
+    return;
+  }
+
   if (customData) {
     const name = (customData as PopcornTransaction).name || 'مامەڵکردنی کاڵا';
-    renderSinglePopcornWorksheet(workbook, customData, name);
+    renderSinglePopcornWorksheet(workbook, customData as PopcornTransaction, name);
     return;
   }
 
@@ -965,9 +1263,9 @@ export function appendPopcornSheetToWorkbook(
     const single = store.transactions[0] || DEFAULT_TRANSACTION;
     renderSinglePopcornWorksheet(workbook, single, single.name || 'مامەڵکردنی کاڵا');
   } else {
-    // If there are multiple transactions, create a dedicated worksheet for each!
+    renderPopcornSummaryWorksheet(workbook, store.transactions);
     store.transactions.forEach((trans, idx) => {
-      const sheetTitle = `${idx + 1}. ${trans.name}`;
+      const sheetTitle = getUniqueSheetName(workbook, `${idx + 1}. ${trans.name || 'مامەڵە'}`);
       renderSinglePopcornWorksheet(workbook, trans, sheetTitle);
     });
   }
@@ -976,20 +1274,70 @@ export function appendPopcornSheetToWorkbook(
 /**
  * Export standalone Popcorn Excel report
  */
-export async function exportPopcornToExcel(data?: PopcornProjectData | PopcornTransaction) {
+export async function exportPopcornToExcel(
+  data?: PopcornProjectData | PopcornTransaction | PopcornTransaction[] | PopcornStoreState,
+  options?: {
+    singleOnly?: boolean;
+    allTransactions?: PopcornTransaction[];
+  }
+) {
   const workbook = new ExcelJS.Workbook();
   workbook.creator = 'DanaMahjadStore';
   workbook.created = new Date();
 
-  appendPopcornSheetToWorkbook(workbook, data);
+  const dateStr = new Date().toISOString().split('T')[0];
+
+  // 1. Explicit Single Transaction Export
+  if (options?.singleOnly && data && !Array.isArray(data) && !(data as PopcornStoreState).transactions) {
+    const trans = data as PopcornTransaction;
+    const sheetName = trans.name || 'مامەڵکردنی کاڵا';
+    renderSinglePopcornWorksheet(workbook, trans, sheetName);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    const cleanName = (sheetName || 'Mamala').replace(/[^a-zA-Z0-9_\u0600-\u06FF]/g, '_');
+    saveAs(
+      new Blob([buffer], {
+        type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      }),
+      `Mamala_${cleanName}_${dateStr}.xlsx`
+    );
+    return;
+  }
+
+  // 2. Multi-Transaction Export (includes all transactions from memory, options, or Firestore)
+  let transactions: PopcornTransaction[] = [];
+
+  if (Array.isArray(data)) {
+    transactions = data;
+  } else if (data && (data as PopcornStoreState).transactions) {
+    transactions = (data as PopcornStoreState).transactions;
+  } else if (options?.allTransactions && options.allTransactions.length > 0) {
+    transactions = options.allTransactions;
+  } else {
+    // Fetch live from Cloud Firestore to ensure all devices/transactions are captured
+    transactions = await fetchAllCloudTransactions();
+  }
+
+  if (transactions.length <= 1) {
+    const single = transactions[0] || (data as PopcornTransaction) || DEFAULT_TRANSACTION;
+    renderSinglePopcornWorksheet(workbook, single, single.name || 'مامەڵکردنی کاڵا');
+  } else {
+    // Top-level comparison table for all transactions
+    renderPopcornSummaryWorksheet(workbook, transactions);
+
+    // Dedicated sheet for every single transaction
+    transactions.forEach((trans, idx) => {
+      const sheetTitle = getUniqueSheetName(workbook, `${idx + 1}. ${trans.name || 'مامەڵە'}`);
+      renderSinglePopcornWorksheet(workbook, trans, sheetTitle);
+    });
+  }
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const dateStr = new Date().toISOString().split('T')[0];
   saveAs(
     new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
-    `Mamala_${dateStr}.xlsx`
+    `Mamalakan_${dateStr}.xlsx`
   );
 }
 
