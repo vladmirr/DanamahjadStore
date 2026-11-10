@@ -18,9 +18,9 @@ export const Navbar: React.FC = () => {
 
         <div className="flex items-center gap-2">
           <span className="font-bold text-white text-sm tracking-wider">
-            DanaMahjadStore
+            Dana Mahjad
           </span>
-          <img src="/logo-icon.png" alt="DanaMahjadStore" className="w-6 h-6 object-contain" />
+          <img src="/logo-icon.png" alt="Dana Mahjad" className="w-6 h-6 object-contain" />
         </div>
       </div>
     </header>

@@ -122,13 +122,13 @@ export const Sidebar: React.FC = () => {
                   <div className="w-11 h-11 rounded-2xl bg-white/[0.05] border border-white/10 p-2 flex items-center justify-center shrink-0 shadow-sm">
                     <img
                       src="/logo-icon.png"
-                      alt="DanaMahjadStore Logo"
+                      alt="Dana Mahjad Logo"
                       className="w-full h-full object-contain"
                     />
                   </div>
                   <div>
                     <h1 className="text-base font-bold text-white tracking-wide">
-                      DanaMahjadStore
+                      Dana Mahjad
                     </h1>
                     <p className="text-[10px] text-neutral-400 mt-0.5">مێنۆی سەرەکی سیستەم</p>
                   </div>

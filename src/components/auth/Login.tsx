@@ -76,7 +76,7 @@ export const Login: React.FC<LoginProps> = ({ onSuccess }) => {
               />
             </div>
             <h1 className="text-2xl font-bold text-white tracking-tight">
-              DanaMahjadStore
+              Dana Mahjad
             </h1>
             <p className="text-neutral-400 text-xs mt-1">
               سیستەمی پێشکەوتووی بەڕێوەبردنی کۆگا و فرۆشتن بە دینار

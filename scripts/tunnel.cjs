@@ -1,7 +1,7 @@
 const { spawn } = require('child_process');
 
 function startTunnel() {
-  console.log('[Tunnel] Starting localtunnel for DanaMahjadStore...');
+  console.log('[Tunnel] Starting localtunnel for Dana Mahjad...');
   const proc = spawn('npx.cmd', [
     'localtunnel',
     '--port', '5173',

@@ -332,7 +332,7 @@ export const CloudSyncModal: React.FC<CloudSyncModalProps> = ({ isOpen, onClose 
                     </div>
                     <ol className="list-decimal list-inside space-y-1.5 leading-relaxed">
                       <li>بچۆ بۆ <strong>console.firebase.google.com</strong> و بە ئیمەیڵی گووگڵ بچۆ ژوورەوە.</li>
-                      <li>کلیک لە <strong>Add project</strong> بکە و ناوێکی لێبنێ (وەک: DanaMahjadStore).</li>
+                      <li>کلیک لە <strong>Add project</strong> بکە و ناوێکی لێبنێ (وەک: Dana Mahjad).</li>
                       <li>لە مێنۆی لای چەپ بڕۆ بەشی <strong>Build &gt; Firestore Database</strong> و کلیک لە <strong>Create database</strong> بکە (دۆخی Start in test mode هەڵبژێرە).</li>
                       <li>لە سەرەوە کلیک لە ئایکۆنی ڕێکخستن ⚙️ (Project settings) بکە، بڕۆ خوارەوە بۆ بەشی Web App <code>&lt;/&gt;</code>.</li>
                       <li>کۆدی <strong>firebaseConfig</strong> کۆپی بکە و لە سەرەوە پەیستی بکە!</li>

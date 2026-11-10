@@ -97,13 +97,13 @@ export const StatementModal: React.FC = () => {
               <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl bg-amber-500/10 border border-amber-500/30 print:border-slate-400 p-1 flex items-center justify-center shrink-0">
                 <img
                   src="/logo-icon.png"
-                  alt="DanaMahjadStore"
+                  alt="Dana Mahjad"
                   className="w-full h-full object-contain"
                 />
               </div>
               <div className="min-w-0">
                 <h2 className="text-lg sm:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-yellow-400 to-amber-500 print:text-black block truncate">
-                  DanaMahjadStore
+                  Dana Mahjad
                 </h2>
                 <p className="text-[11px] sm:text-xs text-slate-400 print:text-slate-600 mt-0.5 truncate">
                   ڕاپۆرتی کەشف حسابی دارایی کڕیار (Customer Statement)

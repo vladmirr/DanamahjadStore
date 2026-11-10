@@ -816,7 +816,7 @@ ${
     : `👤 مامەڵەی تەواو تایبەت (بێ هاوبەش - ١٠٠٪ قازانج بۆ خۆت)`
 }
 ----------------------------------------
-تۆمارکراوە لە سیستەمی DanaMahjadStore`;
+تۆمارکراوە لە سیستەمی Dana Mahjad`;
 
     navigator.clipboard.writeText(text);
     setCopiedSummary(true);

@@ -110,7 +110,7 @@ export async function exportAllDataToExcel(
 
   // Create Workbook & Worksheet
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'DanaMahjadStore';
+  workbook.creator = 'Dana Mahjad';
   workbook.created = new Date();
 
   const worksheet = workbook.addWorksheet('ڕاپۆرتی گشتی', {
@@ -679,7 +679,7 @@ export async function exportAllDataToExcel(
     new Blob([buffer], {
       type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     }),
-    `DanaMahjadStore_Report_${dateStr}.xlsx`
+    `Dana_Mahjad_Report_${dateStr}.xlsx`
   );
 }
 
@@ -1426,7 +1426,7 @@ export async function exportPopcornToExcel(
   }
 ) {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'DanaMahjadStore';
+  workbook.creator = 'Dana Mahjad';
   workbook.created = new Date();
 
   const dateStr = new Date().toISOString().split('T')[0];
@@ -1493,7 +1493,7 @@ export async function exportTrucksToExcel(
   transactionName: string = 'مامەڵە'
 ) {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'DanaMahjadStore';
+  workbook.creator = 'Dana Mahjad';
   workbook.created = new Date();
 
   const ws = workbook.addWorksheet('بارهەڵگرەکان و شۆفێران', {
@@ -1653,7 +1653,7 @@ export async function exportExpensesToExcel(
   transactionName: string = 'مامەڵە'
 ) {
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = 'DanaMahjadStore';
+  workbook.creator = 'Dana Mahjad';
   workbook.created = new Date();
 
   const thinBorder: Partial<ExcelJS.Borders> = {

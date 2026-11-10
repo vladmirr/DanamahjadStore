@@ -49,12 +49,12 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
           <div className="w-11 h-11 rounded-xl bg-white/[0.05] border border-white/10 p-1.5 flex items-center justify-center shrink-0">
             <img
               src="/logo-icon.png"
-              alt="DanaMahjadStore Logo"
+              alt="Dana Mahjad Logo"
               className="w-full h-full object-contain"
             />
           </div>
           <h2 className="text-xl md:text-2xl font-bold text-white tracking-tight">
-            داشبۆردی سەرەکی <span className="text-white">DanaMahjadStore</span>
+            داشبۆردی سەرەکی <span className="text-white">Dana Mahjad</span>
           </h2>
         </div>
         <p className="text-xs md:text-sm text-neutral-400 mt-2 max-w-xl">
