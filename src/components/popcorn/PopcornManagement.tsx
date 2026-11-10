@@ -929,6 +929,10 @@ ${
                 const buyPrice = Number(trans.config.buyPricePerTonUSD) || 0;
                 const sellPrice = Number(trans.config.sellingPricePerTonUSD) || 0;
                 const truckCount = trans.trucks?.length || 0;
+                const arrivedTons = (trans.trucks || []).reduce((sum, t) => {
+                  if (t.status && t.status !== 'delivered') return sum;
+                  return sum + (Number(t.tonsCarried) || 0);
+                }, 0);
                 const expenseCount = trans.expenses?.length || 0;
                 const isCompleted = trans.status === 'completed';
 
@@ -993,9 +997,11 @@ ${
                         <div className={`p-2.5 rounded-xl border ${
                           isCompleted ? 'bg-[#050e09]/80 border-emerald-500/15' : 'bg-[#050505] border-white/[0.06]'
                         }`}>
-                          <span className="text-[10px] text-neutral-400 block mb-0.5">بارهەڵگرەکان</span>
-                          <span className="font-bold text-white">
-                            {truckCount} <span className="text-[10px] font-normal text-neutral-400">بار</span>
+                          <span className="text-[10px] text-neutral-400 block mb-0.5">باری گەیشتوو</span>
+                          <span className={`font-bold font-numeric ${
+                            arrivedTons > 0 ? 'text-emerald-400' : (isCompleted ? 'text-emerald-400' : 'text-white')
+                          }`}>
+                            {formatNumber(arrivedTons)} <span className="text-[10px] font-normal text-neutral-400">تۆن</span>
                           </span>
                         </div>
 
@@ -1037,7 +1043,10 @@ ${
                             )}
                           </span>
                         </span>
-                        <span>{expenseCount} خەرجی تۆمارکراو</span>
+                        <span>
+                          {truckCount > 0 ? `${truckCount} بارهەڵگر • ` : ''}
+                          {expenseCount} خەرجی تۆمارکراو
+                        </span>
                       </div>
                     </div>
 
