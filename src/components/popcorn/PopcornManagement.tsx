@@ -12,6 +12,7 @@ import {
   Printer,
   RotateCcw,
   CheckCircle2,
+  Unlock,
   Clock,
   MapPin,
   User,
@@ -327,6 +328,27 @@ export const PopcornManagement: React.FC = () => {
       showToast(`هەڵە لە نوێکردنەوە لە داتابەیس: ${err?.message || 'پەیوەندی نییە'}`, 'error');
     } finally {
       setIsCloudSyncing(false);
+    }
+  };
+
+  // Toggle transaction status between 'active' and 'completed' (persisted to Firestore)
+  const handleToggleTransactionStatus = async () => {
+    if (!activeTransaction) return;
+    const isCurrentlyCompleted = activeTransaction.status === 'completed';
+    const newStatus: 'active' | 'completed' = isCurrentlyCompleted ? 'active' : 'completed';
+
+    await updateActiveTransaction((curr) => ({
+      ...curr,
+      status: newStatus,
+      completedAt: newStatus === 'completed' ? new Date().toISOString() : undefined,
+    }));
+
+    if (newStatus === 'completed') {
+      playSound('success');
+      showToast('مامەڵەکە بە سەرکەوتوویی وەک تەواوکراو دیاریکرا', 'success');
+    } else {
+      playSound('click');
+      showToast('مامەڵەکە بۆ دەستکاریکردن و نوێکردنەوە کرایەوە', 'info');
     }
   };
 
@@ -932,9 +954,16 @@ ${
                           </div>
                         </div>
 
-                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
-                          چالاک
-                        </span>
+                        {trans.status === 'completed' ? (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 shrink-0 shadow-sm shadow-emerald-950/40">
+                            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                            <span>تەواوکراو</span>
+                          </span>
+                        ) : (
+                          <span className="px-2.5 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0">
+                            چالاک
+                          </span>
+                        )}
                       </div>
 
                       {/* 4 Metrics Grid */}
@@ -1059,9 +1088,17 @@ ${
                   <span>هەڵبژاردنی مامەڵە</span>
                 </button>
 
-                <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  {activeTransaction.name}
-                </h1>
+                <div className="flex items-center gap-2.5 flex-wrap">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
+                    {activeTransaction.name}
+                  </h1>
+                  {activeTransaction.status === 'completed' && (
+                    <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1.5 shadow-sm shadow-emerald-950/40">
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>تەواوکراو</span>
+                    </span>
+                  )}
+                </div>
               </div>
 
               {/* Right: Modern Command Toolbar */}
@@ -1083,11 +1120,46 @@ ${
                   >
                     {store.transactions.map((trans) => (
                       <option key={trans.id} value={trans.id} className="bg-[#0f1115] text-white">
-                        {trans.name} ({trans.config.totalTons} تۆن)
+                        {trans.name} ({trans.config.totalTons} تۆن){trans.status === 'completed' ? ' ✓' : ''}
                       </option>
                     ))}
                   </select>
                 </div>
+
+            {/* TRANSACTION STATUS / MARK AS COMPLETED BUTTON */}
+            {activeTransaction.status === 'completed' ? (
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <div
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold select-none shadow-sm shadow-emerald-950/40"
+                  title="ئەم مامەڵەیە بە تەواوکراو تۆمارکراوە"
+                >
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>مامەڵەکە تەواو بووە (تەواوکراو) ✓</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleToggleTransactionStatus}
+                  disabled={isCloudSyncing}
+                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs font-medium transition-colors cursor-pointer select-none"
+                  title="کردنەوەی مامەڵە بۆ دەستکاریکردن"
+                >
+                  <Unlock className="w-3.5 h-3.5 text-amber-400" />
+                  <span className="hidden sm:inline">کردنەوەی مامەڵە بۆ دەستکاریکردن</span>
+                  <span className="sm:hidden">کردنەوە</span>
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={handleToggleTransactionStatus}
+                disabled={isCloudSyncing}
+                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 text-xs font-bold transition-all shadow-sm cursor-pointer select-none"
+                title="دیاریکردنی ئەم مامەڵەیە وەک تەواوبوو لە دوای یەکلاکردنەوەی هەموو بڕەکان"
+              >
+                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                <span>تەواو بوونی مامەڵە</span>
+              </button>
+            )}
 
             {/* CREATE NEW TRANSACTION BUTTON */}
             <button
@@ -1154,6 +1226,46 @@ ${
           </div>
         </div>
       </div>
+
+      {/* ====================================================
+          COMPLETED TRANSACTION NOTICE BANNER
+          ==================================================== */}
+      {activeTransaction.status === 'completed' && (
+        <motion.div
+          initial={{ opacity: 0, y: -6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-2xl p-4 md:p-4.5 bg-emerald-950/30 border border-emerald-500/35 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-200 shadow-lg shadow-emerald-950/30"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
+              <CheckCircle2 className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-bold text-emerald-200">
+                ئەم مامەڵەیە بە تەواوکراو دیاری کراوە. هەموو بڕەکان حیساب کراون.
+              </p>
+              <p className="text-[11px] text-emerald-400/80 mt-0.5">
+                فۆڕم و خانەکان کراوەن بۆ دەستکاریکردن تا لە حاڵەتی پێویستدا ژمارە و خەرجییەکان چاکبکرێنەوە.
+                {activeTransaction.completedAt && (
+                  <span className="mr-2 text-emerald-300 font-medium">
+                    • بەرواری تەواوبوون: {new Date(activeTransaction.completedAt).toLocaleDateString('ku-IQ', { year: 'numeric', month: 'long', day: 'numeric' })}
+                  </span>
+                )}
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleToggleTransactionStatus}
+            disabled={isCloudSyncing}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 text-xs font-semibold shrink-0 cursor-pointer transition-colors shadow-sm"
+          >
+            <Unlock className="w-3.5 h-3.5 text-amber-400" />
+            <span>کردنەوەی مامەڵە بۆ دەستکاریکردن</span>
+          </button>
+        </motion.div>
+      )}
 
       {/* ====================================================
           1. FINANCIAL KPIS (5 UNIFIED MINIMALIST CARDS)

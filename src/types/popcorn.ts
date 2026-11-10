@@ -47,6 +47,7 @@ export interface PopcornTransaction {
   createdAt: string;
   updatedAt: string;
   status: 'active' | 'completed' | 'archived'; // دۆخی مامەڵە
+  completedAt?: string;
   config: PopcornShipmentConfig;
   trucks: PopcornTruck[];
   expenses: PopcornExpense[];
