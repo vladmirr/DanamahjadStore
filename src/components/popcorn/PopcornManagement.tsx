@@ -368,15 +368,21 @@ export const PopcornManagement: React.FC = () => {
   const grossTradeProfit = expectedTotalRevenue - totalBuyingCost; // e.g. $16,400
 
   // 2. Transport & Truck Metrics
+  const isTransactionCompleted = safeTransaction.status === 'completed';
+
   const totalTonsCarried = useMemo(() => {
-    return trucks.reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0);
-  }, [trucks]);
+    const raw = trucks.reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0);
+    if (raw === 0 && isTransactionCompleted) return totalCargoTons;
+    return raw;
+  }, [trucks, isTransactionCompleted, totalCargoTons]);
 
   const deliveredTons = useMemo(() => {
-    return trucks
+    const raw = trucks
       .filter((t) => t.status === 'delivered')
       .reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0);
-  }, [trucks]);
+    if (raw === 0 && isTransactionCompleted) return totalCargoTons;
+    return raw;
+  }, [trucks, isTransactionCompleted, totalCargoTons]);
 
   const remainingTonsToTransport = Math.max(0, totalCargoTons - totalTonsCarried);
 
@@ -929,12 +935,14 @@ ${
                 const buyPrice = Number(trans.config.buyPricePerTonUSD) || 0;
                 const sellPrice = Number(trans.config.sellingPricePerTonUSD) || 0;
                 const truckCount = trans.trucks?.length || 0;
-                const arrivedTons = (trans.trucks || []).reduce((sum, t) => {
+                const isCompleted = trans.status === 'completed';
+                const truckTons = (trans.trucks || []).reduce((sum, t) => {
                   if (t.status && t.status !== 'delivered') return sum;
                   return sum + (Number(t.tonsCarried) || 0);
                 }, 0);
+                const arrivedTons = truckTons > 0 ? truckTons : (isCompleted ? totalTons : 0);
+                const arrivedPercent = totalTons > 0 ? Math.min(100, Math.round((arrivedTons / totalTons) * 100)) : 0;
                 const expenseCount = trans.expenses?.length || 0;
-                const isCompleted = trans.status === 'completed';
 
                 return (
                   <div
@@ -997,9 +1005,20 @@ ${
                         <div className={`p-2.5 rounded-xl border ${
                           isCompleted ? 'bg-[#050e09]/80 border-emerald-500/15' : 'bg-[#050505] border-white/[0.06]'
                         }`}>
-                          <span className="text-[10px] text-neutral-400 block mb-0.5">باری گەیشتوو</span>
+                          <div className="flex items-center justify-between mb-0.5">
+                            <span className="text-[10px] text-neutral-400">باری گەیشتوو</span>
+                            {totalTons > 0 && (
+                              <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded font-numeric ${
+                                isCompleted || arrivedTons >= totalTons
+                                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                  : 'bg-white/10 text-neutral-300 border border-white/10'
+                              }`}>
+                                {arrivedPercent}%
+                              </span>
+                            )}
+                          </div>
                           <span className={`font-bold font-numeric ${
-                            arrivedTons > 0 ? 'text-emerald-400' : (isCompleted ? 'text-emerald-400' : 'text-white')
+                            isCompleted || arrivedTons > 0 ? 'text-emerald-400' : 'text-white'
                           }`}>
                             {formatNumber(arrivedTons)} <span className="text-[10px] font-normal text-neutral-400">تۆن</span>
                           </span>
