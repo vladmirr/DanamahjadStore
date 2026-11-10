@@ -1161,7 +1161,7 @@ ${
               {/* Right: Modern Command Toolbar */}
               <div className="flex items-center gap-2.5 flex-wrap w-full lg:w-auto">
                 {/* Transaction Dropdown Switcher */}
-                <div className="relative flex items-center bg-[#050505] hover:bg-[#12141a] border border-white/10 hover:border-white/20 rounded-xl px-3 py-2 transition-colors">
+                <div className="relative flex items-center bg-[#050505] hover:bg-[#12141a] border border-white/10 hover:border-white/20 rounded-xl px-3 py-2 transition-colors max-w-full">
                   <Layers className="w-4 h-4 text-neutral-400 ml-2 shrink-0" />
                   <select
                     value={activeTransaction.id}
@@ -1173,7 +1173,7 @@ ${
                       });
                       playSound('click');
                     }}
-                    className="bg-transparent text-xs font-semibold text-white pr-2 pl-4 focus:outline-none cursor-pointer"
+                    className="bg-transparent text-xs font-semibold text-white pr-2 pl-4 focus:outline-none cursor-pointer max-w-[180px] sm:max-w-xs truncate"
                   >
                     {store.transactions.map((trans) => (
                       <option key={trans.id} value={trans.id} className="bg-[#0f1115] text-white">
@@ -1789,11 +1789,11 @@ ${
                   </div>
 
                   {/* Region Tabs (Minimalist Segmented Control) */}
-                  <div className="flex items-center justify-between p-1 bg-[#050505] rounded-xl border border-white/[0.08] text-xs">
-                    <div className="flex items-center gap-1">
+                  <div className="flex items-center justify-between p-1 bg-[#050505] rounded-xl border border-white/[0.08] text-xs overflow-x-auto scrollbar-none">
+                    <div className="flex items-center gap-1 shrink-0">
                       <button
                         onClick={() => setActiveExpenseTab('all')}
-                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
                           activeExpenseTab === 'all'
                             ? 'bg-white/10 text-white font-bold border border-white/15'
                             : 'text-neutral-400 hover:text-white'
@@ -1803,7 +1803,7 @@ ${
                       </button>
                       <button
                         onClick={() => setActiveExpenseTab('iran')}
-                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
                           activeExpenseTab === 'iran'
                             ? 'bg-white/10 text-white font-bold border border-white/15'
                             : 'text-neutral-400 hover:text-white'
@@ -1813,7 +1813,7 @@ ${
                       </button>
                       <button
                         onClick={() => setActiveExpenseTab('iraq')}
-                        className={`px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
+                        className={`whitespace-nowrap px-3 py-1.5 rounded-lg transition-colors cursor-pointer font-medium ${
                           activeExpenseTab === 'iraq'
                             ? 'bg-white/10 text-white font-bold border border-white/15'
                             : 'text-neutral-400 hover:text-white'
@@ -2084,8 +2084,8 @@ ${
             ==================================================== */}
         <div className="mt-12 mb-8 pt-8 border-t border-white/[0.08] flex flex-col items-center justify-center gap-3 select-none">
           {activeTransaction.status === 'completed' ? (
-            <div className="flex flex-col sm:flex-row items-center gap-2.5 p-2 rounded-full bg-[#0a1612]/90 border border-emerald-500/40 shadow-2xl backdrop-blur-xl">
-              <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs sm:text-sm font-bold shadow-sm shadow-emerald-950/40">
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 p-2 rounded-2xl sm:rounded-full bg-[#0a1612]/90 border border-emerald-500/40 shadow-2xl backdrop-blur-xl max-w-full">
+              <div className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs sm:text-sm font-bold shadow-sm shadow-emerald-950/40 w-full sm:w-auto text-center">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>مامەڵەکە تەواو بووە (تەواوکراو) ✓</span>
               </div>
@@ -2093,7 +2093,7 @@ ${
                 type="button"
                 onClick={handleToggleTransactionStatus}
                 disabled={isCloudSyncing}
-                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl sm:rounded-full bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs sm:text-sm font-semibold transition-colors cursor-pointer w-full sm:w-auto"
                 title="کردنەوەی مامەڵە بۆ دەستکاریکردن"
               >
                 <Unlock className="w-3.5 h-3.5 text-amber-400" />
@@ -2127,7 +2127,7 @@ ${
           ==================================================== */}
       <AnimatePresence>
         {isNewTransactionModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2.5 sm:p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2140,7 +2140,7 @@ ${
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl z-10 max-h-[92vh] overflow-y-auto my-2 sm:my-auto"
             >
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
                 <div className="flex items-center gap-2.5">
@@ -2332,7 +2332,7 @@ ${
           ==================================================== */}
       <AnimatePresence>
         {isEditTransactionModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2.5 sm:p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2345,7 +2345,7 @@ ${
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl z-10 max-h-[92vh] overflow-y-auto my-2 sm:my-auto"
             >
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
                 <div className="flex items-center gap-2.5">
@@ -2520,7 +2520,7 @@ ${
           ==================================================== */}
       <AnimatePresence>
         {isTruckModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2.5 sm:p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2533,7 +2533,7 @@ ${
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl z-10 max-h-[92vh] overflow-y-auto my-2 sm:my-auto"
             >
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
                 <div className="flex items-center gap-2.5">
@@ -2668,7 +2668,7 @@ ${
           ==================================================== */}
       <AnimatePresence>
         {isExpenseModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2.5 sm:p-4 overflow-y-auto">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -2681,7 +2681,7 @@ ${
               initial={{ scale: 0.98, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.98, opacity: 0 }}
-              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-6 shadow-2xl z-10 max-h-[90vh] overflow-y-auto"
+              className="relative w-full max-w-lg bg-[#0f1115] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-2xl z-10 max-h-[92vh] overflow-y-auto my-2 sm:my-auto"
             >
               <div className="flex items-center justify-between pb-4 border-b border-white/[0.08] mb-5">
                 <div className="flex items-center gap-2.5">

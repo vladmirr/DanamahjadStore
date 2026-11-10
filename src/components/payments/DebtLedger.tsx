@@ -107,12 +107,12 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
           </p>
         </div>
 
-        <div className="flex items-center gap-2 self-start sm:self-auto">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-start sm:self-auto w-full sm:w-auto">
           <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => exportExcel()}
-            className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-medium text-xs bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-500/30 cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl font-medium text-xs bg-slate-900 hover:bg-slate-800 text-amber-400 border border-amber-500/30 cursor-pointer"
             title="داگرتنی داتاکان بە شێوەی ئێکسڵ"
           >
             <FileSpreadsheet className="w-4 h-4 text-amber-400" />
@@ -128,7 +128,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
               setNotes('وەرگیرا بە کاش');
               setIsPaymentModalOpen(true);
             }}
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs btn-gold cursor-pointer"
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl font-bold text-xs btn-gold cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
             <span>تۆمارکردنی پسوولەی وەرگرتنی پارە</span>
@@ -329,12 +329,12 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
       {/* Payment Voucher Modal */}
       <AnimatePresence>
         {isPaymentModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="w-full max-w-lg glass-card rounded-2xl border border-slate-700 p-6 relative overflow-hidden shadow-2xl"
+              className="w-full max-w-lg glass-card rounded-2xl border border-slate-700 p-4 sm:p-6 my-2 sm:my-8 relative overflow-hidden shadow-2xl"
             >
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-2.5">
@@ -408,7 +408,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-bold focus:outline-none focus:ring-2 focus:ring-emerald-500 font-numeric"
                   />
                   {/* Quick amount shortcuts */}
-                  <div className="flex items-center gap-1.5 mt-2">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
                     {[10000, 25000, 50000, 100000].map((amt) => (
                       <button
                         key={amt}

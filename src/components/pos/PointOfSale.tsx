@@ -403,7 +403,7 @@ export const PointOfSale: React.FC = () => {
                 </div>
 
                 {/* Subtotal line & Add button */}
-                <div className="flex items-center justify-between pt-2">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 pt-2">
                   <div className="text-xs">
                     <span className="text-slate-400">کۆی ئەم کاڵایە: </span>
                     <span className="text-sm font-bold text-amber-300 font-numeric">
@@ -423,7 +423,7 @@ export const PointOfSale: React.FC = () => {
                     whileTap={{ scale: 0.98 }}
                     type="button"
                     onClick={handleAddToCart}
-                    className="px-4 py-2 rounded-xl text-xs font-bold btn-gold flex items-center gap-1.5 cursor-pointer"
+                    className="w-full sm:w-auto px-4 py-2 rounded-xl text-xs font-bold btn-gold flex items-center justify-center gap-1.5 cursor-pointer"
                   >
                     <Plus className="w-4 h-4" />
                     <span>زیادکردن بۆ پسوولە</span>
@@ -596,10 +596,10 @@ export const PointOfSale: React.FC = () => {
                   {cart.map((item, idx) => (
                     <div
                       key={`${item.productId}-${item.unitType}-${idx}`}
-                      className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between text-xs"
+                      className="p-3 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2.5 text-xs"
                     >
-                      <div className="flex-1 pr-1">
-                        <p className="font-semibold text-white line-clamp-1">
+                      <div className="flex-1 pr-1 min-w-0">
+                        <p className="font-semibold text-white truncate">
                           {item.productName}
                         </p>
                         <p className="text-[11px] text-slate-400 font-numeric">
@@ -612,7 +612,7 @@ export const PointOfSale: React.FC = () => {
                         </p>
                       </div>
 
-                      <div className="flex items-center gap-3">
+                      <div className="flex items-center justify-between sm:justify-end gap-2.5 pt-1.5 sm:pt-0 border-t border-slate-800/60 sm:border-0">
                         {/* Qty +/- buttons */}
                         <div className="flex items-center gap-1 bg-slate-950 border border-slate-800 rounded-lg p-0.5">
                           <button
@@ -622,7 +622,7 @@ export const PointOfSale: React.FC = () => {
                           >
                             <Minus className="w-3 h-3" />
                           </button>
-                          <span className="w-6 text-center font-bold text-white font-numeric">
+                          <span className="w-6 text-center font-bold text-white font-numeric text-xs">
                             {item.quantity}
                           </span>
                           <button
@@ -635,7 +635,7 @@ export const PointOfSale: React.FC = () => {
                         </div>
 
                         {/* Line total */}
-                        <span className="font-bold text-white font-numeric w-24 text-left">
+                        <span className="font-bold text-white font-numeric min-w-[75px] text-left">
                           {formatIQD(
                             item.unitType === 'carton'
                               ? item.quantity * (item.unitsPerCarton || 1) * item.unitPrice
@@ -648,6 +648,7 @@ export const PointOfSale: React.FC = () => {
                           type="button"
                           onClick={() => handleRemoveFromCart(idx)}
                           className="text-slate-500 hover:text-rose-400 p-1 cursor-pointer"
+                          title="سڕینەوە"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>
@@ -670,11 +671,11 @@ export const PointOfSale: React.FC = () => {
 
               {/* Down Payment / Cash Paid Upfront */}
               <div>
-                <div className="flex items-center justify-between text-xs mb-1.5">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5 text-xs mb-1.5">
                   <label className="text-slate-300 font-medium">
                     بڕی پارەی دراو لە کاتی کڕین (Down payment):
                   </label>
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-1 self-start sm:self-auto">
                     <button
                       type="button"
                       onClick={handleSetFullPayment}

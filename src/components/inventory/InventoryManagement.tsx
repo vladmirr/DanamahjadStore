@@ -363,12 +363,12 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
       {/* Add / Edit Product Modal */}
       <AnimatePresence>
         {isAddModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 10 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
-              className="w-full max-w-xl glass-card rounded-2xl border border-slate-700 p-6 relative overflow-hidden shadow-2xl max-h-[90vh] overflow-y-auto"
+              className="w-full max-w-xl glass-card rounded-2xl border border-slate-700 p-4 sm:p-6 my-2 sm:my-8 relative overflow-hidden shadow-2xl max-h-[92vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between pb-4 border-b border-slate-800">
                 <div className="flex items-center gap-2">
