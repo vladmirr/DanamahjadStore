@@ -1126,41 +1126,6 @@ ${
                   </select>
                 </div>
 
-            {/* TRANSACTION STATUS / MARK AS COMPLETED BUTTON */}
-            {activeTransaction.status === 'completed' ? (
-              <div className="flex items-center gap-1.5 flex-wrap">
-                <div
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs font-bold select-none shadow-sm shadow-emerald-950/40"
-                  title="ئەم مامەڵەیە بە تەواوکراو تۆمارکراوە"
-                >
-                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                  <span>مامەڵەکە تەواو بووە (تەواوکراو) ✓</span>
-                </div>
-                <button
-                  type="button"
-                  onClick={handleToggleTransactionStatus}
-                  disabled={isCloudSyncing}
-                  className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs font-medium transition-colors cursor-pointer select-none"
-                  title="کردنەوەی مامەڵە بۆ دەستکاریکردن"
-                >
-                  <Unlock className="w-3.5 h-3.5 text-amber-400" />
-                  <span className="hidden sm:inline">کردنەوەی مامەڵە بۆ دەستکاریکردن</span>
-                  <span className="sm:hidden">کردنەوە</span>
-                </button>
-              </div>
-            ) : (
-              <button
-                type="button"
-                onClick={handleToggleTransactionStatus}
-                disabled={isCloudSyncing}
-                className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 hover:text-emerald-300 border border-emerald-500/30 hover:border-emerald-500/50 text-xs font-bold transition-all shadow-sm cursor-pointer select-none"
-                title="دیاریکردنی ئەم مامەڵەیە وەک تەواوبوو لە دوای یەکلاکردنەوەی هەموو بڕەکان"
-              >
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>تەواو بوونی مامەڵە</span>
-              </button>
-            )}
-
             {/* CREATE NEW TRANSACTION BUTTON */}
             <button
               onClick={handleOpenCreateTransaction}
@@ -2056,6 +2021,46 @@ ${
             </motion.div>
           )}
         </AnimatePresence>
+
+        {/* ====================================================
+            BOTTOM CENTER ACTION: TRANSACTION COMPLETION
+            ==================================================== */}
+        <div className="mt-12 mb-8 pt-8 border-t border-white/[0.08] flex flex-col items-center justify-center gap-3 select-none">
+          {activeTransaction.status === 'completed' ? (
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 p-2 rounded-full bg-[#0a1612]/90 border border-emerald-500/40 shadow-2xl backdrop-blur-xl">
+              <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs sm:text-sm font-bold shadow-sm shadow-emerald-950/40">
+                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span>مامەڵەکە تەواو بووە (تەواوکراو) ✓</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleTransactionStatus}
+                disabled={isCloudSyncing}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-full bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs sm:text-sm font-semibold transition-colors cursor-pointer"
+                title="کردنەوەی مامەڵە بۆ دەستکاریکردن"
+              >
+                <Unlock className="w-3.5 h-3.5 text-amber-400" />
+                <span>کردنەوەی مامەڵە بۆ دەستکاریکردن</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={handleToggleTransactionStatus}
+              disabled={isCloudSyncing}
+              className="flex items-center gap-2 px-6 py-2.5 rounded-full bg-[#05140d]/90 hover:bg-emerald-950/70 text-emerald-400 hover:text-emerald-300 border border-emerald-500/50 hover:border-emerald-400 text-xs sm:text-sm font-bold transition-all shadow-xl shadow-emerald-950/40 hover:scale-[1.03] active:scale-[0.98] cursor-pointer"
+              title="دیاریکردنی ئەم مامەڵەیە وەک تەواوبوو لە دوای یەکلاکردنەوەی هەموو بڕەکان"
+            >
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 stroke-[2.2]" />
+              <span>تەواو بوونی مامەڵە</span>
+            </button>
+          )}
+          <p className="text-[11px] text-neutral-400 text-center">
+            {activeTransaction.status === 'completed'
+              ? 'ئەم مامەڵەیە بە تەواوکراو تۆمارکراوە لە داتابەیس'
+              : 'لەکاتی یەکلاکردنەوەی تەواوی بڕەکان، خەرجی و شەراکەت کلیک بکە'}
+          </p>
+        </div>
       </div>
       </>
       )}
