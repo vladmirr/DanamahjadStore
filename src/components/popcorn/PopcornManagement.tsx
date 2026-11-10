@@ -1304,7 +1304,7 @@ ${
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
           {/* 1. Buying Details */}
-          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
+          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">تێچووی کڕین (Buying Cost)</p>
@@ -1325,7 +1325,7 @@ ${
           </TiltCard>
 
           {/* 2. Selling Revenue */}
-          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
+          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">داهاتی فرۆش (Selling Revenue)</p>
@@ -1352,7 +1352,7 @@ ${
           </TiltCard>
 
           {/* 3. Cost Iran Side + Cost Iraq Side */}
-          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
+          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">کۆی خەرجییەکان (Expenses)</p>
@@ -1373,7 +1373,7 @@ ${
           </TiltCard>
 
           {/* 4. Net Profit */}
-          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
+          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">قازانجی پوختەی مامەڵە (Net)</p>
@@ -1417,7 +1417,7 @@ ${
           </TiltCard>
 
           {/* 5. Calculate with Partner if there is any */}
-          <TiltCard className="bg-[#0f1115] border border-white/[0.08] hover:border-white/20">
+          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
