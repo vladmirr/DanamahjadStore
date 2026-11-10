@@ -930,6 +930,7 @@ ${
                 const sellPrice = Number(trans.config.sellingPricePerTonUSD) || 0;
                 const truckCount = trans.trucks?.length || 0;
                 const expenseCount = trans.expenses?.length || 0;
+                const isCompleted = trans.status === 'completed';
 
                 return (
                   <div
@@ -938,13 +939,23 @@ ${
                       setSelectedTransactionId(trans.id);
                       playSound('click');
                     }}
-                    className="rounded-2xl bg-[#0f1115] border border-white/[0.08] hover:border-white/25 hover:bg-[#13161e] p-5 shadow-lg group cursor-pointer flex flex-col justify-between transition-all duration-150 relative"
+                    className={`rounded-2xl p-5 shadow-lg group cursor-pointer flex flex-col justify-between transition-all duration-200 relative ${
+                      isCompleted
+                        ? 'bg-gradient-to-b from-[#0b1b14] via-[#091711] to-[#07130e] border border-emerald-500/35 hover:border-emerald-500/55 shadow-emerald-950/30'
+                        : 'bg-[#0f1115] border border-white/[0.08] hover:border-white/25 hover:bg-[#13161e]'
+                    }`}
                   >
                     <div>
                       {/* Card Header: Icon, Name & Status */}
                       <div className="flex items-start justify-between gap-3 mb-3.5">
                         <div className="flex items-center gap-3">
-                          <div className="p-2.5 rounded-xl bg-white/[0.04] text-white border border-white/[0.08] group-hover:bg-white group-hover:text-black transition-colors shrink-0">
+                          <div
+                            className={`p-2.5 rounded-xl border transition-colors shrink-0 ${
+                              isCompleted
+                                ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/25 group-hover:bg-emerald-500 group-hover:text-black'
+                                : 'bg-white/[0.04] text-white border-white/[0.08] group-hover:bg-white group-hover:text-black'
+                            }`}
+                          >
                             <Truck className="w-5 h-5" />
                           </div>
                           <div>
@@ -954,7 +965,7 @@ ${
                           </div>
                         </div>
 
-                        {trans.status === 'completed' ? (
+                        {isCompleted ? (
                           <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1 shrink-0 shadow-sm shadow-emerald-950/40">
                             <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                             <span>تەواوکراو</span>
@@ -967,29 +978,39 @@ ${
                       </div>
 
                       {/* 4 Metrics Grid */}
-                      <div className="grid grid-cols-2 gap-2 my-4 pt-3 border-t border-white/[0.06] text-xs">
-                        <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
+                      <div className={`grid grid-cols-2 gap-2 my-4 pt-3 border-t text-xs ${
+                        isCompleted ? 'border-emerald-500/15' : 'border-white/[0.06]'
+                      }`}>
+                        <div className={`p-2.5 rounded-xl border ${
+                          isCompleted ? 'bg-[#050e09]/80 border-emerald-500/15' : 'bg-[#050505] border-white/[0.06]'
+                        }`}>
                           <span className="text-[10px] text-neutral-400 block mb-0.5">کۆی بار</span>
                           <span className="font-bold text-white">
                             {formatNumber(totalTons)} <span className="text-[10px] font-normal text-neutral-400">تۆن</span>
                           </span>
                         </div>
 
-                        <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
+                        <div className={`p-2.5 rounded-xl border ${
+                          isCompleted ? 'bg-[#050e09]/80 border-emerald-500/15' : 'bg-[#050505] border-white/[0.06]'
+                        }`}>
                           <span className="text-[10px] text-neutral-400 block mb-0.5">بارهەڵگرەکان</span>
                           <span className="font-bold text-white">
                             {truckCount} <span className="text-[10px] font-normal text-neutral-400">بار</span>
                           </span>
                         </div>
 
-                        <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
+                        <div className={`p-2.5 rounded-xl border ${
+                          isCompleted ? 'bg-[#050e09]/80 border-emerald-500/15' : 'bg-[#050505] border-white/[0.06]'
+                        }`}>
                           <span className="text-[10px] text-neutral-400 block mb-0.5">نرخی کڕین</span>
                           <span className="font-bold text-white">
                             ${formatNumber(buyPrice)} <span className="text-[10px] font-normal text-neutral-400">/ تۆن</span>
                           </span>
                         </div>
 
-                        <div className="p-2.5 rounded-xl bg-[#050505] border border-white/[0.06]">
+                        <div className={`p-2.5 rounded-xl border ${
+                          isCompleted ? 'bg-[#050e09]/80 border-emerald-500/15' : 'bg-[#050505] border-white/[0.06]'
+                        }`}>
                           <span className="text-[10px] text-neutral-400 block mb-0.5">نرخی فرۆشتن</span>
                           <span className="font-bold text-white">
                             {sellPrice > 0 ? (
@@ -1021,8 +1042,12 @@ ${
                     </div>
 
                     {/* Card Footer: Open CTA */}
-                    <div className="pt-3 border-t border-white/[0.06] flex items-center justify-between mt-auto">
-                      <div className="flex items-center gap-2 text-xs font-bold text-white group-hover:text-neutral-200 transition-colors">
+                    <div className={`pt-3 border-t flex items-center justify-between mt-auto ${
+                      isCompleted ? 'border-emerald-500/15' : 'border-white/[0.06]'
+                    }`}>
+                      <div className={`flex items-center gap-2 text-xs font-bold transition-colors ${
+                        isCompleted ? 'text-emerald-300 group-hover:text-emerald-200' : 'text-white group-hover:text-neutral-200'
+                      }`}>
                         <span>بینینی ئەم مامەڵەیە</span>
                         <ArrowRight className="w-3.5 h-3.5 group-hover:-translate-x-1 transition-transform" />
                       </div>
@@ -1072,7 +1097,11 @@ ${
           {/* ====================================================
               TOP HERO & TRANSACTION SWITCHER BAR (MINIMALIST DARK)
               ==================================================== */}
-          <div className="rounded-2xl bg-[#0f1115] border border-white/[0.08] p-5 md:p-6 shadow-lg">
+          <div className={`rounded-2xl p-5 md:p-6 shadow-lg transition-colors ${
+            activeTransaction.status === 'completed'
+              ? 'bg-gradient-to-b from-[#0b1b14] via-[#091711] to-[#07130e] border border-emerald-500/35 shadow-emerald-950/20'
+              : 'bg-[#0f1115] border border-white/[0.08]'
+          }`}>
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
               {/* Left: Transaction Brand & Back Button */}
               <div className="flex items-center gap-3 flex-wrap">
