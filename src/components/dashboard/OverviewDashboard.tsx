@@ -69,12 +69,13 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">کۆی فرۆشی گشتی</p>
-              <h3 className="text-xl font-bold text-white mt-1.5 font-numeric">
-                {formatIQD(metrics.totalGrossSales)}
+              <h3 className="text-xl font-bold text-white mt-1.5 font-numeric flex items-baseline gap-1.5">
+                <span>{formatNumber(metrics.totalGrossSales)}</span>
+                <span className="text-xs font-semibold text-blue-400/90">د.ع</span>
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-              <TrendingUp className="w-4 h-4" />
+            <div className="p-2 rounded-xl metric-icon-box">
+              <TrendingUp className="w-4 h-4 text-blue-400" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400">
@@ -90,12 +91,13 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">تێچووی فرۆشراو (COGS)</p>
-              <h3 className="text-xl font-bold text-white mt-1.5 font-numeric">
-                {formatIQD(metrics.totalCOGS)}
+              <h3 className="text-xl font-bold text-white mt-1.5 font-numeric flex items-baseline gap-1.5">
+                <span>{formatNumber(metrics.totalCOGS)}</span>
+                <span className="text-xs font-semibold text-rose-400/90">د.ع</span>
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-              <DollarSign className="w-4 h-4" />
+            <div className="p-2 rounded-xl metric-icon-box">
+              <DollarSign className="w-4 h-4 text-rose-400" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400">
@@ -109,12 +111,13 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">کۆی قازانجی گشتی</p>
-              <h3 className="text-xl font-bold text-white mt-1.5 font-numeric">
-                {formatIQD(metrics.totalGrossProfit)}
+              <h3 className="text-xl font-bold text-white mt-1.5 font-numeric flex items-baseline gap-1.5">
+                <span>{formatNumber(metrics.totalGrossProfit)}</span>
+                <span className="text-xs font-semibold text-emerald-400/90">د.ع</span>
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-              <ArrowUpRight className="w-4 h-4" />
+            <div className="p-2 rounded-xl metric-icon-box">
+              <ArrowUpRight className="w-4 h-4 text-emerald-400" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400">
@@ -130,12 +133,13 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">کۆی پارەی وەرگیراو</p>
-              <h3 className="text-xl font-bold text-white mt-1.5 font-numeric">
-                {formatIQD(metrics.totalCashReceived)}
+              <h3 className="text-xl font-bold text-white mt-1.5 font-numeric flex items-baseline gap-1.5">
+                <span>{formatNumber(metrics.totalCashReceived)}</span>
+                <span className="text-xs font-semibold text-emerald-400/90">د.ع</span>
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-              <Wallet className="w-4 h-4" />
+            <div className="p-2 rounded-xl metric-icon-box">
+              <Wallet className="w-4 h-4 text-emerald-400" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400">
@@ -152,15 +156,18 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
             <div>
               <p className="text-xs font-medium text-neutral-400">بڕی پارەی ماوە (قەرز)</p>
               <h3
-                className={`text-xl font-bold mt-1.5 font-numeric ${
+                className={`text-xl font-bold mt-1.5 font-numeric flex items-baseline gap-1.5 ${
                   metrics.totalOutstandingDebt > 0 ? 'text-[#fbbf24]' : 'text-neutral-300'
                 }`}
               >
-                {formatIQD(metrics.totalOutstandingDebt)}
+                <span>{formatNumber(metrics.totalOutstandingDebt)}</span>
+                <span className={`text-xs font-semibold ${metrics.totalOutstandingDebt > 0 ? 'text-amber-400/90' : 'text-neutral-400'}`}>
+                  د.ع
+                </span>
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-              <Receipt className="w-4 h-4" />
+            <div className="p-2 rounded-xl metric-icon-box">
+              <Receipt className="w-4 h-4 text-amber-400" />
             </div>
           </div>
           <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400">

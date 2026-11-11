@@ -1425,12 +1425,13 @@ ${
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">تێچووی کڕین (Buying Cost)</p>
-                <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight">
-                  {formatUSD(totalBuyingCost)}
+                <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight flex items-baseline gap-1.5">
+                  <span className="text-blue-400/80 text-lg font-bold">$</span>
+                  <span>{formatNumber(totalBuyingCost)}</span>
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-                <Globe2 className="w-4 h-4" />
+              <div className="p-2 rounded-xl metric-icon-box">
+                <Globe2 className="w-4 h-4 text-blue-400" />
               </div>
             </div>
             <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
@@ -1447,11 +1448,18 @@ ${
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">داهاتی فرۆش (Selling Revenue)</p>
                 <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight">
-                  {sellPricePerTon > 0 ? formatUSD(expectedTotalRevenue) : 'دیارینەکراوە'}
+                  {sellPricePerTon > 0 ? (
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-blue-400/80 text-lg font-bold">$</span>
+                      <span>{formatNumber(expectedTotalRevenue)}</span>
+                    </span>
+                  ) : (
+                    'دیارینەکراوە'
+                  )}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-                <TrendingUp className="w-4 h-4" />
+              <div className="p-2 rounded-xl metric-icon-box">
+                <TrendingUp className="w-4 h-4 text-blue-400" />
               </div>
             </div>
             <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
@@ -1473,12 +1481,13 @@ ${
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">کۆی خەرجییەکان (Expenses)</p>
-                <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight">
-                  {formatUSD(totalOperatingExpenses)}
+                <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight flex items-baseline gap-1.5">
+                  <span className="text-rose-400/80 text-lg font-bold">$</span>
+                  <span>{formatNumber(totalOperatingExpenses)}</span>
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-                <Scale className="w-4 h-4" />
+              <div className="p-2 rounded-xl metric-icon-box">
+                <Scale className="w-4 h-4 text-rose-400" />
               </div>
             </div>
             <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
@@ -1503,11 +1512,18 @@ ${
                       : 'text-white'
                   }`}
                 >
-                  {sellPricePerTon > 0 ? formatUSD(finalNetProfit) : 'چاوەڕوانی فرۆشتن'}
+                  {sellPricePerTon > 0 ? (
+                    <span className="flex items-baseline gap-1.5">
+                      <span className={`text-lg font-bold ${finalNetProfit >= 0 ? 'text-emerald-400/80' : 'text-rose-400/80'}`}>$</span>
+                      <span>{formatNumber(finalNetProfit)}</span>
+                    </span>
+                  ) : (
+                    'چاوەڕوانی فرۆشتن'
+                  )}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-                <DollarSign className="w-4 h-4" />
+              <div className="p-2 rounded-xl metric-icon-box">
+                <DollarSign className="w-4 h-4 text-emerald-400" />
               </div>
             </div>
             <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
@@ -1541,15 +1557,18 @@ ${
                   {hasPartner ? `پشکی هاوبەش (%${partnerPercent})` : 'پشکی من (بێ هاوبەش)'}
                 </p>
                 <h3 className="text-2xl font-bold text-white mt-2 font-numeric tracking-tight">
-                  {sellPricePerTon > 0
-                    ? hasPartner
-                      ? formatUSD(partnerProfitShare)
-                      : formatUSD(myProfitShare)
-                    : 'چاوەڕوانی فرۆشتن'}
+                  {sellPricePerTon > 0 ? (
+                    <span className="flex items-baseline gap-1.5">
+                      <span className="text-amber-400/80 text-lg font-bold">$</span>
+                      <span>{formatNumber(hasPartner ? partnerProfitShare : myProfitShare)}</span>
+                    </span>
+                  ) : (
+                    'چاوەڕوانی فرۆشتن'
+                  )}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
-                {hasPartner ? <Split className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+              <div className="p-2 rounded-xl metric-icon-box">
+                {hasPartner ? <Split className="w-4 h-4 text-amber-400" /> : <UserCheck className="w-4 h-4 text-amber-400" />}
               </div>
             </div>
             <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
