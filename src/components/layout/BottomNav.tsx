@@ -35,20 +35,20 @@ export const BottomNav: React.FC = () => {
     );
   }
 
-  // The 3 daily primary options in the bottom bar
+  // The 3 daily primary options in the bottom bar (Dashboard centered in the middle)
   const navItems = [
-    {
-      id: 'dashboard',
-      label: 'داشبۆردی سەرەکی',
-      shortLabel: 'داشبۆرد',
-      icon: LayoutDashboard,
-      badge: null,
-    },
     {
       id: 'pos',
       label: 'بەشی فرۆشتن',
       shortLabel: 'فرۆشتن',
       icon: ShoppingCart,
+      badge: null,
+    },
+    {
+      id: 'dashboard',
+      label: 'داشبۆردی سەرەکی',
+      shortLabel: 'داشبۆرد',
+      icon: LayoutDashboard,
       badge: null,
     },
     {
