@@ -1421,7 +1421,7 @@ ${
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
           {/* 1. Buying Details */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="metric-revenue-card">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">تێچووی کڕین (Buying Cost)</p>
@@ -1429,7 +1429,7 @@ ${
                   {formatUSD(totalBuyingCost)}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
                 <Globe2 className="w-4 h-4" />
               </div>
             </div>
@@ -1442,7 +1442,7 @@ ${
           </TiltCard>
 
           {/* 2. Selling Revenue */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="metric-card-blue">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">داهاتی فرۆش (Selling Revenue)</p>
@@ -1450,7 +1450,7 @@ ${
                   {sellPricePerTon > 0 ? formatUSD(expectedTotalRevenue) : 'دیارینەکراوە'}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
@@ -1469,7 +1469,7 @@ ${
           </TiltCard>
 
           {/* 3. Cost Iran Side + Cost Iraq Side */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="metric-cost-card">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">کۆی خەرجییەکان (Expenses)</p>
@@ -1477,7 +1477,7 @@ ${
                   {formatUSD(totalOperatingExpenses)}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
                 <Scale className="w-4 h-4" />
               </div>
             </div>
@@ -1490,7 +1490,7 @@ ${
           </TiltCard>
 
           {/* 4. Net Profit */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="metric-profit-card">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">قازانجی پوختەی مامەڵە (Net)</p>
@@ -1506,7 +1506,7 @@ ${
                   {sellPricePerTon > 0 ? formatUSD(finalNetProfit) : 'چاوەڕوانی فرۆشتن'}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
@@ -1534,7 +1534,7 @@ ${
           </TiltCard>
 
           {/* 5. Calculate with Partner if there is any */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="metric-card-amber">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
@@ -1548,7 +1548,7 @@ ${
                     : 'چاوەڕوانی فرۆشتن'}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
                 {hasPartner ? <Split className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
               </div>
             </div>

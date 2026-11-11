@@ -65,7 +65,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
       {/* 5 Core Accounting KPI Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
         {/* 1. کۆی فرۆشی گشتی (Total Gross Sales) */}
-        <TiltCard>
+        <TiltCard className="metric-revenue-card">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">کۆی فرۆشی گشتی</p>
@@ -73,7 +73,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalGrossSales)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
+            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
@@ -86,7 +86,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
         </TiltCard>
 
         {/* 2. تێچووی فرۆشراو (Cost of Goods Sold - COGS) */}
-        <TiltCard>
+        <TiltCard className="metric-cost-card">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">تێچووی فرۆشراو (COGS)</p>
@@ -94,7 +94,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalCOGS)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
+            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
@@ -105,7 +105,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
         </TiltCard>
 
         {/* 3. کۆی قازانجی گشتی (Total Gross Profit) */}
-        <TiltCard>
+        <TiltCard className="metric-profit-card">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">کۆی قازانجی گشتی</p>
@@ -113,7 +113,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalGrossProfit)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
+            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
@@ -126,7 +126,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
         </TiltCard>
 
         {/* 4. کۆی پارەی وەرگیراو (Total Cash Received) */}
-        <TiltCard>
+        <TiltCard className="metric-card-emerald">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">کۆی پارەی وەرگیراو</p>
@@ -134,7 +134,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalCashReceived)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
+            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
@@ -159,7 +159,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalOutstandingDebt)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
+            <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 metric-icon-box">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
