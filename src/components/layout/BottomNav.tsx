@@ -22,10 +22,6 @@ export const BottomNav: React.FC = () => {
             onClick={() => setActiveTab('dashboard')}
             className="flex items-center gap-2 sm:gap-2.5 px-4 sm:px-6 py-2 rounded-full bg-white/[0.06] hover:bg-white/10 text-white border border-white/10 hover:border-white/20 shadow-sm transition-all cursor-pointer group touch-manipulation"
           >
-            <span className="relative flex h-2 w-2 shrink-0">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400 nav-pulse-dot" />
-            </span>
             <span className="text-xs sm:text-sm font-bold text-neutral-200 group-hover:text-white transition-colors">
               داشبۆردی سەرەکی
             </span>
@@ -94,22 +90,6 @@ export const BottomNav: React.FC = () => {
                       damping: 34,
                     }}
                   />
-                )}
-
-                {/* 2. Active Status Dot with Breathing Glow that Glides Across Tabs */}
-                {isActive && (
-                  <motion.span
-                    layoutId="active-nav-dot"
-                    className="relative flex h-2 w-2 shrink-0 z-10"
-                    transition={{
-                      type: 'spring',
-                      stiffness: 420,
-                      damping: 34,
-                    }}
-                  >
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400 nav-pulse-dot" />
-                  </motion.span>
                 )}
 
                 <span className="relative z-10 text-xs sm:text-sm whitespace-nowrap">
