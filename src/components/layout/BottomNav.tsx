@@ -25,7 +25,7 @@ export const BottomNav: React.FC = () => {
             <span className="text-xs sm:text-sm font-bold text-neutral-200 group-hover:text-white transition-colors">
               داشبۆردی سەرەکی
             </span>
-            <LayoutDashboard className="w-4 h-4 text-neutral-400 group-hover:text-white transition-all shrink-0 nav-icon nav-icon-dashboard" />
+            <LayoutDashboard className="w-4 h-4 text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)] transition-all shrink-0 nav-icon nav-icon-dashboard" />
           </button>
         </nav>
       </div>
@@ -39,6 +39,8 @@ export const BottomNav: React.FC = () => {
       label: 'بەشی فرۆشتن',
       shortLabel: 'فرۆشتن',
       icon: ShoppingCart,
+      colorClass: 'text-blue-400/80 group-hover:text-blue-300',
+      activeColorClass: 'text-blue-400 drop-shadow-[0_0_8px_rgba(59,130,246,0.75)]',
       badge: null,
     },
     {
@@ -46,6 +48,8 @@ export const BottomNav: React.FC = () => {
       label: 'داشبۆردی سەرەکی',
       shortLabel: 'داشبۆرد',
       icon: LayoutDashboard,
+      colorClass: 'text-emerald-400/80 group-hover:text-emerald-300',
+      activeColorClass: 'text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.8)]',
       badge: null,
     },
     {
@@ -53,6 +57,8 @@ export const BottomNav: React.FC = () => {
       label: 'پارەدان و قەرزەکان',
       shortLabel: 'قەرزەکان',
       icon: Wallet,
+      colorClass: 'text-amber-400/80 group-hover:text-amber-300',
+      activeColorClass: 'text-amber-400 drop-shadow-[0_0_8px_rgba(245,158,11,0.75)]',
       badge: null,
     },
   ];
@@ -99,8 +105,8 @@ export const BottomNav: React.FC = () => {
 
                 <div className="relative z-10 shrink-0 flex items-center gap-1.5">
                   <Icon
-                    className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-200 nav-icon nav-icon-${item.id} ${
-                      isActive ? 'text-white' : 'text-neutral-400 group-hover:text-white'
+                    className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-200 shrink-0 nav-icon nav-icon-${item.id} ${
+                      isActive ? item.activeColorClass : item.colorClass
                     }`}
                   />
                   {item.badge && item.badge}
