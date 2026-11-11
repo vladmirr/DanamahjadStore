@@ -26,3 +26,4 @@ export const DashboardBackground: React.FC<DashboardBackgroundProps> = ({ classN
 };
 
 export default DashboardBackground;
+

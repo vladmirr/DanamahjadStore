@@ -32,3 +32,24 @@
   border-color: rgba(255, 255, 255, 0.18);
   box-shadow: 0 8px 32px -4px rgba(0, 0, 0, 0.7);
 }
+
+/* Strict Read-Only Locked States for Completed Transactions */
+.transaction-locked input:not([type="search"]),
+.transaction-locked select,
+.transaction-locked textarea,
+.transaction-locked-input {
+  cursor: not-allowed !important;
+  opacity: 0.55 !important;
+  background-color: rgba(255, 255, 255, 0.02) !important;
+  border-color: rgba(255, 255, 255, 0.06) !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.transaction-locked button[data-modify="true"],
+.transaction-locked .btn-modify-locked {
+  cursor: not-allowed !important;
+  opacity: 0.4 !important;
+  pointer-events: none !important;
+}
+

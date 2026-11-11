@@ -12,6 +12,7 @@ import {
   Printer,
   RotateCcw,
   CheckCircle2,
+  Lock,
   Unlock,
   Clock,
   MapPin,
@@ -113,9 +114,9 @@ export const PopcornManagement: React.FC = () => {
   const [isDeletingTransaction, setIsDeletingTransaction] = useState<boolean>(false);
   const [isCreatingTransaction, setIsCreatingTransaction] = useState<boolean>(false);
 
-  // Toast notification state for explicit error and success feedback
-  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
-  const showToast = (message: string, type: 'success' | 'error' | 'info' = 'info') => {
+  // Toast notification state for explicit error, success and warning feedback
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info' | 'warning'; message: string } | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info') => {
     setToast({ type, message });
     setTimeout(() => {
       setToast((cur) => (cur?.message === message ? null : cur));
@@ -168,6 +169,14 @@ export const PopcornManagement: React.FC = () => {
       setEditTransactionName(activeTransaction.name);
     }
   }, [activeTransaction?.id, activeTransaction?.name]);
+
+  // Strict Read-Only Lock State for Completed Transactions
+  const [isEditingUnlocked, setIsEditingUnlocked] = useState(false);
+
+  // Whenever active transaction changes, ensure completed transactions open locked by default
+  useEffect(() => {
+    setIsEditingUnlocked(false);
+  }, [activeTransaction?.id, selectedTransactionId]);
 
   // Form: Truck
   const [truckForm, setTruckForm] = useState({
@@ -344,11 +353,30 @@ export const PopcornManagement: React.FC = () => {
     }));
 
     if (newStatus === 'completed') {
+      setIsEditingUnlocked(false);
       playSound('success');
-      showToast('مامەڵەکە بە سەرکەوتوویی وەک تەواوکراو دیاریکرا', 'success');
+      showToast('مامەڵەکە بە سەرکەوتوویی وەک تەواوکراو دیاریکرا و قفڵ کرا', 'success');
     } else {
+      setIsEditingUnlocked(true);
       playSound('click');
-      showToast('مامەڵەکە بۆ دەستکاریکردن و نوێکردنەوە کرایەوە', 'info');
+      showToast('مامەڵەکە بۆ دۆخی چالاک (Active) گەڕێندرایەوە و کرایەوە', 'info');
+    }
+  };
+
+  // Toggle edit lock state for completed transaction
+  const handleToggleEditLock = () => {
+    if (isLocked) {
+      // User clicks "🔓 کردنەوەی مامەڵە بۆ دەستکاریکردن"
+      setIsEditingUnlocked(true);
+      playSound('click');
+      showToast('دۆخی دەستکاریکردن کارایە: دەتوانیت ژمارەکان و خەرجییەکان چاک بکەیتەوە', 'info');
+    } else {
+      // User clicks "🔒 قفڵکردنەوەی مامەڵە"
+      setIsEditingUnlocked(false);
+      playSound('success');
+      showToast('مامەڵەکە بە سەرکەوتوویی قفڵ کرایەوە و گۆڕانکارییەکان پارێزران', 'success');
+      // Persist any active modifications to cloud
+      syncPopcornStoreToCloud(store).catch((err) => console.error(err));
     }
   };
 
@@ -369,6 +397,7 @@ export const PopcornManagement: React.FC = () => {
 
   // 2. Transport & Truck Metrics
   const isTransactionCompleted = safeTransaction.status === 'completed';
+  const isLocked = isTransactionCompleted && !isEditingUnlocked;
 
   const totalTonsCarried = useMemo(() => {
     const raw = trucks.reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0);
@@ -531,6 +560,10 @@ export const PopcornManagement: React.FC = () => {
 
   const handleSaveEditTransaction = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە - تکایە سەرەتا بیکەوە بۆ دەستکاریکردن', 'warning');
+      return;
+    }
     if (!editTransactionName.trim()) {
       playSound('error');
       return;
@@ -557,6 +590,10 @@ export const PopcornManagement: React.FC = () => {
   };
 
   const handleDeleteTransaction = async (id: string) => {
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە و ناتوانیت بیسڕیتەوە', 'warning');
+      return;
+    }
     if (store.transactions.length <= 1) {
       alert('ناتوانیت تەنها مامەڵەی ماوە بسڕیتەوە!');
       return;
@@ -585,6 +622,10 @@ export const PopcornManagement: React.FC = () => {
   // TRUCK HANDLERS
   // ----------------------------------------------------
   const handleOpenAddTruck = () => {
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە - تکایە سەرەتا کلیک لە کردنەوەی مامەڵە بۆ دەستکاریکردن بکە', 'warning');
+      return;
+    }
     setEditingTruck(null);
     setTruckForm({
       plateNumber: '',
@@ -598,6 +639,10 @@ export const PopcornManagement: React.FC = () => {
   };
 
   const handleOpenEditTruck = (truck: PopcornTruck) => {
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە - تکایە سەرەتا کلیک لە کردنەوەی مامەڵە بۆ دەستکاریکردن بکە', 'warning');
+      return;
+    }
     setEditingTruck(truck);
     setTruckForm({
       plateNumber: truck.plateNumber,
@@ -612,6 +657,10 @@ export const PopcornManagement: React.FC = () => {
 
   const handleSaveTruck = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە و گۆڕانکاری وەرناگیرێت', 'warning');
+      return;
+    }
     if (!truckForm.plateNumber.trim() || !truckForm.tonsCarried || !truckForm.driverName.trim()) {
       playSound('error');
       return;
@@ -660,6 +709,10 @@ export const PopcornManagement: React.FC = () => {
   };
 
   const handleDeleteTruck = (id: string) => {
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە و ناتوانیت بیسڕیتەوە', 'warning');
+      return;
+    }
     updateActiveTransaction((current) => ({
       ...current,
       trucks: current.trucks.filter((t) => t.id !== id),
@@ -693,6 +746,10 @@ export const PopcornManagement: React.FC = () => {
   };
 
   const handleOpenAddExpense = (defaultRegion?: 'iran' | 'iraq') => {
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە - تکایە سەرەتا کلیک لە کردنەوەی مامەڵە بۆ دەستکاریکردن بکە', 'warning');
+      return;
+    }
     setEditingExpense(null);
     setExpenseForm({
       region: defaultRegion || (activeExpenseTab === 'iraq' ? 'iraq' : 'iran'),
@@ -709,6 +766,10 @@ export const PopcornManagement: React.FC = () => {
   };
 
   const handleOpenEditExpense = (expense: PopcornExpense) => {
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە - تکایە سەرەتا کلیک لە کردنەوەی مامەڵە بۆ دەستکاریکردن بکە', 'warning');
+      return;
+    }
     setEditingExpense(expense);
     setExpenseForm({
       region: expense.region,
@@ -726,6 +787,10 @@ export const PopcornManagement: React.FC = () => {
 
   const handleSaveExpense = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە و گۆڕانکاری وەرناگیرێت', 'warning');
+      return;
+    }
     if (!expenseForm.amountUSD) {
       playSound('error');
       return;
@@ -781,6 +846,10 @@ export const PopcornManagement: React.FC = () => {
   };
 
   const handleDeleteExpense = (id: string) => {
+    if (isLocked) {
+      showToast('مامەڵەکە قفڵ کراوە و ناتوانیت بیسڕیتەوە', 'warning');
+      return;
+    }
     updateActiveTransaction((current) => ({
       ...current,
       expenses: current.expenses.filter((e) => e.id !== id),
@@ -1198,12 +1267,21 @@ ${
               {/* Edit Active Transaction Settings */}
               <button
                 onClick={() => {
+                  if (isLocked) {
+                    showToast('مامەڵەکە قفڵ کراوە - پێویستە سەرەتا بیکەیتەوە بۆ دەستکاریکردنی ڕێکخستنەکان', 'warning');
+                    return;
+                  }
                   setEditTransactionForm(config);
                   setEditTransactionName(activeTransaction.name);
                   setIsEditTransactionModalOpen(true);
                 }}
-                className="p-2 rounded-lg hover:bg-white/[0.06] text-neutral-400 hover:text-white transition-colors cursor-pointer"
-                title="دەستکاریکردنی ناوی مامەڵە، نرخەکان و شەراکەت"
+                disabled={isLocked}
+                className={`p-2 rounded-lg transition-colors ${
+                  isLocked
+                    ? 'opacity-35 cursor-not-allowed text-neutral-600'
+                    : 'hover:bg-white/[0.06] text-neutral-400 hover:text-white cursor-pointer'
+                }`}
+                title={isLocked ? 'مامەڵەکە قفڵ کراوە - پێویستە سەرەتا بیکەیتەوە' : 'دەستکاریکردنی ناوی مامەڵە، نرخەکان و شەراکەت'}
               >
                 <Settings className="w-4 h-4" />
               </button>
@@ -1237,9 +1315,20 @@ ${
               {store.transactions.length > 1 && (
                 <button
                   type="button"
-                  onClick={() => setTransactionToDelete(activeTransaction)}
-                  className="p-2 rounded-lg hover:bg-rose-500/10 text-neutral-400 hover:text-rose-400 transition-colors cursor-pointer"
-                  title="سڕینەوەی ئەم مامەڵەیە"
+                  onClick={() => {
+                    if (isLocked) {
+                      showToast('نەتوانرا: مامەڵەی تەواوکراوی قفڵکراو ناسڕدرێتەوە', 'warning');
+                      return;
+                    }
+                    setTransactionToDelete(activeTransaction);
+                  }}
+                  disabled={isLocked}
+                  className={`p-2 rounded-lg transition-colors ${
+                    isLocked
+                      ? 'opacity-30 cursor-not-allowed text-neutral-600'
+                      : 'hover:bg-rose-500/10 text-neutral-400 hover:text-rose-400 cursor-pointer'
+                  }`}
+                  title={isLocked ? 'مامەڵەکە قفڵ کراوە' : 'سڕینەوەی ئەم مامەڵەیە'}
                 >
                   <Trash2 className="w-4 h-4" />
                 </button>
@@ -1252,24 +1341,36 @@ ${
       {/* ====================================================
           COMPLETED TRANSACTION NOTICE BANNER
           ==================================================== */}
-      {activeTransaction.status === 'completed' && (
+      {isTransactionCompleted && (
         <motion.div
           initial={{ opacity: 0, y: -6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="rounded-2xl p-4 md:p-4.5 bg-emerald-950/30 border border-emerald-500/35 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-emerald-200 shadow-lg shadow-emerald-950/30"
+          className={`rounded-2xl p-4 md:p-4.5 border flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-lg transition-colors select-none ${
+            isLocked
+              ? 'bg-emerald-950/30 border-emerald-500/35 text-emerald-200 shadow-emerald-950/30'
+              : 'bg-amber-950/30 border-amber-500/40 text-amber-200 shadow-amber-950/30'
+          }`}
         >
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 shrink-0">
-              <CheckCircle2 className="w-5 h-5" />
+            <div className={`p-2.5 rounded-xl border shrink-0 ${
+              isLocked
+                ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/40'
+                : 'bg-amber-500/20 text-amber-400 border-amber-500/40'
+            }`}>
+              {isLocked ? <Lock className="w-5 h-5" /> : <Unlock className="w-5 h-5" />}
             </div>
             <div>
-              <p className="text-xs sm:text-sm font-bold text-emerald-200">
-                ئەم مامەڵەیە بە تەواوکراو دیاری کراوە. هەموو بڕەکان حیساب کراون.
+              <p className={`text-xs sm:text-sm font-bold ${isLocked ? 'text-emerald-200' : 'text-amber-200'}`}>
+                {isLocked
+                  ? 'ئەم مامەڵەیە بە تەواوکراو دیاری کراوە و قفڵ کراوە.'
+                  : 'دۆخی دەستکاریکردن کارایە: دەتوانیت ژمارەکان و خەرجییەکان چاک بکەیتەوە.'}
               </p>
-              <p className="text-[11px] text-emerald-400/80 mt-0.5">
-                فۆڕم و خانەکان کراوەن بۆ دەستکاریکردن تا لە حاڵەتی پێویستدا ژمارە و خەرجییەکان چاکبکرێنەوە.
+              <p className={`text-[11px] mt-0.5 ${isLocked ? 'text-emerald-400/80' : 'text-amber-400/80'}`}>
+                {isLocked
+                  ? 'بۆ پاراستنی حیساباتەکان لە دەستکاری نەخوازراو، فۆڕم و داتاکان قفڵ کراون (Read-Only).'
+                  : 'ئاگاداربە! گۆڕانکاری لە نرخ، بارهەڵگر یان خەرجییەکان ڕاستەوخۆ حیساباتەکان نوێ دەکاتەوە.'}
                 {activeTransaction.completedAt && (
-                  <span className="mr-2 text-emerald-300 font-medium">
+                  <span className={`mr-2 font-medium ${isLocked ? 'text-emerald-300' : 'text-amber-300'}`}>
                     • بەرواری تەواوبوون: {new Date(activeTransaction.completedAt).toLocaleDateString('ku-IQ', { year: 'numeric', month: 'long', day: 'numeric' })}
                   </span>
                 )}
@@ -1279,16 +1380,32 @@ ${
 
           <button
             type="button"
-            onClick={handleToggleTransactionStatus}
+            onClick={handleToggleEditLock}
             disabled={isCloudSyncing}
-            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40 text-xs font-semibold shrink-0 cursor-pointer transition-colors shadow-sm"
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold shrink-0 cursor-pointer transition-all shadow-sm ${
+              isLocked
+                ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-amber-200 border border-amber-500/35'
+                : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40'
+            }`}
+            title={isLocked ? 'کردنەوەی مامەڵە بۆ دەستکاریکردن' : 'قفڵکردنەوەی مامەڵە'}
           >
-            <Unlock className="w-3.5 h-3.5 text-amber-400" />
-            <span>کردنەوەی مامەڵە بۆ دەستکاریکردن</span>
+            {isLocked ? (
+              <>
+                <Unlock className="w-4 h-4 text-amber-400" />
+                <span>🔓 کردنەوەی مامەڵە بۆ دەستکاریکردن</span>
+              </>
+            ) : (
+              <>
+                <Lock className="w-4 h-4 text-emerald-400" />
+                <span>🔒 قفڵکردنەوەی مامەڵە</span>
+              </>
+            )}
           </button>
         </motion.div>
       )}
 
+      {/* Main editable sections container (strict lock applied when transaction is completed and not unlocked) */}
+      <div className={`space-y-6 ${isLocked ? 'transaction-locked' : ''}`}>
       {/* ====================================================
           1. FINANCIAL KPIS (5 UNIFIED MINIMALIST CARDS)
           ==================================================== */}
@@ -1535,9 +1652,15 @@ ${
 
                   <button
                     onClick={handleOpenAddTruck}
-                    className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold transition-colors cursor-pointer shadow-sm select-none"
+                    disabled={isLocked}
+                    className={`flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-sm select-none ${
+                      isLocked
+                        ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed opacity-50 border border-white/5'
+                        : 'bg-white text-black hover:bg-neutral-200 cursor-pointer'
+                    }`}
+                    title={isLocked ? 'مامەڵەکە قفڵ کراوە - تکایە سەرەتا بیکەوە بۆ دەستکاریکردن' : 'زیادکردنی بارهەڵگرتنی نوێ'}
                   >
-                    <Plus className="w-4 h-4 stroke-[2.5]" />
+                    {isLocked ? <Lock className="w-3.5 h-3.5 text-neutral-500" /> : <Plus className="w-4 h-4 stroke-[2.5]" />}
                     <span>زیادکردنی بارهەڵگرتنی نوێ</span>
                   </button>
                   <button
@@ -1634,20 +1757,28 @@ ${
 
                               <td className="py-3 px-4 text-center whitespace-nowrap">
                                 <div className="flex items-center justify-center gap-1.5">
-                                  <button
-                                    onClick={() => handleOpenEditTruck(truck)}
-                                    className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-                                    title="دەستکاریکردن"
-                                  >
-                                    <Edit2 className="w-3.5 h-3.5" />
-                                  </button>
-                                  <button
-                                    onClick={() => setTruckToDelete(truck)}
-                                    className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors cursor-pointer"
-                                    title="سڕینەوە"
-                                  >
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
+                                  {isLocked ? (
+                                    <span className="p-1.5 rounded-lg text-neutral-600 cursor-not-allowed select-none" title="مامەڵەکە قفڵ کراوە">
+                                      <Lock className="w-3.5 h-3.5" />
+                                    </span>
+                                  ) : (
+                                    <>
+                                      <button
+                                        onClick={() => handleOpenEditTruck(truck)}
+                                        className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                                        title="دەستکاریکردن"
+                                      >
+                                        <Edit2 className="w-3.5 h-3.5" />
+                                      </button>
+                                      <button
+                                        onClick={() => setTruckToDelete(truck)}
+                                        className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors cursor-pointer"
+                                        title="سڕینەوە"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5" />
+                                      </button>
+                                    </>
+                                  )}
                                 </div>
                               </td>
                             </tr>
@@ -1765,16 +1896,28 @@ ${
 
                       <button
                         onClick={() => handleOpenAddExpense('iran')}
-                        className="px-3 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm select-none"
+                        disabled={isLocked}
+                        className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition-all shadow-sm select-none ${
+                          isLocked
+                            ? 'bg-neutral-800 text-neutral-500 cursor-not-allowed opacity-50 border border-white/5'
+                            : 'bg-white text-black hover:bg-neutral-200 cursor-pointer'
+                        }`}
+                        title={isLocked ? 'مامەڵەکە قفڵ کراوە' : 'خەرجی ئێران'}
                       >
-                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                        {isLocked ? <Lock className="w-3.5 h-3.5 text-neutral-500" /> : <Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
                         <span>خەرجی ئێران</span>
                       </button>
                       <button
                         onClick={() => handleOpenAddExpense('iraq')}
-                        className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white text-xs font-semibold cursor-pointer flex items-center gap-1.5 transition-colors shadow-sm select-none"
+                        disabled={isLocked}
+                        className={`px-3 py-2 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all shadow-sm select-none ${
+                          isLocked
+                            ? 'bg-neutral-800/60 text-neutral-500 cursor-not-allowed opacity-50 border border-white/5'
+                            : 'bg-white/[0.06] hover:bg-white/10 border border-white/15 text-white cursor-pointer'
+                        }`}
+                        title={isLocked ? 'مامەڵەکە قفڵ کراوە' : 'خەرجی عێراق'}
                       >
-                        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                        {isLocked ? <Lock className="w-3.5 h-3.5 text-neutral-500" /> : <Plus className="w-3.5 h-3.5 stroke-[2.5]" />}
                         <span>خەرجی عێراق</span>
                       </button>
                       <button
@@ -1901,20 +2044,28 @@ ${
                                   </td>
                                   <td className="py-3 px-4 text-center whitespace-nowrap">
                                     <div className="flex items-center justify-center gap-1.5">
-                                      <button
-                                        onClick={() => handleOpenEditExpense(expense)}
-                                        className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
-                                        title="دەستکاریکردن"
-                                      >
-                                        <Edit2 className="w-3.5 h-3.5" />
-                                      </button>
-                                      <button
-                                        onClick={() => setExpenseToDelete(expense)}
-                                        className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors cursor-pointer"
-                                        title="سڕینەوە"
-                                      >
-                                        <Trash2 className="w-3.5 h-3.5" />
-                                      </button>
+                                      {isLocked ? (
+                                        <span className="p-1.5 rounded-lg text-neutral-600 cursor-not-allowed select-none" title="مامەڵەکە قفڵ کراوە">
+                                          <Lock className="w-3.5 h-3.5" />
+                                        </span>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={() => handleOpenEditExpense(expense)}
+                                            className="p-1.5 rounded-lg bg-white/[0.04] hover:bg-white/10 text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                                            title="دەستکاریکردن"
+                                          >
+                                            <Edit2 className="w-3.5 h-3.5" />
+                                          </button>
+                                          <button
+                                            onClick={() => setExpenseToDelete(expense)}
+                                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 hover:text-rose-300 border border-rose-500/20 transition-colors cursor-pointer"
+                                            title="سڕینەوە"
+                                          >
+                                            <Trash2 className="w-3.5 h-3.5" />
+                                          </button>
+                                        </>
+                                      )}
                                     </div>
                                   </td>
                                 </tr>
@@ -2049,13 +2200,22 @@ ${
                         </div>
                         <button
                           onClick={() => {
+                            if (isLocked) {
+                              showToast('مامەڵەکە قفڵ کراوە - تکایە سەرەتا بیکەوە بۆ دەستکاریکردن', 'warning');
+                              return;
+                            }
                             setEditTransactionForm({
                               ...config,
                               hasPartner: true,
                             });
                             setIsEditTransactionModalOpen(true);
                           }}
-                          className="text-xs text-neutral-300 hover:text-white underline cursor-pointer pt-1"
+                          disabled={isLocked}
+                          className={`text-xs underline pt-1 transition-colors select-none ${
+                            isLocked
+                              ? 'text-neutral-600 cursor-not-allowed opacity-50'
+                              : 'text-neutral-300 hover:text-white cursor-pointer'
+                          }`}
                         >
                           + زیادکردنی شەراکەت بۆ ئەم مامەڵەیە
                         </button>
@@ -2080,24 +2240,41 @@ ${
         </AnimatePresence>
 
         {/* ====================================================
-            BOTTOM CENTER ACTION: TRANSACTION COMPLETION
+            BOTTOM CENTER ACTION: TRANSACTION COMPLETION & LOCK
             ==================================================== */}
         <div className="mt-12 mb-8 pt-8 border-t border-white/[0.08] flex flex-col items-center justify-center gap-3 select-none">
           {activeTransaction.status === 'completed' ? (
-            <div className="flex flex-col sm:flex-row items-center gap-2.5 p-2 rounded-2xl sm:rounded-full bg-[#0a1612]/90 border border-emerald-500/40 shadow-2xl backdrop-blur-xl max-w-full">
+            <div className={`flex flex-col sm:flex-row items-center gap-2.5 p-2 rounded-2xl sm:rounded-full border shadow-2xl backdrop-blur-xl max-w-full transition-colors ${
+              isLocked
+                ? 'bg-[#0a1612]/90 border-emerald-500/40 shadow-emerald-950/40'
+                : 'bg-[#1a140a]/90 border-amber-500/40 shadow-amber-950/40'
+            }`}>
               <div className="flex items-center justify-center gap-2 px-4 sm:px-5 py-2.5 rounded-xl sm:rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-xs sm:text-sm font-bold shadow-sm shadow-emerald-950/40 w-full sm:w-auto text-center">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>مامەڵەکە تەواو بووە (تەواوکراو) ✓</span>
               </div>
               <button
                 type="button"
-                onClick={handleToggleTransactionStatus}
+                onClick={handleToggleEditLock}
                 disabled={isCloudSyncing}
-                className="flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl sm:rounded-full bg-[#050505] hover:bg-white/10 text-neutral-300 hover:text-white border border-white/10 hover:border-white/20 text-xs sm:text-sm font-semibold transition-colors cursor-pointer w-full sm:w-auto"
-                title="کردنەوەی مامەڵە بۆ دەستکاریکردن"
+                className={`flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl sm:rounded-full border text-xs sm:text-sm font-semibold transition-all cursor-pointer w-full sm:w-auto shadow-sm ${
+                  isLocked
+                    ? 'bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border-amber-500/35'
+                    : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-200 border border-emerald-500/40'
+                }`}
+                title={isLocked ? 'کردنەوەی مامەڵە بۆ دەستکاریکردن' : 'قفڵکردنەوەی مامەڵە'}
               >
-                <Unlock className="w-3.5 h-3.5 text-amber-400" />
-                <span>کردنەوەی مامەڵە بۆ دەستکاریکردن</span>
+                {isLocked ? (
+                  <>
+                    <Unlock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>🔓 کردنەوەی مامەڵە بۆ دەستکاریکردن</span>
+                  </>
+                ) : (
+                  <>
+                    <Lock className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>🔒 قفڵکردنەوەی مامەڵە</span>
+                  </>
+                )}
               </button>
             </div>
           ) : (
@@ -2112,12 +2289,28 @@ ${
               <span>تەواو بوونی مامەڵە</span>
             </button>
           )}
-          <p className="text-[11px] text-neutral-400 text-center">
-            {activeTransaction.status === 'completed'
-              ? 'ئەم مامەڵەیە بە تەواوکراو تۆمارکراوە لە داتابەیس'
-              : 'لەکاتی یەکلاکردنەوەی تەواوی بڕەکان، خەرجی و شەراکەت کلیک بکە'}
-          </p>
+          <div className="flex items-center gap-2 flex-wrap justify-center text-[11px] text-neutral-400 text-center">
+            <span>
+              {activeTransaction.status === 'completed'
+                ? isLocked
+                  ? 'ئەم مامەڵەیە بە تەواوکراو دیاری کراوە و قفڵ کراوە لە داتابەیس'
+                  : 'دۆخی دەستکاریکردن کارایە: دەتوانیت ژمارەکان و خەرجییەکان چاک بکەیتەوە'
+                : 'لەکاتی یەکلاکردنەوەی تەواوی بڕەکان، خەرجی و شەراکەت کلیک بکە'}
+            </span>
+            {activeTransaction.status === 'completed' && (
+              <button
+                type="button"
+                onClick={handleToggleTransactionStatus}
+                disabled={isCloudSyncing}
+                className="text-neutral-500 hover:text-neutral-300 underline transition-colors cursor-pointer mr-1"
+                title="گەڕاندنەوەی دۆخی ئەم مامەڵەیە بۆ مامەڵەی نا-تەواو"
+              >
+                (گەڕاندنەوە بۆ دۆخی چالاک / Active)
+              </button>
+            )}
+          </div>
         </div>
+      </div>
       </div>
       </>
       )}
@@ -3328,6 +3521,8 @@ ${
                 ? 'bg-rose-950/90 border-rose-500/40 text-rose-200 shadow-rose-950/50'
                 : toast.type === 'success'
                 ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200 shadow-emerald-950/50'
+                : toast.type === 'warning'
+                ? 'bg-amber-950/90 border-amber-500/40 text-amber-200 shadow-amber-950/50'
                 : 'bg-neutral-900/90 border-white/20 text-neutral-200'
             }`}
           >
@@ -3335,6 +3530,8 @@ ${
               <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0" />
             ) : toast.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+            ) : toast.type === 'warning' ? (
+              <Lock className="w-4 h-4 text-amber-400 shrink-0" />
             ) : (
               <Cloud className="w-4 h-4 text-blue-400 shrink-0" />
             )}

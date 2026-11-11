@@ -253,3 +253,4 @@ export function initDashboardBackground(options: DashboardBgOptions = {}) {
     clearTimeout(resizeTimeout);
   };
 }
+

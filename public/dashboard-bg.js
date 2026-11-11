@@ -231,3 +231,4 @@
 
   global.initDashboardBackground = initDashboardBackground;
 })(typeof window !== 'undefined' ? window : this);
+
