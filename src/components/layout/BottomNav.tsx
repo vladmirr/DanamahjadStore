@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import {
   LayoutDashboard,
   ShoppingCart,
@@ -7,7 +8,7 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export const BottomNav: React.FC = () => {
-  const { activeTab, setActiveTab, metrics } = useApp();
+  const { activeTab, setActiveTab } = useApp();
 
   // When on the Popcorn page, show ONLY floating pill "داشبۆردی سەرەکی"
   if (activeTab === 'popcorn') {
@@ -19,16 +20,16 @@ export const BottomNav: React.FC = () => {
         >
           <button
             onClick={() => setActiveTab('dashboard')}
-            className="flex items-center gap-2 sm:gap-2.5 px-4 sm:px-6 py-2 rounded-full bg-white/[0.06] hover:bg-white/10 text-white border border-white/10 hover:border-white/20 shadow-sm transition-all cursor-pointer group"
+            className="flex items-center gap-2 sm:gap-2.5 px-4 sm:px-6 py-2 rounded-full bg-white/[0.06] hover:bg-white/10 text-white border border-white/10 hover:border-white/20 shadow-sm transition-all cursor-pointer group touch-manipulation"
           >
             <span className="relative flex h-2 w-2 shrink-0">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400 nav-pulse-dot" />
             </span>
             <span className="text-xs sm:text-sm font-bold text-neutral-200 group-hover:text-white transition-colors">
               داشبۆردی سەرەکی
             </span>
-            <LayoutDashboard className="w-4 h-4 text-neutral-400 group-hover:text-white transition-colors shrink-0" />
+            <LayoutDashboard className="w-4 h-4 text-neutral-400 group-hover:text-white transition-all shrink-0 nav-icon nav-icon-dashboard" />
           </button>
         </nav>
       </div>
@@ -66,8 +67,8 @@ export const BottomNav: React.FC = () => {
         aria-label="خوارەوەی پەڕە - پێڕستی سەرەکی"
         className="bg-[#0b0e14]/90 hover:bg-[#121620]/95 backdrop-blur-xl border border-white/10 hover:border-white/20 rounded-full shadow-2xl shadow-black/80 p-1 sm:p-1.5 flex items-center transition-all duration-200"
       >
-        {/* Navigation Items: Single Row with Balanced Widths on Mobile & Desktop */}
-        <div className="flex items-center gap-1 sm:gap-2 w-auto">
+        {/* Navigation Items: Single Row with Smooth Sliding Indicator & Icon Micro-Animations */}
+        <div className="relative flex items-center gap-1 sm:gap-2 w-auto nav-pill-container">
           {navItems.map((item) => {
             const isActive = activeTab === item.id;
             const Icon = item.icon;
@@ -76,27 +77,49 @@ export const BottomNav: React.FC = () => {
               <button
                 key={item.id}
                 onClick={() => setActiveTab(item.id)}
-                className={`flex items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-full transition-all duration-150 cursor-pointer shrink-0 select-none group ${
+                className={`relative flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full transition-colors duration-200 cursor-pointer shrink-0 select-none group touch-manipulation nav-item ${
                   isActive
-                    ? 'bg-white/10 text-white border border-white/20 font-bold shadow-sm'
-                    : 'text-neutral-400 hover:text-white hover:bg-white/[0.04] border border-transparent font-medium'
+                    ? 'text-white font-bold nav-item-active'
+                    : 'text-neutral-400 hover:text-white hover:bg-white/[0.04] font-medium'
                 }`}
               >
+                {/* 1. Sliding Active Indicator Pill (iOS / Dynamic Island Physics) */}
                 {isActive && (
-                  <span className="relative flex h-2 w-2 shrink-0">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
-                  </span>
+                  <motion.div
+                    layoutId="active-nav-indicator"
+                    className="absolute inset-0 bg-white/10 border border-white/20 rounded-full shadow-lg shadow-black/50 pointer-events-none active-pill"
+                    transition={{
+                      type: 'spring',
+                      stiffness: 420,
+                      damping: 34,
+                    }}
+                  />
                 )}
 
-                <span className="text-xs sm:text-sm whitespace-nowrap">
+                {/* 2. Active Status Dot with Breathing Glow that Glides Across Tabs */}
+                {isActive && (
+                  <motion.span
+                    layoutId="active-nav-dot"
+                    className="relative flex h-2 w-2 shrink-0 z-10"
+                    transition={{
+                      type: 'spring',
+                      stiffness: 420,
+                      damping: 34,
+                    }}
+                  >
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400 nav-pulse-dot" />
+                  </motion.span>
+                )}
+
+                <span className="relative z-10 text-xs sm:text-sm whitespace-nowrap">
                   <span className="sm:hidden">{item.shortLabel}</span>
                   <span className="hidden sm:inline">{item.label}</span>
                 </span>
 
-                <div className="relative shrink-0 flex items-center gap-1.5">
+                <div className="relative z-10 shrink-0 flex items-center gap-1.5">
                   <Icon
-                    className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-colors ${
+                    className={`w-3.5 h-3.5 sm:w-4 sm:h-4 transition-all duration-200 nav-icon nav-icon-${item.id} ${
                       isActive ? 'text-white' : 'text-neutral-400 group-hover:text-white'
                     }`}
                   />

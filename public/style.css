@@ -53,3 +53,113 @@
   pointer-events: none !important;
 }
 
+/* ==========================================================================
+   Bottom Floating Navbar: Sliding Indicator & Icon Micro-Interactions
+   ========================================================================== */
+
+/* Touch responsiveness - zero delay on mobile tap */
+.touch-manipulation {
+  touch-action: manipulation;
+}
+
+/* Active Status Dot Breathing Glow Animation */
+@keyframes pulseGlow {
+  0%, 100% {
+    box-shadow: 0 0 4px #10b981;
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 10px #10b981, 0 0 16px rgba(16, 185, 129, 0.45);
+    transform: scale(1.15);
+  }
+}
+
+.nav-pulse-dot {
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+
+/* Icon Micro-Animations & Pop Interactions */
+@keyframes dashboardPop {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  45% {
+    transform: scale(1.18) translateY(-2px) rotate(15deg);
+    filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.5));
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes cartNudge {
+  0% {
+    transform: scale(1) rotate(0deg);
+  }
+  40% {
+    transform: scale(1.18) translateY(-2px) rotate(-12deg);
+    filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.5));
+  }
+  75% {
+    transform: scale(1.05) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+  }
+}
+
+@keyframes walletLift {
+  0% {
+    transform: scale(1) translateY(0);
+  }
+  50% {
+    transform: scale(1.2) translateY(-3px);
+    filter: drop-shadow(0 0 8px rgba(245, 158, 11, 0.5));
+  }
+  100% {
+    transform: scale(1) translateY(0);
+  }
+}
+
+.nav-item-active .nav-icon-dashboard {
+  animation: dashboardPop 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-item-active .nav-icon-pos {
+  animation: cartNudge 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.nav-item-active .nav-icon-payments {
+  animation: walletLift 0.45s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Hover elevation on desktop */
+@media (hover: hover) and (pointer: fine) {
+  .nav-item:hover .nav-icon {
+    transform: translateY(-2px);
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.35));
+  }
+}
+
+/* Standalone CSS Sliding Active Indicator */
+.nav-pill-container {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.nav-indicator {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  height: 100%;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 14px -2px rgba(0, 0, 0, 0.5);
+  pointer-events: none;
+  z-index: 0;
+  transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1), width 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
