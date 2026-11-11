@@ -73,7 +73,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalGrossSales)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300">
+            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
               <TrendingUp className="w-4 h-4" />
             </div>
           </div>
@@ -94,7 +94,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalCOGS)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300">
+            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
               <DollarSign className="w-4 h-4" />
             </div>
           </div>
@@ -113,7 +113,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalGrossProfit)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300">
+            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
               <ArrowUpRight className="w-4 h-4" />
             </div>
           </div>
@@ -134,7 +134,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                 {formatIQD(metrics.totalCashReceived)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300">
+            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
               <Wallet className="w-4 h-4" />
             </div>
           </div>
@@ -147,19 +147,19 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
         </TiltCard>
 
         {/* 5. بڕی پارەی ماوە (Remaining Balance / Debt) */}
-        <TiltCard>
+        <TiltCard className="metric-debt-card">
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-neutral-400">بڕی پارەی ماوە (قەرز)</p>
               <h3
                 className={`text-xl font-bold mt-1.5 font-numeric ${
-                  metrics.totalOutstandingDebt > 0 ? 'text-amber-400' : 'text-neutral-300'
+                  metrics.totalOutstandingDebt > 0 ? 'text-[#fbbf24]' : 'text-neutral-300'
                 }`}
               >
                 {formatIQD(metrics.totalOutstandingDebt)}
               </h3>
             </div>
-            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300">
+            <div className="p-2 rounded-xl bg-white/[0.05] border border-white/10 text-neutral-300 metric-icon-box">
               <Receipt className="w-4 h-4" />
             </div>
           </div>
@@ -167,7 +167,7 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
             <span>قەرزی لای کڕیاران</span>
             <span
               className={`font-semibold ${
-                metrics.totalOutstandingDebt > 0 ? 'text-amber-400' : 'text-neutral-300'
+                metrics.totalOutstandingDebt > 0 ? 'text-[#fbbf24]' : 'text-neutral-300'
               }`}
             >
               {metrics.totalOutstandingDebt > 0 ? 'ماوەتەوە' : 'پاکتاوە'}
