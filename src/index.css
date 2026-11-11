@@ -52,28 +52,38 @@
   overflow: hidden;
 }
 
-/* Minimalist Dark Glassmorphism & Panels */
-.glass-panel {
-  background: rgba(13, 16, 23, 0.88);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-}
-
+/* ==========================================================================
+   Luxury Amber / Dark Espresso Boxes & Glassmorphic Surfaces
+   Matching user reference: rich dark espresso background (#1a1209 -> #120c06),
+   warm gold/amber border (#d97706 / #f59e0b), outer amber glow & hover lift
+   ========================================================================== */
+.amber-box,
+.metric-card,
 .glass-card {
-  background: rgba(13, 16, 23, 0.88);
+  background: linear-gradient(180deg, #1b120c 0%, #120c07 100%);
+  border: 2px solid rgba(217, 119, 6, 0.72);
+  border-radius: 1.125rem;
+  box-shadow: 0 0 16px rgba(217, 119, 6, 0.22), 0 4px 20px rgba(0, 0, 0, 0.65);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   backdrop-filter: blur(14px);
   -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.07);
-  box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.6);
+  position: relative;
 }
 
-.glass-card-hover {
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
+.amber-box:hover,
+.metric-card:hover,
+.glass-card:hover,
 .glass-card-hover:hover {
-  border-color: rgba(255, 255, 255, 0.18);
-  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.6);
+  border-color: #f59e0b;
+  box-shadow: 0 0 28px rgba(245, 158, 11, 0.45), 0 8px 30px rgba(0, 0, 0, 0.85);
+  transform: translateY(-2px);
+}
+
+.glass-panel {
+  background: linear-gradient(180deg, #1b120c 0%, #120c07 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(217, 119, 6, 0.4);
 }
 
 /* ==========================================================================

@@ -1023,7 +1023,7 @@ ${
                     className={`rounded-2xl p-5 shadow-lg group cursor-pointer flex flex-col justify-between transition-all duration-200 relative ${
                       isCompleted
                         ? 'bg-gradient-to-b from-[#0b1b14] via-[#091711] to-[#07130e] border border-emerald-500/35 hover:border-emerald-500/55 shadow-emerald-950/30'
-                        : 'bg-[#0f1115] border border-white/[0.08] hover:border-white/25 hover:bg-[#13161e]'
+                        : 'amber-box'
                     }`}
                   >
                     <div>
@@ -1197,7 +1197,7 @@ ${
           <div className={`rounded-2xl p-5 md:p-6 shadow-lg transition-colors ${
             activeTransaction.status === 'completed'
               ? 'bg-gradient-to-b from-[#0b1b14] via-[#091711] to-[#07130e] border border-emerald-500/35 shadow-emerald-950/20'
-              : 'bg-[#0f1115] border border-white/[0.08]'
+              : 'amber-box'
           }`}>
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
               {/* Left: Transaction Brand & Back Button */}
@@ -1421,7 +1421,7 @@ ${
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3.5">
           {/* 1. Buying Details */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="amber-box">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">تێچووی کڕین (Buying Cost)</p>
@@ -1429,11 +1429,11 @@ ${
                   {formatUSD(totalBuyingCost)}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300">
                 <Globe2 className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-amber-600/20 flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>{totalCargoTons} تۆن × {formatUSD(buyPricePerTon)}</span>
               <span className="text-neutral-300 font-medium">
                 {config.originCountry || config.destinationCity || 'هاوردەکراو'}
@@ -1442,7 +1442,7 @@ ${
           </TiltCard>
 
           {/* 2. Selling Revenue */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="amber-box">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">داهاتی فرۆش (Selling Revenue)</p>
@@ -1450,11 +1450,11 @@ ${
                   {sellPricePerTon > 0 ? formatUSD(expectedTotalRevenue) : 'دیارینەکراوە'}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300">
                 <TrendingUp className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-amber-600/20 flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>
                 {sellPricePerTon > 0
                   ? `فرۆشتن: ${formatUSD(sellPricePerTon)}/تۆن`
@@ -1469,7 +1469,7 @@ ${
           </TiltCard>
 
           {/* 3. Cost Iran Side + Cost Iraq Side */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="amber-box">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">کۆی خەرجییەکان (Expenses)</p>
@@ -1477,11 +1477,11 @@ ${
                   {formatUSD(totalOperatingExpenses)}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300">
                 <Scale className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-amber-600/20 flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>ئێران: {formatUSD(totalIranSpending)}</span>
               <span className="text-neutral-300 font-medium">
                 عێراق: {formatUSD(totalIraqSpending)}
@@ -1490,7 +1490,7 @@ ${
           </TiltCard>
 
           {/* 4. Net Profit */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="amber-box">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">قازانجی پوختەی مامەڵە (Net)</p>
@@ -1506,11 +1506,11 @@ ${
                   {sellPricePerTon > 0 ? formatUSD(finalNetProfit) : 'چاوەڕوانی فرۆشتن'}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300">
                 <DollarSign className="w-4 h-4" />
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-amber-600/20 flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               {sellPricePerTon > 0 ? (
                 <>
                   <span>قازانجی سەدەهاوردە:</span>
@@ -1534,7 +1534,7 @@ ${
           </TiltCard>
 
           {/* 5. Calculate with Partner if there is any */}
-          <TiltCard className="bg-[#0d1017]/90 backdrop-blur-xl border border-white/[0.07] hover:border-white/20 shadow-lg shadow-black/40">
+          <TiltCard className="amber-box">
             <div className="flex items-start justify-between">
               <div>
                 <p className="text-[11px] font-medium text-neutral-400 uppercase tracking-wider">
@@ -1548,11 +1548,11 @@ ${
                     : 'چاوەڕوانی فرۆشتن'}
                 </h3>
               </div>
-              <div className="p-2 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300">
+              <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300">
                 {hasPartner ? <Split className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
               </div>
             </div>
-            <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
+            <div className="mt-4 pt-2.5 border-t border-amber-600/20 flex items-center justify-between text-[11px] text-neutral-400 font-numeric">
               <span>{hasPartner ? `پشکی من (%${myPercent}):` : '١٠٠٪ بۆ خۆت:'}</span>
               <span className="text-neutral-300 font-semibold">
                 {sellPricePerTon > 0 ? formatUSD(myProfitShare) : 'چاوەڕوانی فرۆشتن'}
@@ -1570,10 +1570,10 @@ ${
           <button
             type="button"
             onClick={() => setIsTruckSectionOpen(!isTruckSectionOpen)}
-            className="w-full p-4 sm:p-5 rounded-2xl bg-[#0f1115] hover:bg-[#14171d] border border-white/[0.08] hover:border-white/20 shadow-md flex items-center justify-between gap-4 transition-colors cursor-pointer"
+            className="w-full p-4 sm:p-5 rounded-2xl amber-box flex items-center justify-between gap-4 cursor-pointer"
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 flex items-center justify-center shrink-0">
                 <Truck className="w-5 h-5" />
               </div>
               <div className="text-right">
@@ -1587,19 +1587,19 @@ ${
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#050505] border border-white/10 text-neutral-300 font-numeric font-medium text-xs">
+              <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0c0804] border border-amber-500/20 text-neutral-300 font-numeric font-medium text-xs">
                 <span>{trucks.length} بارهەڵگر</span>
-                <span className="text-neutral-600">|</span>
+                <span className="text-amber-500/30">|</span>
                 <span>{totalTonsCarried} لە {totalCargoTons} تۆن</span>
-                <span className="px-1.5 py-0.5 rounded bg-white/10 text-white border border-white/15 text-[10px] font-bold">
+                <span className="px-1.5 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 text-[10px] font-bold">
                   {Math.min(100, Math.round((totalTonsCarried / (totalCargoTons || 1)) * 100))}%
                 </span>
               </span>
 
-              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-neutral-400">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-300">
                 <ChevronDown
                   className={`w-4 h-4 transition-transform duration-200 ${
-                    isTruckSectionOpen ? 'rotate-180 text-white' : ''
+                    isTruckSectionOpen ? 'rotate-180 text-amber-300' : ''
                   }`}
                 />
               </div>
@@ -1816,10 +1816,10 @@ ${
           <button
             type="button"
             onClick={() => setIsExpenseSectionOpen(!isExpenseSectionOpen)}
-            className="w-full p-4 sm:p-5 rounded-2xl bg-[#0f1115] hover:bg-[#14171d] border border-white/[0.08] hover:border-white/20 shadow-md flex items-center justify-between gap-4 transition-colors cursor-pointer"
+            className="w-full p-4 sm:p-5 rounded-2xl amber-box flex items-center justify-between gap-4 cursor-pointer"
           >
             <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-xl bg-white/[0.04] border border-white/10 text-neutral-300 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/25 text-amber-300 flex items-center justify-center shrink-0">
                 <Scale className="w-5 h-5" />
               </div>
               <div className="text-right">
@@ -1833,17 +1833,17 @@ ${
             </div>
 
             <div className="flex items-center gap-3">
-              <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#050505] border border-white/10 text-neutral-300 font-numeric font-medium text-xs">
+              <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#0c0804] border border-amber-500/20 text-neutral-300 font-numeric font-medium text-xs">
                 <span>کۆی گشتی: {formatUSD(totalOperatingExpenses)}</span>
-                <span className="text-neutral-600">|</span>
+                <span className="text-amber-500/30">|</span>
                 <span className="text-neutral-300 text-[11px]">🇮🇷 {formatUSD(totalIranSpending)}</span>
                 <span className="text-neutral-300 text-[11px]">🇮🇶 {formatUSD(totalIraqSpending)}</span>
               </span>
 
-              <div className="w-8 h-8 rounded-lg bg-white/[0.04] border border-white/10 flex items-center justify-center text-neutral-400">
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-300">
                 <ChevronDown
                   className={`w-4 h-4 transition-transform duration-200 ${
-                    isExpenseSectionOpen ? 'rotate-180 text-white' : ''
+                    isExpenseSectionOpen ? 'rotate-180 text-amber-300' : ''
                   }`}
                 />
               </div>
