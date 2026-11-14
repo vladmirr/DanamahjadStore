@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   History,
   ShoppingCart,
@@ -11,17 +11,95 @@ import {
   FileSpreadsheet,
   ArrowUpDown,
   Filter,
+  Edit2,
+  X,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatDateKurdish, formatShortDate } from '../../utils/formatters';
+import { formatIQD, formatDateKurdish, formatShortDate, formatNumber } from '../../utils/formatters';
 import { Sale, PaymentVoucher } from '../../types';
 
 export const TransactionHistory: React.FC = () => {
-  const { sales, payments, deleteSale, deletePayment, setViewingInvoice, exportExcel } = useApp();
+  const {
+    sales,
+    payments,
+    customers,
+    deleteSale,
+    deletePayment,
+    updatePayment,
+    setViewingInvoice,
+    exportExcel,
+  } = useApp();
 
   const [activeSubTab, setActiveSubTab] = useState<'sales' | 'payments'>('sales');
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7days' | '30days'>('all');
+
+  // Edit Payment State
+  const [editingPayment, setEditingPayment] = useState<PaymentVoucher | null>(null);
+  const [editCustomerName, setEditCustomerName] = useState('');
+  const [editAmount, setEditAmount] = useState('');
+  const [editNotes, setEditNotes] = useState('');
+  const [editDate, setEditDate] = useState('');
+  const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
+
+  const handleOpenEditPayment = (p: PaymentVoucher) => {
+    setEditingPayment(p);
+    setEditCustomerName(p.customerName || '');
+    setEditAmount(p.amount ? p.amount.toString() : '');
+    setEditNotes(p.notes || '');
+
+    try {
+      const d = new Date(p.date);
+      if (!isNaN(d.getTime())) {
+        const offset = d.getTimezoneOffset();
+        const local = new Date(d.getTime() - offset * 60 * 1000);
+        setEditDate(local.toISOString().slice(0, 16));
+      } else {
+        setEditDate('');
+      }
+    } catch {
+      setEditDate('');
+    }
+  };
+
+  const handleCloseEditPayment = () => {
+    setEditingPayment(null);
+    setEditCustomerName('');
+    setEditAmount('');
+    setEditNotes('');
+    setEditDate('');
+    setIsSubmittingEdit(false);
+  };
+
+  const handleSaveEditPayment = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPayment) return;
+    if (!editCustomerName.trim() || !editAmount || Number(editAmount) <= 0) return;
+
+    setIsSubmittingEdit(true);
+    try {
+      let isoDate = editingPayment.date;
+      if (editDate) {
+        const parsed = new Date(editDate);
+        if (!isNaN(parsed.getTime())) {
+          isoDate = parsed.toISOString();
+        }
+      }
+
+      await updatePayment(editingPayment.id, {
+        customerName: editCustomerName.trim(),
+        amount: Number(editAmount),
+        notes: editNotes.trim(),
+        date: isoDate,
+      });
+
+      handleCloseEditPayment();
+    } catch (err) {
+      console.error('Failed to update payment voucher:', err);
+    } finally {
+      setIsSubmittingEdit(false);
+    }
+  };
 
   // Filter Sales
   const filteredSales = useMemo(() => {
@@ -242,7 +320,7 @@ export const TransactionHistory: React.FC = () => {
                   <th className="py-3.5 px-4 font-semibold">ناوی کڕیار</th>
                   <th className="py-3.5 px-4 font-semibold">بڕی پارەی وەرگیراو</th>
                   <th className="py-3.5 px-4 font-semibold">تێبینی و ڕوونکردنەوە</th>
-                  <th className="py-3.5 px-4 font-semibold text-center">سڕینەوە</th>
+                  <th className="py-3.5 px-4 font-semibold text-center">کردارەکان</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60">
@@ -271,16 +349,26 @@ export const TransactionHistory: React.FC = () => {
                         {p.notes || '—'}
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => {
-                            if (confirm('دڵنیایت لە سڕینەوەی ئەم وەسڵی پارەدانە؟')) {
-                              deletePayment(p.id);
-                            }
-                          }}
-                          className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <button
+                            onClick={() => handleOpenEditPayment(p)}
+                            title="دەستکاریکردنی وەسڵ"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (confirm('دڵنیایت لە سڕینەوەی ئەم وەسڵی پارەدانە؟')) {
+                                deletePayment(p.id);
+                              }
+                            }}
+                            title="سڕینەوەی وەسڵ"
+                            className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -290,6 +378,154 @@ export const TransactionHistory: React.FC = () => {
           </div>
         </div>
       )}
+
+      {/* Edit Payment Voucher Modal */}
+      <AnimatePresence>
+        {editingPayment && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-lg glass-card rounded-2xl border border-slate-700/80 p-6 relative overflow-hidden shadow-2xl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-5">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-500/25 text-cyan-400">
+                    <Edit2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      دەستکاریکردنی وەسڵی پارەدان
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      پسوولەی ژمارە:{' '}
+                      <span className="font-mono text-cyan-400 font-semibold">
+                        {editingPayment.voucherNumber}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseEditPayment}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Form */}
+              <form onSubmit={handleSaveEditPayment} className="space-y-4">
+                {/* Customer Name */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    ناوی کڕیار (Customer Name)
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      required
+                      list="edit-payment-customers"
+                      value={editCustomerName}
+                      onChange={(e) => setEditCustomerName(e.target.value)}
+                      placeholder="ناوی کڕیار بنووسە..."
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                    />
+                    <datalist id="edit-payment-customers">
+                      {customers.map((c) => (
+                        <option key={c.name} value={c.name} />
+                      ))}
+                    </datalist>
+                  </div>
+                </div>
+
+                {/* Amount */}
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="text-xs font-medium text-slate-300">
+                      بڕی پارەی وەرگیراو (د.ع)
+                    </label>
+                    {editAmount && Number(editAmount) > 0 && (
+                      <span className="text-xs font-bold text-emerald-400 font-numeric">
+                        {formatIQD(Number(editAmount))}
+                      </span>
+                    )}
+                  </div>
+                  <input
+                    type="number"
+                    required
+                    min="1"
+                    value={editAmount}
+                    onChange={(e) => setEditAmount(e.target.value)}
+                    placeholder="0"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-emerald-400 font-bold focus:outline-none focus:ring-2 focus:ring-cyan-500 font-numeric"
+                  />
+                  {/* Quick shortcuts */}
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                    {[25000, 50000, 100000, 250000, 500000, 1000000].map((amt) => (
+                      <button
+                        key={amt}
+                        type="button"
+                        onClick={() => setEditAmount(amt.toString())}
+                        className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] text-slate-300 hover:text-cyan-400 hover:border-cyan-500/30 font-numeric cursor-pointer"
+                      >
+                        +{formatNumber(amt)}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Date & Time */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    بەروار و کاتی وەرگرتن (Date & Time)
+                  </label>
+                  <input
+                    type="datetime-local"
+                    value={editDate}
+                    onChange={(e) => setEditDate(e.target.value)}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-mono"
+                    dir="ltr"
+                  />
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    تێبینی و ڕوونکردنەوە (Notes)
+                  </label>
+                  <input
+                    type="text"
+                    value={editNotes}
+                    onChange={(e) => setEditNotes(e.target.value)}
+                    placeholder="نموونە: وەرگیرا بە کاش، حەواڵە..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800 mt-6">
+                  <button
+                    type="button"
+                    onClick={handleCloseEditPayment}
+                    className="px-4 py-2.5 rounded-xl text-xs text-slate-300 hover:bg-slate-800 cursor-pointer transition-colors"
+                  >
+                    پەشیمانبوونەوە
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingEdit}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/30 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    {isSubmittingEdit ? 'پاشەکەوت دەکرێت...' : 'پاشەکەوتکردنی گۆڕانکارییەکان'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -121,6 +121,12 @@ export interface AppContextType {
     notes: string;
     date?: string;
   }) => PaymentVoucher;
+  updatePayment: (id: string, updates: Partial<{
+    customerName: string;
+    amount: number;
+    notes: string;
+    date: string;
+  }>) => Promise<void>;
   deletePayment: (id: string) => Promise<void>;
   deleteCustomer: (customerName: string, rollbackInventory?: boolean) => Promise<void>;
 
@@ -531,6 +537,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newVoucher;
   };
 
+  const updatePayment = async (
+    id: string,
+    updates: Partial<{ customerName: string; amount: number; notes: string; date: string }>
+  ) => {
+    const cleanUpdates: Record<string, any> = { updatedAt: new Date().toISOString() };
+    if (updates.customerName !== undefined) cleanUpdates.customerName = updates.customerName.trim();
+    if (updates.amount !== undefined) cleanUpdates.amount = Number(updates.amount) || 0;
+    if (updates.notes !== undefined) cleanUpdates.notes = updates.notes.trim();
+    if (updates.date !== undefined) cleanUpdates.date = updates.date;
+
+    await setDoc(doc(db, 'debts', id), cleanUpdates, { merge: true });
+    playSound('success');
+  };
+
   const deletePayment = async (id: string) => {
     await deleteDoc(doc(db, 'debts', id));
     playSound('delete');
@@ -808,6 +828,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         createSale,
         deleteSale,
         createPayment,
+        updatePayment,
         deletePayment,
         deleteCustomer,
 
