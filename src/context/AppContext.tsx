@@ -114,6 +114,24 @@ export interface AppContextType {
     paidAmount: number;
     notes?: string;
   }) => Sale | null;
+  updateSale: (id: string, updates: {
+    customerName?: string;
+    customerPhone?: string;
+    paidAmount?: number;
+    notes?: string;
+    date?: string;
+    items?: Array<{
+      productId: string;
+      productName: string;
+      unitType: 'carton' | 'unit';
+      quantity: number;
+      quantityInUnits?: number;
+      unitPrice: number;
+      costPricePerUnit?: number;
+      total?: number;
+      totalCost?: number;
+    }>;
+  }) => Promise<void>;
   deleteSale: (id: string) => Promise<void>;
   createPayment: (paymentInput: {
     customerName: string;
@@ -485,6 +503,133 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return newSale;
   };
 
+  const updateSale = async (
+    id: string,
+    updates: {
+      customerName?: string;
+      customerPhone?: string;
+      paidAmount?: number;
+      notes?: string;
+      date?: string;
+      items?: Array<{
+        productId: string;
+        productName: string;
+        unitType: 'carton' | 'unit';
+        quantity: number;
+        quantityInUnits?: number;
+        unitPrice: number;
+        costPricePerUnit?: number;
+        total?: number;
+        totalCost?: number;
+      }>;
+    }
+  ) => {
+    const existingSale = sales.find((s) => s.id === id);
+    if (!existingSale) return;
+
+    let itemsToSave = existingSale.items;
+    let totalAmount = existingSale.totalAmount;
+    let totalCost = existingSale.totalCost;
+    let grossProfit = existingSale.grossProfit;
+
+    if (updates.items && Array.isArray(updates.items)) {
+      // 1. Roll back old items to inventory
+      if (Array.isArray(existingSale.items)) {
+        for (const item of existingSale.items) {
+          const prod = inventory.find((p) => p.id === item.productId);
+          if (prod) {
+            const currentUnits = prod.totalUnits || prod.totalPieces || 0;
+            const restoredUnits = currentUnits + (item.quantityInUnits || 0);
+            const unitsPerCarton = prod.unitsPerCarton || prod.piecesPerCarton || 1;
+            const newCartons = Math.round((restoredUnits / unitsPerCarton) * 100) / 100;
+            await setDoc(doc(db, 'inventory', prod.id), {
+              totalUnits: restoredUnits,
+              totalPieces: restoredUnits,
+              cartons: newCartons,
+              cartonQty: newCartons,
+              updatedAt: new Date().toISOString(),
+            }, { merge: true });
+            prod.totalUnits = restoredUnits;
+            prod.totalPieces = restoredUnits;
+          }
+        }
+      }
+
+      // 2. Prepare new items and deduct from inventory
+      const preparedItems = updates.items.map((item) => {
+        const prod = inventory.find((p) => p.id === item.productId);
+        const unitsPerCarton = prod?.unitsPerCarton || prod?.piecesPerCarton || 1;
+        const quantityInUnits =
+          item.unitType === 'carton' ? item.quantity * unitsPerCarton : item.quantity;
+        const costPricePerUnit = item.costPricePerUnit ?? (prod?.costPricePerUnit || 0);
+        const total =
+          item.unitType === 'carton'
+            ? item.quantity * unitsPerCarton * item.unitPrice
+            : item.quantity * item.unitPrice;
+        const itemTotalCost = quantityInUnits * costPricePerUnit;
+
+        return {
+          productId: item.productId,
+          productName: item.productName,
+          unitType: item.unitType,
+          quantity: item.quantity,
+          quantityInUnits,
+          unitPrice: item.unitPrice,
+          costPricePerUnit,
+          total,
+          totalCost: itemTotalCost,
+        };
+      });
+
+      for (const line of preparedItems) {
+        const prod = inventory.find((p) => p.id === line.productId);
+        if (prod) {
+          const currentUnits = prod.totalUnits || prod.totalPieces || 0;
+          const newUnits = Math.max(0, currentUnits - line.quantityInUnits);
+          const unitsPerCarton = prod.unitsPerCarton || prod.piecesPerCarton || 1;
+          const newCartons = Math.round((newUnits / unitsPerCarton) * 100) / 100;
+          await setDoc(doc(db, 'inventory', prod.id), {
+            totalUnits: newUnits,
+            totalPieces: newUnits,
+            cartons: newCartons,
+            cartonQty: newCartons,
+            updatedAt: new Date().toISOString(),
+          }, { merge: true });
+          prod.totalUnits = newUnits;
+          prod.totalPieces = newUnits;
+        }
+      }
+
+      itemsToSave = preparedItems;
+      totalAmount = preparedItems.reduce((acc, i) => acc + i.total, 0);
+      totalCost = preparedItems.reduce((acc, i) => acc + i.totalCost, 0);
+      grossProfit = totalAmount - totalCost;
+    }
+
+    const paidAmount = updates.paidAmount !== undefined
+      ? Math.min(Number(updates.paidAmount) || 0, totalAmount)
+      : Math.min(existingSale.paidAmount, totalAmount);
+    const remainingAmount = Math.max(0, totalAmount - paidAmount);
+
+    const cleanSaleUpdates: Record<string, any> = {
+      items: itemsToSave,
+      totalAmount,
+      totalCost,
+      grossProfit,
+      paidAmount,
+      remainingAmount,
+      updatedAt: new Date().toISOString(),
+    };
+
+    if (updates.customerName !== undefined) cleanSaleUpdates.customerName = updates.customerName.trim();
+    if (updates.customerPhone !== undefined) cleanSaleUpdates.customerPhone = updates.customerPhone.trim();
+    if (updates.notes !== undefined) cleanSaleUpdates.notes = updates.notes.trim();
+    if (updates.date !== undefined) cleanSaleUpdates.date = updates.date;
+
+    await setDoc(doc(db, 'sales', id), cleanSaleUpdates, { merge: true });
+    playSound('success');
+  };
+
   const deleteSale = async (saleId: string) => {
     const saleToDelete = sales.find((s) => s.id === saleId);
     if (saleToDelete && Array.isArray(saleToDelete.items)) {
@@ -826,6 +971,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updateProduct,
         deleteProduct,
         createSale,
+        updateSale,
         deleteSale,
         createPayment,
         updatePayment,

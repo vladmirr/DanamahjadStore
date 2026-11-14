@@ -13,6 +13,9 @@ import {
   Filter,
   Edit2,
   X,
+  Plus,
+  Minus,
+  Package,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatIQD, formatDateKurdish, formatShortDate, formatNumber } from '../../utils/formatters';
@@ -23,9 +26,11 @@ export const TransactionHistory: React.FC = () => {
     sales,
     payments,
     customers,
+    products,
     deleteSale,
     deletePayment,
     updatePayment,
+    updateSale,
     setViewingInvoice,
     exportExcel,
   } = useApp();
@@ -33,6 +38,157 @@ export const TransactionHistory: React.FC = () => {
   const [activeSubTab, setActiveSubTab] = useState<'sales' | 'payments'>('sales');
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState<'all' | 'today' | '7days' | '30days'>('all');
+
+  // Edit Sale State
+  const [editingSale, setEditingSale] = useState<Sale | null>(null);
+  const [editSaleCustomerName, setEditSaleCustomerName] = useState('');
+  const [editSaleCustomerPhone, setEditSaleCustomerPhone] = useState('');
+  const [editSaleDate, setEditSaleDate] = useState('');
+  const [editSalePaidAmount, setEditSalePaidAmount] = useState('');
+  const [editSaleNotes, setEditSaleNotes] = useState('');
+  const [editSaleItems, setEditSaleItems] = useState<Sale['items']>([]);
+  const [isSubmittingEditSale, setIsSubmittingEditSale] = useState(false);
+
+  const handleOpenEditSale = (s: Sale) => {
+    setEditingSale(s);
+    setEditSaleCustomerName(s.customerName || '');
+    setEditSaleCustomerPhone(s.customerPhone || '');
+    setEditSalePaidAmount(s.paidAmount !== undefined ? s.paidAmount.toString() : '0');
+    setEditSaleNotes(s.notes || '');
+    setEditSaleItems(JSON.parse(JSON.stringify(s.items || [])));
+
+    try {
+      const d = new Date(s.date);
+      if (!isNaN(d.getTime())) {
+        const offset = d.getTimezoneOffset();
+        const local = new Date(d.getTime() - offset * 60 * 1000);
+        setEditSaleDate(local.toISOString().slice(0, 16));
+      } else {
+        setEditSaleDate('');
+      }
+    } catch {
+      setEditSaleDate('');
+    }
+  };
+
+  const handleCloseEditSale = () => {
+    setEditingSale(null);
+    setEditSaleCustomerName('');
+    setEditSaleCustomerPhone('');
+    setEditSaleDate('');
+    setEditSalePaidAmount('');
+    setEditSaleNotes('');
+    setEditSaleItems([]);
+    setIsSubmittingEditSale(false);
+  };
+
+  const updateItemQuantity = (index: number, newQty: number) => {
+    if (newQty <= 0) return;
+    setEditSaleItems((prev) => {
+      const copy = [...prev];
+      const item = { ...copy[index] };
+      const prod = products.find((p) => p.id === item.productId);
+      const unitsPerCarton =
+        prod?.unitsPerCarton ||
+        (item.quantity > 0 ? Math.round(item.quantityInUnits / item.quantity) : 1) ||
+        1;
+      const quantityInUnits = item.unitType === 'carton' ? newQty * unitsPerCarton : newQty;
+      const total =
+        item.unitType === 'carton'
+          ? newQty * unitsPerCarton * item.unitPrice
+          : newQty * item.unitPrice;
+      const totalCost = quantityInUnits * (item.costPricePerUnit || prod?.costPricePerUnit || 0);
+
+      copy[index] = {
+        ...item,
+        quantity: newQty,
+        quantityInUnits,
+        total,
+        totalCost,
+      };
+      return copy;
+    });
+  };
+
+  const updateItemPrice = (index: number, newPrice: number) => {
+    if (newPrice < 0) return;
+    setEditSaleItems((prev) => {
+      const copy = [...prev];
+      const item = { ...copy[index] };
+      const prod = products.find((p) => p.id === item.productId);
+      const unitsPerCarton =
+        prod?.unitsPerCarton ||
+        (item.quantity > 0 ? Math.round(item.quantityInUnits / item.quantity) : 1) ||
+        1;
+      const total =
+        item.unitType === 'carton'
+          ? item.quantity * unitsPerCarton * newPrice
+          : item.quantity * newPrice;
+
+      copy[index] = {
+        ...item,
+        unitPrice: newPrice,
+        total,
+      };
+      return copy;
+    });
+  };
+
+  const removeItem = (index: number) => {
+    if (editSaleItems.length <= 1) {
+      alert('وەسڵ ناتوانێت بەبێ هیچ کاڵایەک بمێنێتەوە!');
+      return;
+    }
+    setEditSaleItems((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const editSaleTotalAmount = useMemo(() => {
+    return editSaleItems.reduce((acc, item) => acc + (item.total || 0), 0);
+  }, [editSaleItems]);
+
+  const editSaleRemainingAmount = useMemo(() => {
+    const paid = Number(editSalePaidAmount) || 0;
+    return Math.max(0, editSaleTotalAmount - paid);
+  }, [editSaleTotalAmount, editSalePaidAmount]);
+
+  const handleSaveEditSale = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSale) return;
+    if (!editSaleCustomerName.trim()) {
+      alert('تکایە ناوی کڕیار بنووسە!');
+      return;
+    }
+    if (editSaleItems.length === 0) {
+      alert('تکایە لانیکەم یەک کاڵا دیاریبکە!');
+      return;
+    }
+
+    setIsSubmittingEditSale(true);
+    try {
+      let isoDate = editingSale.date;
+      if (editSaleDate) {
+        const parsed = new Date(editSaleDate);
+        if (!isNaN(parsed.getTime())) {
+          isoDate = parsed.toISOString();
+        }
+      }
+
+      await updateSale(editingSale.id, {
+        customerName: editSaleCustomerName.trim(),
+        customerPhone: editSaleCustomerPhone.trim(),
+        paidAmount: Number(editSalePaidAmount) || 0,
+        notes: editSaleNotes.trim(),
+        date: isoDate,
+        items: editSaleItems,
+      });
+
+      handleCloseEditSale();
+    } catch (err) {
+      console.error('Failed to update sale:', err);
+    } finally {
+      setIsSubmittingEditSale(false);
+    }
+  };
 
   // Edit Payment State
   const [editingPayment, setEditingPayment] = useState<PaymentVoucher | null>(null);
@@ -290,6 +446,13 @@ export const TransactionHistory: React.FC = () => {
                             <Eye className="w-3.5 h-3.5" />
                           </button>
                           <button
+                            onClick={() => handleOpenEditSale(s)}
+                            title="دەستکاریکردنی فرۆش"
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-emerald-400 hover:bg-emerald-500/10 transition-colors cursor-pointer"
+                          >
+                            <Edit2 className="w-3.5 h-3.5" />
+                          </button>
+                          <button
                             onClick={() => {
                               if (confirm('دڵنیایت لە سڕینەوەی ئەم فرۆشە؟ بڕی مەوجوودی کاڵاکان دەگەڕێتەوە ناو کۆگا.')) {
                                 deleteSale(s.id);
@@ -519,6 +682,288 @@ export const TransactionHistory: React.FC = () => {
                     className="px-5 py-2.5 rounded-xl text-xs font-bold bg-cyan-600 hover:bg-cyan-500 text-white shadow-lg shadow-cyan-600/30 cursor-pointer transition-all disabled:opacity-50"
                   >
                     {isSubmittingEdit ? 'پاشەکەوت دەکرێت...' : 'پاشەکەوتکردنی گۆڕانکارییەکان'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Edit Sale Modal */}
+      <AnimatePresence>
+        {editingSale && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="w-full max-w-2xl max-h-[90vh] flex flex-col glass-card rounded-2xl border border-slate-700/80 p-6 relative overflow-hidden shadow-2xl"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800 mb-4 shrink-0">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 rounded-xl bg-emerald-500/15 border border-emerald-500/25 text-emerald-400">
+                    <Edit2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-bold text-white">
+                      دەستکاریکردنی وەسڵی فرۆشتن
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      پسوولەی ژمارە:{' '}
+                      <span className="font-mono text-emerald-400 font-semibold">
+                        {editingSale.invoiceNumber}
+                      </span>
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={handleCloseEditSale}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Scrollable Form Body */}
+              <form onSubmit={handleSaveEditSale} className="flex-1 overflow-y-auto space-y-4 pr-1">
+                {/* Customer Info & Date */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {/* Customer Name */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      ناوی کڕیار (Customer)
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      list="edit-sale-customers"
+                      value={editSaleCustomerName}
+                      onChange={(e) => setEditSaleCustomerName(e.target.value)}
+                      placeholder="ناوی کڕیار بنووسە..."
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                    />
+                    <datalist id="edit-sale-customers">
+                      {customers.map((c) => (
+                        <option key={c.name} value={c.name} />
+                      ))}
+                    </datalist>
+                  </div>
+
+                  {/* Customer Phone */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      ژمارەی مۆبایل (Phone)
+                    </label>
+                    <input
+                      type="text"
+                      value={editSaleCustomerPhone}
+                      onChange={(e) => setEditSaleCustomerPhone(e.target.value)}
+                      placeholder="0750xxxxxxx"
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  {/* Date & Time */}
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      بەروار و کات (Date & Time)
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={editSaleDate}
+                      onChange={(e) => setEditSaleDate(e.target.value)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-mono"
+                      dir="ltr"
+                    />
+                  </div>
+                </div>
+
+                {/* Items in Invoice */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+                      <Package className="w-3.5 h-3.5 text-emerald-400" />
+                      <span>کاڵاکانی ناو ئەم وەسڵە ({editSaleItems.length})</span>
+                    </label>
+                  </div>
+
+                  <div className="space-y-2 bg-slate-950/70 border border-slate-800 rounded-xl p-2.5 max-h-56 overflow-y-auto">
+                    {editSaleItems.map((item, idx) => (
+                      <div
+                        key={idx}
+                        className="p-2.5 rounded-lg bg-slate-900/90 border border-slate-800/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                      >
+                        {/* Name and unit */}
+                        <div className="flex-1 min-w-0">
+                          <div className="font-semibold text-white truncate">
+                            {item.productName}
+                          </div>
+                          <div className="text-[11px] text-slate-400 flex items-center gap-2 mt-0.5">
+                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300">
+                              {item.unitType === 'carton' ? 'کارتۆن' : 'دانە'}
+                            </span>
+                            {item.unitType === 'carton' && (
+                              <span>({item.quantityInUnits} دانە)</span>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Controls: Quantity & Price */}
+                        <div className="flex items-center gap-3">
+                          {/* Quantity */}
+                          <div className="flex items-center gap-1 bg-slate-950 rounded-lg border border-slate-800 p-0.5">
+                            <button
+                              type="button"
+                              onClick={() => updateItemQuantity(idx, Math.max(1, item.quantity - 1))}
+                              className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                            >
+                              <Minus className="w-3 h-3" />
+                            </button>
+                            <input
+                              type="number"
+                              min="1"
+                              value={item.quantity}
+                              onChange={(e) =>
+                                updateItemQuantity(idx, Math.max(1, parseInt(e.target.value) || 1))
+                              }
+                              className="w-12 text-center bg-transparent text-white font-numeric font-bold text-xs focus:outline-none"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => updateItemQuantity(idx, item.quantity + 1)}
+                              className="w-6 h-6 flex items-center justify-center rounded text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                            >
+                              <Plus className="w-3 h-3" />
+                            </button>
+                          </div>
+
+                          {/* Unit Price */}
+                          <div className="flex items-center gap-1">
+                            <input
+                              type="number"
+                              min="0"
+                              value={item.unitPrice}
+                              onChange={(e) =>
+                                updateItemPrice(idx, Math.max(0, parseInt(e.target.value) || 0))
+                              }
+                              className="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white font-numeric font-semibold text-center focus:outline-none focus:border-emerald-500"
+                            />
+                            <span className="text-[10px] text-slate-400">د.ع</span>
+                          </div>
+
+                          {/* Line Total */}
+                          <div className="w-24 text-left font-numeric font-bold text-emerald-400 text-xs">
+                            {formatIQD(item.total)}
+                          </div>
+
+                          {/* Delete Item Button */}
+                          {editSaleItems.length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => removeItem(idx)}
+                              title="سڕینەوەی ئەم کاڵایە لە وەسڵ"
+                              className="p-1 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Financial Summary & Down Payment */}
+                <div className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    {/* Total Amount */}
+                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                      <span className="text-[11px] text-slate-400 block mb-0.5">کۆی گشتی فرۆش:</span>
+                      <span className="text-sm font-bold text-white font-numeric">
+                        {formatIQD(editSaleTotalAmount)}
+                      </span>
+                    </div>
+
+                    {/* Paid Amount */}
+                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                      <span className="text-[11px] text-slate-400 block mb-0.5">بڕی دراو (پێشەکی):</span>
+                      <input
+                        type="number"
+                        min="0"
+                        max={editSaleTotalAmount}
+                        value={editSalePaidAmount}
+                        onChange={(e) => setEditSalePaidAmount(e.target.value)}
+                        className="w-full bg-slate-950 border border-slate-700 rounded-lg px-2.5 py-1 text-xs text-emerald-400 font-bold font-numeric focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                      />
+                    </div>
+
+                    {/* Remaining Amount */}
+                    <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800/80">
+                      <span className="text-[11px] text-slate-400 block mb-0.5">ماوە (قەرز):</span>
+                      <span className="text-sm font-bold font-numeric">
+                        {editSaleRemainingAmount > 0 ? (
+                          <span className="text-amber-400">
+                            {formatIQD(editSaleRemainingAmount)}
+                          </span>
+                        ) : (
+                          <span className="text-emerald-400">پاکتاو (0 د.ع)</span>
+                        )}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Quick Payment Buttons */}
+                  <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-slate-800/60">
+                    <span className="text-[10px] text-slate-400">دیاریکردنی خێرا:</span>
+                    <button
+                      type="button"
+                      onClick={() => setEditSalePaidAmount(editSaleTotalAmount.toString())}
+                      className="px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-[11px] font-medium hover:bg-emerald-500/20 cursor-pointer transition-colors"
+                    >
+                      هەمووی دراوە (کاش تەواو)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditSalePaidAmount('0')}
+                      className="px-2.5 py-1 rounded-lg bg-amber-500/10 text-amber-400 border border-amber-500/20 text-[11px] font-medium hover:bg-amber-500/20 cursor-pointer transition-colors"
+                    >
+                      هیچ نەدراوە (سەرجەمی بە قەرز)
+                    </button>
+                  </div>
+                </div>
+
+                {/* Notes */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    تێبینی و ڕوونکردنەوە (Notes)
+                  </label>
+                  <input
+                    type="text"
+                    value={editSaleNotes}
+                    onChange={(e) => setEditSaleNotes(e.target.value)}
+                    placeholder="تێبینی دەربارەی ئەم فرۆشە بنووسە..."
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-800 mt-4 shrink-0">
+                  <button
+                    type="button"
+                    onClick={handleCloseEditSale}
+                    className="px-4 py-2.5 rounded-xl text-xs text-slate-300 hover:bg-slate-800 cursor-pointer transition-colors"
+                  >
+                    پەشیمانبوونەوە
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isSubmittingEditSale}
+                    className="px-5 py-2.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-lg shadow-emerald-500/20 cursor-pointer transition-all disabled:opacity-50"
+                  >
+                    {isSubmittingEditSale ? 'پاشەکەوت دەکرێت...' : 'پاشەکەوتکردنی گۆڕانکارییەکان'}
                   </button>
                 </div>
               </form>
