@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Printer, X, FileText } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatShortDate } from '../../utils/formatters';
+import { formatIQD, formatUSD, formatCurrency, formatShortDate } from '../../utils/formatters';
+import { Currency } from '../../types';
 
 export const StatementModal: React.FC = () => {
   const { viewingStatementCustomer, setViewingStatementCustomer, sales, payments, customers } =
@@ -21,6 +22,7 @@ export const StatementModal: React.FC = () => {
         id: s.id,
         number: s.invoiceNumber,
         date: s.date,
+        currency: (s.currency || 'IQD') as Currency,
         description: `فرۆشتن: ${s.items.map((i) => i.productName).join('، ')}`,
         debit: s.totalAmount, // Increases debt
         credit: s.paidAmount, // Decreases debt via down payment
@@ -34,6 +36,7 @@ export const StatementModal: React.FC = () => {
         id: p.id,
         number: p.voucherNumber,
         date: p.date,
+        currency: (p.currency || 'IQD') as Currency,
         description: `وەرگرتنی قیست / پارەدان: ${p.notes || 'کاش'}`,
         debit: 0,
         credit: p.amount, // Decreases debt
@@ -45,13 +48,22 @@ export const StatementModal: React.FC = () => {
       (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
     );
 
-    // Calculate running balance
-    let currentBalance = 0;
+    // Calculate running balance separately for IQD and USD
+    let currentBalanceIQD = 0;
+    let currentBalanceUSD = 0;
+
     return combined.map((entry) => {
-      currentBalance += entry.debit - entry.credit;
+      if (entry.currency === 'USD') {
+        currentBalanceUSD += entry.debit - entry.credit;
+      } else {
+        currentBalanceIQD += entry.debit - entry.credit;
+      }
       return {
         ...entry,
-        runningBalance: Math.max(0, currentBalance),
+        runningBalance:
+          entry.currency === 'USD'
+            ? Math.max(0, currentBalanceUSD)
+            : Math.max(0, currentBalanceIQD),
       };
     });
   }, [sales, payments, viewingStatementCustomer]);
@@ -131,27 +143,49 @@ export const StatementModal: React.FC = () => {
             </div>
             <div>
               <span className="text-slate-400 print:text-slate-600">کۆی کڕینەکان:</span>
-              <p className="font-bold text-white print:text-black font-numeric mt-0.5 text-xs sm:text-sm">
-                {formatIQD(customerObj?.totalPurchases || 0)}
-              </p>
+              <div className="mt-0.5 space-y-0.5 font-numeric">
+                <p className="font-bold text-white print:text-black text-xs sm:text-sm">
+                  {formatIQD(customerObj?.totalPurchases || 0)}
+                </p>
+                {(customerObj?.totalPurchasesUSD || 0) > 0 && (
+                  <p className="font-bold text-emerald-400 print:text-black text-[11px]">
+                    {formatUSD(customerObj?.totalPurchasesUSD || 0)}
+                  </p>
+                )}
+              </div>
             </div>
             <div>
               <span className="text-slate-400 print:text-slate-600">کۆی پارەی دراو:</span>
-              <p className="font-bold text-emerald-400 print:text-black font-numeric mt-0.5 text-xs sm:text-sm">
-                {formatIQD(customerObj?.totalPaid || 0)}
-              </p>
+              <div className="mt-0.5 space-y-0.5 font-numeric">
+                <p className="font-bold text-emerald-400 print:text-black text-xs sm:text-sm">
+                  {formatIQD(customerObj?.totalPaid || 0)}
+                </p>
+                {(customerObj?.totalPaidUSD || 0) > 0 && (
+                  <p className="font-bold text-emerald-300 print:text-black text-[11px]">
+                    {formatUSD(customerObj?.totalPaidUSD || 0)}
+                  </p>
+                )}
+              </div>
             </div>
             <div>
               <span className="text-slate-400 print:text-slate-600">قەرزی ماوە:</span>
-              <p
-                className={`font-bold font-numeric mt-0.5 text-xs sm:text-sm ${
-                  (customerObj?.outstandingDebt || 0) > 0
-                    ? 'text-amber-400 print:text-black'
-                    : 'text-emerald-400 print:text-black'
-                }`}
-              >
-                {formatIQD(customerObj?.outstandingDebt || 0)}
-              </p>
+              <div className="mt-0.5 space-y-0.5 font-numeric">
+                {(customerObj?.outstandingDebt || 0) > 0 && (
+                  <p className="font-bold text-amber-400 print:text-black text-xs sm:text-sm">
+                    {formatIQD(customerObj?.outstandingDebt || 0)}
+                  </p>
+                )}
+                {(customerObj?.outstandingDebtUSD || 0) > 0 && (
+                  <p className="font-bold text-emerald-400 print:text-black text-xs sm:text-sm">
+                    {formatUSD(customerObj?.outstandingDebtUSD || 0)}
+                  </p>
+                )}
+                {(customerObj?.outstandingDebt || 0) === 0 && (!customerObj?.outstandingDebtUSD || customerObj?.outstandingDebtUSD === 0) && (
+                  <p className="font-bold text-emerald-400 print:text-black text-xs sm:text-sm">
+                    پاکتاو (0 د.ع)
+                  </p>
+                )}
+              </div>
             </div>
           </div>
 
@@ -162,6 +196,7 @@ export const StatementModal: React.FC = () => {
                 <tr className="border-b border-slate-700 print:border-black text-slate-300 print:text-black font-semibold">
                   <th className="pb-2.5 px-1.5">بەروار</th>
                   <th className="pb-2.5 px-1.5">جۆری مامەڵە</th>
+                  <th className="pb-2.5 px-1.5">دراو</th>
                   <th className="pb-2.5 px-1.5">ڕوونکردنەوە</th>
                   <th className="pb-2.5 px-1.5">کڕین / قەرز (+)</th>
                   <th className="pb-2.5 px-1.5">دراو / قیست (-)</th>
@@ -171,7 +206,7 @@ export const StatementModal: React.FC = () => {
               <tbody className="divide-y divide-slate-800 print:divide-slate-200">
                 {timeline.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-8 text-center text-slate-500">
+                    <td colSpan={7} className="py-8 text-center text-slate-500">
                       هیچ تۆمارێکی دارایی نییە بۆ ئەم کڕیارە!
                     </td>
                   </tr>
@@ -192,17 +227,26 @@ export const StatementModal: React.FC = () => {
                           {entry.number}
                         </span>
                       </td>
+                      <td className="py-2.5 px-1.5">
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                          entry.currency === 'USD'
+                            ? 'bg-emerald-500/15 text-emerald-400'
+                            : 'bg-amber-500/15 text-amber-400'
+                        } print:border print:border-black print:text-black`}>
+                          {entry.currency === 'USD' ? '$ دۆلار' : 'د.ع'}
+                        </span>
+                      </td>
                       <td className="py-2.5 px-1.5 max-w-xs truncate text-[11px] text-slate-300 print:text-black">
                         {entry.description}
                       </td>
                       <td className="py-2.5 px-1.5 font-numeric text-white print:text-black font-medium">
-                        {entry.debit > 0 ? formatIQD(entry.debit) : '—'}
+                        {entry.debit > 0 ? formatCurrency(entry.debit, entry.currency) : '—'}
                       </td>
                       <td className="py-2.5 px-1.5 font-numeric text-emerald-400 print:text-black font-medium">
-                        {entry.credit > 0 ? formatIQD(entry.credit) : '—'}
+                        {entry.credit > 0 ? formatCurrency(entry.credit, entry.currency) : '—'}
                       </td>
                       <td className="py-2.5 px-1.5 text-left font-bold font-numeric text-amber-400 print:text-black">
-                        {formatIQD(entry.runningBalance)}
+                        {formatCurrency(entry.runningBalance, entry.currency)}
                       </td>
                     </tr>
                   ))

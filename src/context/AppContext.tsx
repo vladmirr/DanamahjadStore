@@ -14,6 +14,7 @@ import {
   CustomerDebtSummary,
   DashboardMetrics,
   AdminUser,
+  Currency,
 } from '../types';
 import {
   INITIAL_PRODUCTS,
@@ -38,6 +39,7 @@ export interface Item {
   piecesPerCarton: number;
   totalPieces: number;
   pricePerPiece: number;
+  currency?: Currency;
   status?: string;
   [key: string]: any;
 }
@@ -47,6 +49,7 @@ export interface Sale {
   invoiceNumber: string;
   customerName: string;
   customerPhone?: string;
+  currency?: Currency;
   totalAmount: number;
   totalCost: number;
   grossProfit: number;
@@ -63,6 +66,7 @@ export interface Sale {
     costPricePerUnit: number;
     total: number;
     totalCost: number;
+    currency?: Currency;
   }>;
   date: string;
   [key: string]: any;
@@ -73,6 +77,7 @@ export interface Debt {
   voucherNumber: string;
   customerName: string;
   amount: number;
+  currency?: Currency;
   type?: 'debt' | 'payment';
   notes?: string;
   date: string;
@@ -104,6 +109,7 @@ export interface AppContextType {
   createSale: (saleInput: {
     customerName: string;
     customerPhone?: string;
+    currency?: Currency;
     items: Array<{
       productId: string;
       productName: string;
@@ -117,6 +123,7 @@ export interface AppContextType {
   updateSale: (id: string, updates: {
     customerName?: string;
     customerPhone?: string;
+    currency?: Currency;
     paidAmount?: number;
     notes?: string;
     date?: string;
@@ -130,18 +137,21 @@ export interface AppContextType {
       costPricePerUnit?: number;
       total?: number;
       totalCost?: number;
+      currency?: Currency;
     }>;
   }) => Promise<void>;
   deleteSale: (id: string) => Promise<void>;
   createPayment: (paymentInput: {
     customerName: string;
     amount: number;
+    currency?: Currency;
     notes: string;
     date?: string;
   }) => PaymentVoucher;
   updatePayment: (id: string, updates: Partial<{
     customerName: string;
     amount: number;
+    currency: Currency;
     notes: string;
     date: string;
   }>) => Promise<void>;
@@ -229,6 +239,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const sellingPricePerUnit = Number(data.sellingPricePerUnit ?? data.pricePerPiece) || 0;
           const costPricePerUnit = Number(data.costPricePerUnit) || 0;
           const minStockThreshold = Number(data.minStockThreshold) || 5;
+          const currency: Currency = data.currency === 'USD' ? 'USD' : 'IQD';
 
           return {
             id: d.id,
@@ -244,6 +255,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             pricePerPiece: sellingPricePerUnit,
             costPricePerUnit,
             minStockThreshold,
+            currency,
           } as Item;
         });
         setInventory(items);
@@ -256,13 +268,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (snapshot) => {
         const salesData = snapshot.docs.map((d) => {
           const data = d.data();
+          const currency: Currency = data.currency === 'USD' ? 'USD' : 'IQD';
+          const items = Array.isArray(data.items)
+            ? data.items.map((it: any) => ({
+                ...it,
+                currency: it.currency === 'USD' || currency === 'USD' ? 'USD' : 'IQD',
+              }))
+            : [];
           return {
             id: d.id,
             ...data,
             invoiceNumber: data.invoiceNumber || `INV-${d.id.slice(-4)}`,
             customerName: data.customerName || 'کڕیاری گشتی',
             customerPhone: data.customerPhone || '',
-            items: Array.isArray(data.items) ? data.items : [],
+            currency,
+            items,
             totalAmount: Number(data.totalAmount) || 0,
             totalCost: Number(data.totalCost) || 0,
             grossProfit: Number(data.grossProfit) || 0,
@@ -283,12 +303,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (snapshot) => {
         const debtData = snapshot.docs.map((d) => {
           const data = d.data();
+          const currency: Currency = data.currency === 'USD' ? 'USD' : 'IQD';
           return {
             id: d.id,
             ...data,
             voucherNumber: data.voucherNumber || `VCH-${d.id.slice(-4)}`,
             customerName: data.customerName || 'کڕیار',
             amount: Number(data.amount) || 0,
+            currency,
             type: data.type || 'payment',
             notes: data.notes || '',
             date: data.date || new Date().toISOString(),
@@ -315,6 +337,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const totalUnits = Number(item.totalUnits ?? item.totalPieces) || cartons * unitsPerCarton;
     const sellingPricePerUnit = Number(item.sellingPricePerUnit ?? item.pricePerPiece) || 0;
     const costPricePerUnit = Number(item.costPricePerUnit) || 0;
+    const currency: Currency = item.currency === 'USD' ? 'USD' : 'IQD';
 
     const cleanItem = {
       ...item,
@@ -330,6 +353,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       pricePerPiece: sellingPricePerUnit,
       costPricePerUnit,
       minStockThreshold: item.minStockThreshold || 5,
+      currency,
       createdAt: item.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -351,6 +375,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatedAt: new Date().toISOString(),
     };
 
+    if (item.currency !== undefined) {
+      payload.currency = item.currency === 'USD' ? 'USD' : 'IQD';
+    }
     if (cartons !== undefined) {
       payload.cartons = cartons;
       payload.cartonQty = cartons;
@@ -375,9 +402,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addSale = async (sale: any) => {
     const id = sale.id ? String(sale.id) : `sale-${Date.now()}`;
+    const currency: Currency = sale.currency === 'USD' ? 'USD' : 'IQD';
     const cleanSale = {
       ...sale,
       id,
+      currency,
       date: sale.date || new Date().toISOString(),
     };
     await setDoc(doc(db, 'sales', id), cleanSale);
@@ -404,9 +433,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const addDebt = async (debt: any) => {
     const id = debt.id ? String(debt.id) : `debt-${Date.now()}`;
+    const currency: Currency = debt.currency === 'USD' ? 'USD' : 'IQD';
     const cleanDebt = {
       ...debt,
       id,
+      currency,
       amount: Number(debt.amount) || 0,
       date: debt.date || new Date().toISOString(),
     };
@@ -429,6 +460,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const createSale = (saleInput: {
     customerName: string;
     customerPhone?: string;
+    currency?: Currency;
     items: Array<{
       productId: string;
       productName: string;
@@ -443,6 +475,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       playSound('error');
       return null;
     }
+
+    const currency: Currency = saleInput.currency === 'USD' ? 'USD' : 'IQD';
 
     const preparedItems = saleInput.items.map((item) => {
       const prod = inventory.find((p) => p.id === item.productId);
@@ -466,6 +500,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         costPricePerUnit,
         total,
         totalCost,
+        currency,
       };
     });
 
@@ -480,6 +515,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       invoiceNumber: generateInvoiceNumber(sales.length),
       customerName: saleInput.customerName.trim(),
       customerPhone: saleInput.customerPhone?.trim() || '',
+      currency,
       items: preparedItems,
       totalAmount,
       totalCost,
@@ -508,6 +544,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     updates: {
       customerName?: string;
       customerPhone?: string;
+      currency?: Currency;
       paidAmount?: number;
       notes?: string;
       date?: string;
@@ -521,6 +558,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         costPricePerUnit?: number;
         total?: number;
         totalCost?: number;
+        currency?: Currency;
       }>;
     }
   ) => {
@@ -531,6 +569,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let totalAmount = existingSale.totalAmount;
     let totalCost = existingSale.totalCost;
     let grossProfit = existingSale.grossProfit;
+    const saleCurrency: Currency = updates.currency || existingSale.currency || 'IQD';
 
     if (updates.items && Array.isArray(updates.items)) {
       // 1. Roll back old items to inventory
@@ -578,6 +617,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           costPricePerUnit,
           total,
           totalCost: itemTotalCost,
+          currency: saleCurrency,
         };
       });
 
@@ -618,6 +658,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       grossProfit,
       paidAmount,
       remainingAmount,
+      currency: saleCurrency,
       updatedAt: new Date().toISOString(),
     };
 
@@ -655,14 +696,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const createPayment = (paymentInput: {
     customerName: string;
     amount: number;
+    currency?: Currency;
     notes: string;
     date?: string;
   }): PaymentVoucher => {
+    const currency: Currency = paymentInput.currency === 'USD' ? 'USD' : 'IQD';
     const newVoucher: PaymentVoucher = {
       id: `pay-${Date.now()}`,
       voucherNumber: generateVoucherNumber(debts.length),
       customerName: paymentInput.customerName.trim(),
       amount: Number(paymentInput.amount) || 0,
+      currency,
       notes: paymentInput.notes.trim(),
       date: paymentInput.date || new Date().toISOString(),
     };
@@ -684,11 +728,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updatePayment = async (
     id: string,
-    updates: Partial<{ customerName: string; amount: number; notes: string; date: string }>
+    updates: Partial<{ customerName: string; amount: number; currency: Currency; notes: string; date: string }>
   ) => {
     const cleanUpdates: Record<string, any> = { updatedAt: new Date().toISOString() };
     if (updates.customerName !== undefined) cleanUpdates.customerName = updates.customerName.trim();
     if (updates.amount !== undefined) cleanUpdates.amount = Number(updates.amount) || 0;
+    if (updates.currency !== undefined) cleanUpdates.currency = updates.currency;
     if (updates.notes !== undefined) cleanUpdates.notes = updates.notes.trim();
     if (updates.date !== undefined) cleanUpdates.date = updates.date;
 
@@ -754,18 +799,27 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     sales.forEach((s) => {
       const name = s.customerName?.trim() || '';
       if (!name) return;
+      const isUSD = s.currency === 'USD';
       const existing = customerMap.get(name) || {
         name,
         phone: s.customerPhone || '',
         totalPurchases: 0,
         totalPaid: 0,
         outstandingDebt: 0,
+        totalPurchasesUSD: 0,
+        totalPaidUSD: 0,
+        outstandingDebtUSD: 0,
         lastTransactionDate: s.date || new Date().toISOString(),
         invoicesCount: 0,
       };
 
-      existing.totalPurchases += s.totalAmount || 0;
-      existing.totalPaid += s.paidAmount || 0;
+      if (isUSD) {
+        existing.totalPurchasesUSD = (existing.totalPurchasesUSD || 0) + (s.totalAmount || 0);
+        existing.totalPaidUSD = (existing.totalPaidUSD || 0) + (s.paidAmount || 0);
+      } else {
+        existing.totalPurchases += s.totalAmount || 0;
+        existing.totalPaid += s.paidAmount || 0;
+      }
       existing.invoicesCount += 1;
       if (s.customerPhone && !existing.phone) {
         existing.phone = s.customerPhone;
@@ -780,17 +834,25 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     debts.forEach((p) => {
       const name = p.customerName?.trim() || '';
       if (!name) return;
+      const isUSD = p.currency === 'USD';
       const existing = customerMap.get(name) || {
         name,
         phone: '',
         totalPurchases: 0,
         totalPaid: 0,
         outstandingDebt: 0,
+        totalPurchasesUSD: 0,
+        totalPaidUSD: 0,
+        outstandingDebtUSD: 0,
         lastTransactionDate: p.date || new Date().toISOString(),
         invoicesCount: 0,
       };
 
-      existing.totalPaid += p.amount || 0;
+      if (isUSD) {
+        existing.totalPaidUSD = (existing.totalPaidUSD || 0) + (p.amount || 0);
+      } else {
+        existing.totalPaid += p.amount || 0;
+      }
       if (p.date && new Date(p.date) > new Date(existing.lastTransactionDate)) {
         existing.lastTransactionDate = p.date;
       }
@@ -801,28 +863,65 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const list = Array.from(customerMap.values()).map((c) => ({
       ...c,
       outstandingDebt: Math.max(0, c.totalPurchases - c.totalPaid),
+      outstandingDebtUSD: Math.max(0, (c.totalPurchasesUSD || 0) - (c.totalPaidUSD || 0)),
     }));
 
-    return list.sort((a, b) => b.outstandingDebt - a.outstandingDebt);
+    return list.sort((a, b) => {
+      const debtWeightA = a.outstandingDebt + (a.outstandingDebtUSD || 0) * 1500;
+      const debtWeightB = b.outstandingDebt + (b.outstandingDebtUSD || 0) * 1500;
+      return debtWeightB - debtWeightA;
+    });
   }, [sales, debts]);
 
   const metrics = useMemo<DashboardMetrics>(() => {
-    const totalGrossSales = sales.reduce((acc, s) => acc + (s.totalAmount || 0), 0);
-    const totalCOGS = sales.reduce((acc, s) => acc + (s.totalCost || 0), 0);
+    // Separate IQD & USD sales
+    const iqdSales = sales.filter((s) => s.currency !== 'USD');
+    const usdSales = sales.filter((s) => s.currency === 'USD');
+
+    // Separate IQD & USD debts/payments
+    const iqdDebts = debts.filter((p) => p.currency !== 'USD');
+    const usdDebts = debts.filter((p) => p.currency === 'USD');
+
+    // Separate IQD & USD inventory items
+    const iqdInventory = inventory.filter((p) => p.currency !== 'USD');
+    const usdInventory = inventory.filter((p) => p.currency === 'USD');
+
+    // IQD Metrics
+    const totalGrossSales = iqdSales.reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+    const totalCOGS = iqdSales.reduce((acc, s) => acc + (s.totalCost || 0), 0);
     const totalGrossProfit = totalGrossSales - totalCOGS;
-    const salesCashReceived = sales.reduce((acc, s) => acc + (s.paidAmount || 0), 0);
-    const voucherCashReceived = debts.reduce((acc, p) => acc + (p.amount || 0), 0);
+    const salesCashReceived = iqdSales.reduce((acc, s) => acc + (s.paidAmount || 0), 0);
+    const voucherCashReceived = iqdDebts.reduce((acc, p) => acc + (p.amount || 0), 0);
     const totalCashReceived = salesCashReceived + voucherCashReceived;
     const totalOutstandingDebt = Math.max(0, totalGrossSales - totalCashReceived);
 
-    const totalInventoryCostValue = inventory.reduce(
+    const totalInventoryCostValue = iqdInventory.reduce(
       (acc, p) => acc + (p.costPricePerUnit || 0) * (p.totalUnits || p.totalPieces || 0),
       0
     );
-    const totalInventorySellingValue = inventory.reduce(
+    const totalInventorySellingValue = iqdInventory.reduce(
       (acc, p) => acc + (p.sellingPricePerUnit || p.pricePerPiece || 0) * (p.totalUnits || p.totalPieces || 0),
       0
     );
+
+    // USD Metrics
+    const totalGrossSalesUSD = usdSales.reduce((acc, s) => acc + (s.totalAmount || 0), 0);
+    const totalCOGSUSD = usdSales.reduce((acc, s) => acc + (s.totalCost || 0), 0);
+    const totalGrossProfitUSD = totalGrossSalesUSD - totalCOGSUSD;
+    const salesCashReceivedUSD = usdSales.reduce((acc, s) => acc + (s.paidAmount || 0), 0);
+    const voucherCashReceivedUSD = usdDebts.reduce((acc, p) => acc + (p.amount || 0), 0);
+    const totalCashReceivedUSD = salesCashReceivedUSD + voucherCashReceivedUSD;
+    const totalOutstandingDebtUSD = Math.max(0, totalGrossSalesUSD - totalCashReceivedUSD);
+
+    const totalInventoryCostValueUSD = usdInventory.reduce(
+      (acc, p) => acc + (p.costPricePerUnit || 0) * (p.totalUnits || p.totalPieces || 0),
+      0
+    );
+    const totalInventorySellingValueUSD = usdInventory.reduce(
+      (acc, p) => acc + (p.sellingPricePerUnit || p.pricePerPiece || 0) * (p.totalUnits || p.totalPieces || 0),
+      0
+    );
+
     const lowStockItemsCount = inventory.filter(
       (p) => (p.totalUnits || p.totalPieces || 0) <= (p.minStockThreshold || 5)
     ).length;
@@ -835,6 +934,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       totalOutstandingDebt,
       totalInventoryCostValue,
       totalInventorySellingValue,
+
+      totalGrossSalesUSD,
+      totalCOGSUSD,
+      totalGrossProfitUSD,
+      totalCashReceivedUSD,
+      totalOutstandingDebtUSD,
+      totalInventoryCostValueUSD,
+      totalInventorySellingValueUSD,
+
       lowStockItemsCount,
     };
   }, [sales, debts, inventory]);

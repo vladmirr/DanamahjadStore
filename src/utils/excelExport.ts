@@ -69,12 +69,13 @@ export async function exportAllDataToExcel(
         total: item.total,
         date: formatShortDate(s.date),
         customerName: s.customerName,
+        currency: s.currency || 'IQD',
       };
     })
   );
 
   // Customer payments (standalone vouchers + POS upfront down payments)
-  const customerPaymentsList: Array<{ amount: number; date: string }> = [];
+  const customerPaymentsList: Array<{ amount: number; date: string; currency: string }> = [];
 
   // Standalone vouchers for this customer
   payments
@@ -85,6 +86,7 @@ export async function exportAllDataToExcel(
       customerPaymentsList.push({
         amount: p.amount,
         date: formatShortDate(p.date),
+        currency: p.currency || 'IQD',
       });
     });
 
@@ -95,6 +97,7 @@ export async function exportAllDataToExcel(
       customerPaymentsList.push({
         amount: s.paidAmount,
         date: formatShortDate(s.date),
+        currency: s.currency || 'IQD',
       });
     });
 
@@ -104,6 +107,7 @@ export async function exportAllDataToExcel(
       customerPaymentsList.push({
         amount: p.amount,
         date: formatShortDate(p.date),
+        currency: p.currency || 'IQD',
       });
     });
   }
@@ -397,7 +401,7 @@ export async function exportAllDataToExcel(
         bold: false,
         alignment: rightAlignment,
       });
-      worksheet.getCell(rowNum, 2).value = p.name;
+      worksheet.getCell(rowNum, 2).value = p.currency === 'USD' ? `${p.name} ($ USD)` : p.name;
 
       styleCell(worksheet.getCell(rowNum, 3), { numFmt: '#,##0' });
       worksheet.getCell(rowNum, 3).value = purchasedCartons;
@@ -411,10 +415,11 @@ export async function exportAllDataToExcel(
         result: purchasedTotalUnits,
       };
 
-      styleCell(worksheet.getCell(rowNum, 6), { numFmt: '#,##0' });
+      const pCostFmt = p.currency === 'USD' ? '"$"#,##0.00' : '#,##0';
+      styleCell(worksheet.getCell(rowNum, 6), { numFmt: pCostFmt });
       worksheet.getCell(rowNum, 6).value = p.costPricePerUnit;
 
-      styleCell(worksheet.getCell(rowNum, 7), { numFmt: '#,##0' });
+      styleCell(worksheet.getCell(rowNum, 7), { numFmt: pCostFmt });
       worksheet.getCell(rowNum, 7).value = {
         formula: `E${rowNum}*F${rowNum}`,
         result: purchaseCost,
@@ -442,7 +447,7 @@ export async function exportAllDataToExcel(
       worksheet.getCell(rowNum, 10).value = r + 1;
 
       styleCell(worksheet.getCell(rowNum, 11), { alignment: rightAlignment });
-      worksheet.getCell(rowNum, 11).value = p.name;
+      worksheet.getCell(rowNum, 11).value = p.currency === 'USD' ? `${p.name} ($ USD)` : p.name;
 
       // Col L (12): Remaining Cartons = Purchased Cartons minus Sold Cartons
       styleCell(worksheet.getCell(rowNum, 12), { numFmt: '#,##0' });
@@ -466,14 +471,15 @@ export async function exportAllDataToExcel(
       };
 
       // Col O (15): نرخ دانە (Cost Price per unit)
-      styleCell(worksheet.getCell(rowNum, 15), { numFmt: '#,##0' });
+      const pRemFmt = p.currency === 'USD' ? '"$"#,##0.00' : '#,##0';
+      styleCell(worksheet.getCell(rowNum, 15), { numFmt: pRemFmt });
       worksheet.getCell(rowNum, 15).value = {
         formula: `F${rowNum}`,
         result: p.costPricePerUnit,
       };
 
       // Col P (16): کۆی گشتی (Total Stock Value = Total Units * Cost Price)
-      styleCell(worksheet.getCell(rowNum, 16), { numFmt: '#,##0' });
+      styleCell(worksheet.getCell(rowNum, 16), { numFmt: pRemFmt });
       worksheet.getCell(rowNum, 16).value = {
         formula: `N${rowNum}*O${rowNum}`,
         result: remainingValue,
@@ -498,7 +504,7 @@ export async function exportAllDataToExcel(
       worksheet.getCell(rowNum, 18).value = r + 1;
 
       styleCell(worksheet.getCell(rowNum, 19), { alignment: rightAlignment });
-      worksheet.getCell(rowNum, 19).value = item.productName;
+      worksheet.getCell(rowNum, 19).value = item.currency === 'USD' ? `${item.productName} ($ USD)` : item.productName;
 
       // Col T (20): کارتۆن (Cartons sold)
       styleCell(worksheet.getCell(rowNum, 20), { numFmt: '#,##0.##' });
@@ -516,11 +522,12 @@ export async function exportAllDataToExcel(
       };
 
       // Col W (23): نرخی فرۆش
-      styleCell(worksheet.getCell(rowNum, 23), { numFmt: '#,##0' });
+      const saleFmt = item.currency === 'USD' ? '"$"#,##0.00' : '#,##0';
+      styleCell(worksheet.getCell(rowNum, 23), { numFmt: saleFmt });
       worksheet.getCell(rowNum, 23).value = item.unitPrice;
 
       // Col X (24): کۆی گشتی فرۆش
-      styleCell(worksheet.getCell(rowNum, 24), { numFmt: '#,##0' });
+      styleCell(worksheet.getCell(rowNum, 24), { numFmt: saleFmt });
       worksheet.getCell(rowNum, 24).value = {
         formula: `V${rowNum}*W${rowNum}`,
         result: item.total,
@@ -543,7 +550,8 @@ export async function exportAllDataToExcel(
       styleCell(worksheet.getCell(rowNum, 27), {});
       worksheet.getCell(rowNum, 27).value = r + 1;
 
-      styleCell(worksheet.getCell(rowNum, 28), { numFmt: '#,##0' });
+      const payFmt = pay.currency === 'USD' ? '"$"#,##0.00' : '#,##0';
+      styleCell(worksheet.getCell(rowNum, 28), { numFmt: payFmt });
       worksheet.getCell(rowNum, 28).value = pay.amount;
 
       styleCell(worksheet.getCell(rowNum, 29), {});

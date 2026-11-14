@@ -18,8 +18,8 @@ import {
   Package,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatDateKurdish, formatShortDate, formatNumber } from '../../utils/formatters';
-import { Sale, PaymentVoucher } from '../../types';
+import { formatIQD, formatUSD, formatCurrency, formatDateKurdish, formatShortDate, formatNumber } from '../../utils/formatters';
+import { Sale, PaymentVoucher, Currency } from '../../types';
 
 export const TransactionHistory: React.FC = () => {
   const {
@@ -46,6 +46,7 @@ export const TransactionHistory: React.FC = () => {
   const [editSaleDate, setEditSaleDate] = useState('');
   const [editSalePaidAmount, setEditSalePaidAmount] = useState('');
   const [editSaleNotes, setEditSaleNotes] = useState('');
+  const [editSaleCurrency, setEditSaleCurrency] = useState<Currency>('IQD');
   const [editSaleItems, setEditSaleItems] = useState<Sale['items']>([]);
   const [isSubmittingEditSale, setIsSubmittingEditSale] = useState(false);
 
@@ -55,6 +56,7 @@ export const TransactionHistory: React.FC = () => {
     setEditSaleCustomerPhone(s.customerPhone || '');
     setEditSalePaidAmount(s.paidAmount !== undefined ? s.paidAmount.toString() : '0');
     setEditSaleNotes(s.notes || '');
+    setEditSaleCurrency(s.currency || 'IQD');
     setEditSaleItems(JSON.parse(JSON.stringify(s.items || [])));
 
     try {
@@ -78,6 +80,7 @@ export const TransactionHistory: React.FC = () => {
     setEditSaleDate('');
     setEditSalePaidAmount('');
     setEditSaleNotes('');
+    setEditSaleCurrency('IQD');
     setEditSaleItems([]);
     setIsSubmittingEditSale(false);
   };
@@ -176,6 +179,7 @@ export const TransactionHistory: React.FC = () => {
       await updateSale(editingSale.id, {
         customerName: editSaleCustomerName.trim(),
         customerPhone: editSaleCustomerPhone.trim(),
+        currency: editSaleCurrency,
         paidAmount: Number(editSalePaidAmount) || 0,
         notes: editSaleNotes.trim(),
         date: isoDate,
@@ -196,6 +200,7 @@ export const TransactionHistory: React.FC = () => {
   const [editAmount, setEditAmount] = useState('');
   const [editNotes, setEditNotes] = useState('');
   const [editDate, setEditDate] = useState('');
+  const [editPaymentCurrency, setEditPaymentCurrency] = useState<Currency>('IQD');
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
   const handleOpenEditPayment = (p: PaymentVoucher) => {
@@ -203,6 +208,7 @@ export const TransactionHistory: React.FC = () => {
     setEditCustomerName(p.customerName || '');
     setEditAmount(p.amount ? p.amount.toString() : '');
     setEditNotes(p.notes || '');
+    setEditPaymentCurrency(p.currency || 'IQD');
 
     try {
       const d = new Date(p.date);
@@ -224,6 +230,7 @@ export const TransactionHistory: React.FC = () => {
     setEditAmount('');
     setEditNotes('');
     setEditDate('');
+    setEditPaymentCurrency('IQD');
     setIsSubmittingEdit(false);
   };
 
@@ -245,6 +252,7 @@ export const TransactionHistory: React.FC = () => {
       await updatePayment(editingPayment.id, {
         customerName: editCustomerName.trim(),
         amount: Number(editAmount),
+        currency: editPaymentCurrency,
         notes: editNotes.trim(),
         date: isoDate,
       });
@@ -392,6 +400,7 @@ export const TransactionHistory: React.FC = () => {
                   <th className="py-3.5 px-4 font-semibold">ژمارەی وەسڵ</th>
                   <th className="py-3.5 px-4 font-semibold">بەروار و کات</th>
                   <th className="py-3.5 px-4 font-semibold">ناوی کڕیار</th>
+                  <th className="py-3.5 px-4 font-semibold">دراو</th>
                   <th className="py-3.5 px-4 font-semibold">کاڵاکان</th>
                   <th className="py-3.5 px-4 font-semibold">کۆی وەسڵ</th>
                   <th className="py-3.5 px-4 font-semibold">دراو (Down Payment)</th>
@@ -402,7 +411,7 @@ export const TransactionHistory: React.FC = () => {
               <tbody className="divide-y divide-slate-800/60">
                 {filteredSales.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-12 text-center text-slate-500">
+                    <td colSpan={9} className="py-12 text-center text-slate-500">
                       هیچ تۆمارێکی فرۆشتن نەدۆزرایەوە!
                     </td>
                   </tr>
@@ -418,19 +427,28 @@ export const TransactionHistory: React.FC = () => {
                       <td className="py-3 px-4 font-semibold text-white">
                         {s.customerName}
                       </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          s.currency === 'USD'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                        }`}>
+                          {s.currency === 'USD' ? '$ USD' : 'د.ع IQD'}
+                        </span>
+                      </td>
                       <td className="py-3 px-4 text-slate-300 max-w-xs truncate">
                         {s.items.map((i) => `${i.productName} (${i.quantity} ${i.unitType === 'carton' ? 'کارتۆن' : 'دانە'})`).join('، ')}
                       </td>
                       <td className="py-3 px-4 font-bold text-white font-numeric">
-                        {formatIQD(s.totalAmount)}
+                        {formatCurrency(s.totalAmount, s.currency || 'IQD')}
                       </td>
                       <td className="py-3 px-4 font-semibold text-emerald-400 font-numeric">
-                        {formatIQD(s.paidAmount)}
+                        {formatCurrency(s.paidAmount, s.currency || 'IQD')}
                       </td>
                       <td className="py-3 px-4 font-bold font-numeric">
                         {s.remainingAmount > 0 ? (
                           <span className="text-amber-400">
-                            {formatIQD(s.remainingAmount)}
+                            {formatCurrency(s.remainingAmount, s.currency || 'IQD')}
                           </span>
                         ) : (
                           <span className="text-slate-500">پاکتاو</span>
@@ -481,6 +499,7 @@ export const TransactionHistory: React.FC = () => {
                   <th className="py-3.5 px-4 font-semibold">ژمارەی پسوولە</th>
                   <th className="py-3.5 px-4 font-semibold">بەروار و کات</th>
                   <th className="py-3.5 px-4 font-semibold">ناوی کڕیار</th>
+                  <th className="py-3.5 px-4 font-semibold">دراو</th>
                   <th className="py-3.5 px-4 font-semibold">بڕی پارەی وەرگیراو</th>
                   <th className="py-3.5 px-4 font-semibold">تێبینی و ڕوونکردنەوە</th>
                   <th className="py-3.5 px-4 font-semibold text-center">کردارەکان</th>
@@ -489,7 +508,7 @@ export const TransactionHistory: React.FC = () => {
               <tbody className="divide-y divide-slate-800/60">
                 {filteredPayments.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="py-12 text-center text-slate-500">
+                    <td colSpan={7} className="py-12 text-center text-slate-500">
                       هیچ تۆمارێکی پارەدان نەدۆزرایەوە!
                     </td>
                   </tr>
@@ -505,8 +524,17 @@ export const TransactionHistory: React.FC = () => {
                       <td className="py-3 px-4 font-semibold text-white">
                         {p.customerName}
                       </td>
+                      <td className="py-3 px-4">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                          p.currency === 'USD'
+                            ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                            : 'bg-amber-500/15 text-amber-400 border border-amber-500/30'
+                        }`}>
+                          {p.currency === 'USD' ? '$ USD' : 'د.ع IQD'}
+                        </span>
+                      </td>
                       <td className="py-3 px-4 font-bold text-emerald-400 font-numeric text-sm">
-                        {formatIQD(p.amount)}
+                        {formatCurrency(p.amount, p.currency || 'IQD')}
                       </td>
                       <td className="py-3 px-4 text-slate-300">
                         {p.notes || '—'}
@@ -580,6 +608,37 @@ export const TransactionHistory: React.FC = () => {
 
               {/* Form */}
               <form onSubmit={handleSaveEditPayment} className="space-y-4">
+                {/* Currency Selection */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    دراوی پسوولە (Currency)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditPaymentCurrency('IQD')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        editPaymentCurrency === 'IQD'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      دینار (د.ع IQD)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditPaymentCurrency('USD')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        editPaymentCurrency === 'USD'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      دۆلار ($ USD)
+                    </button>
+                  </div>
+                </div>
+
                 {/* Customer Name */}
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1.5">
@@ -607,18 +666,19 @@ export const TransactionHistory: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-medium text-slate-300">
-                      بڕی پارەی وەرگیراو (د.ع)
+                      بڕی پارەی وەرگیراو ({editPaymentCurrency === 'USD' ? '$ دۆلار' : 'د.ع دینار'})
                     </label>
                     {editAmount && Number(editAmount) > 0 && (
                       <span className="text-xs font-bold text-emerald-400 font-numeric">
-                        {formatIQD(Number(editAmount))}
+                        {formatCurrency(Number(editAmount), editPaymentCurrency)}
                       </span>
                     )}
                   </div>
                   <input
                     type="number"
                     required
-                    min="1"
+                    min="0.01"
+                    step="any"
                     value={editAmount}
                     onChange={(e) => setEditAmount(e.target.value)}
                     placeholder="0"
@@ -626,14 +686,14 @@ export const TransactionHistory: React.FC = () => {
                   />
                   {/* Quick shortcuts */}
                   <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                    {[25000, 50000, 100000, 250000, 500000, 1000000].map((amt) => (
+                    {(editPaymentCurrency === 'USD' ? [50, 100, 250, 500, 1000] : [25000, 50000, 100000, 250000, 500000, 1000000]).map((amt) => (
                       <button
                         key={amt}
                         type="button"
                         onClick={() => setEditAmount(amt.toString())}
                         className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] text-slate-300 hover:text-cyan-400 hover:border-cyan-500/30 font-numeric cursor-pointer"
                       >
-                        +{formatNumber(amt)}
+                        +{editPaymentCurrency === 'USD' ? `$${amt}` : formatNumber(amt)}
                       </button>
                     ))}
                   </div>
@@ -728,6 +788,37 @@ export const TransactionHistory: React.FC = () => {
 
               {/* Scrollable Form Body */}
               <form onSubmit={handleSaveEditSale} className="flex-1 overflow-y-auto space-y-4 pr-1">
+                {/* Currency Selection */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    دراوی فرۆشتن (Currency)
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setEditSaleCurrency('IQD')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        editSaleCurrency === 'IQD'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      دینار (د.ع IQD)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setEditSaleCurrency('USD')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        editSaleCurrency === 'USD'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      دۆلار ($ USD)
+                    </button>
+                  </div>
+                </div>
+
                 {/* Customer Info & Date */}
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                   {/* Customer Name */}
@@ -845,18 +936,21 @@ export const TransactionHistory: React.FC = () => {
                             <input
                               type="number"
                               min="0"
+                              step="any"
                               value={item.unitPrice}
                               onChange={(e) =>
-                                updateItemPrice(idx, Math.max(0, parseInt(e.target.value) || 0))
+                                updateItemPrice(idx, Math.max(0, parseFloat(e.target.value) || 0))
                               }
                               className="w-20 bg-slate-950 border border-slate-700 rounded-lg px-2 py-1 text-xs text-white font-numeric font-semibold text-center focus:outline-none focus:border-emerald-500"
                             />
-                            <span className="text-[10px] text-slate-400">د.ع</span>
+                            <span className="text-[10px] text-slate-400">
+                              {editSaleCurrency === 'USD' ? '$' : 'د.ع'}
+                            </span>
                           </div>
 
                           {/* Line Total */}
                           <div className="w-24 text-left font-numeric font-bold text-emerald-400 text-xs">
-                            {formatIQD(item.total)}
+                            {formatCurrency(item.total, editSaleCurrency)}
                           </div>
 
                           {/* Delete Item Button */}
@@ -883,7 +977,7 @@ export const TransactionHistory: React.FC = () => {
                     <div className="p-2.5 rounded-lg bg-slate-900 border border-slate-800/80">
                       <span className="text-[11px] text-slate-400 block mb-0.5">کۆی گشتی فرۆش:</span>
                       <span className="text-sm font-bold text-white font-numeric">
-                        {formatIQD(editSaleTotalAmount)}
+                        {formatCurrency(editSaleTotalAmount, editSaleCurrency)}
                       </span>
                     </div>
 
@@ -893,6 +987,7 @@ export const TransactionHistory: React.FC = () => {
                       <input
                         type="number"
                         min="0"
+                        step="any"
                         max={editSaleTotalAmount}
                         value={editSalePaidAmount}
                         onChange={(e) => setEditSalePaidAmount(e.target.value)}
@@ -906,10 +1001,12 @@ export const TransactionHistory: React.FC = () => {
                       <span className="text-sm font-bold font-numeric">
                         {editSaleRemainingAmount > 0 ? (
                           <span className="text-amber-400">
-                            {formatIQD(editSaleRemainingAmount)}
+                            {formatCurrency(editSaleRemainingAmount, editSaleCurrency)}
                           </span>
                         ) : (
-                          <span className="text-emerald-400">پاکتاو (0 د.ع)</span>
+                          <span className="text-emerald-400">
+                            {editSaleCurrency === 'USD' ? 'پاکتاو ($0.00)' : 'پاکتاو (0 د.ع)'}
+                          </span>
                         )}
                       </span>
                     </div>

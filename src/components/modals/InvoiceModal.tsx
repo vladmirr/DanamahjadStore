@@ -2,12 +2,14 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Printer, X, CheckCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatDateKurdish } from '../../utils/formatters';
+import { formatIQD, formatCurrency, formatDateKurdish } from '../../utils/formatters';
 
 export const InvoiceModal: React.FC = () => {
   const { viewingInvoice, setViewingInvoice } = useApp();
 
   if (!viewingInvoice) return null;
+
+  const invCurrency = viewingInvoice.currency || 'IQD';
 
   const handlePrint = () => {
     window.print();
@@ -76,9 +78,18 @@ export const InvoiceModal: React.FC = () => {
 
             {/* Invoice Meta (Number & Date) */}
             <div className="flex items-center justify-between sm:flex-col sm:items-end gap-1.5 pt-2 sm:pt-0 border-t border-slate-800/80 sm:border-t-0 shrink-0">
-              <span className="px-2.5 py-1 rounded-md bg-emerald-500/15 print:border print:border-black text-emerald-400 print:text-black text-xs font-bold font-mono">
-                {viewingInvoice.invoiceNumber}
-              </span>
+              <div className="flex items-center gap-1.5">
+                <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                  invCurrency === 'USD'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
+                    : 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                } print:border print:border-black print:text-black`}>
+                  {invCurrency === 'USD' ? '$ دۆلار' : 'د.ع دینار'}
+                </span>
+                <span className="px-2.5 py-1 rounded-md bg-emerald-500/15 print:border print:border-black text-emerald-400 print:text-black text-xs font-bold font-mono">
+                  {viewingInvoice.invoiceNumber}
+                </span>
+              </div>
               <p className="text-[11px] sm:text-xs text-slate-400 print:text-slate-600 font-numeric" dir="ltr">
                 {formatDateKurdish(viewingInvoice.date)}
               </p>
@@ -112,8 +123,8 @@ export const InvoiceModal: React.FC = () => {
                   <th className="pb-2.5 px-1.5">ناوی کاڵا</th>
                   <th className="pb-2.5 px-1.5">یەکە</th>
                   <th className="pb-2.5 px-1.5">بڕ</th>
-                  <th className="pb-2.5 px-1.5">نرخی تاک (د.ع)</th>
-                  <th className="pb-2.5 px-1.5 text-left">کۆی گشتی (د.ع)</th>
+                  <th className="pb-2.5 px-1.5">نرخی تاک ({invCurrency === 'USD' ? '$' : 'د.ع'})</th>
+                  <th className="pb-2.5 px-1.5 text-left">کۆی گشتی ({invCurrency === 'USD' ? '$' : 'د.ع'})</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800 print:divide-slate-200">
@@ -125,9 +136,9 @@ export const InvoiceModal: React.FC = () => {
                       {item.unitType === 'carton' ? 'کارتۆن' : 'دانە'}
                     </td>
                     <td className="py-2.5 px-1.5 font-bold font-numeric">{item.quantity}</td>
-                    <td className="py-2.5 px-1.5 font-numeric">{formatIQD(item.unitPrice)}</td>
+                    <td className="py-2.5 px-1.5 font-numeric">{formatCurrency(item.unitPrice, invCurrency)}</td>
                     <td className="py-2.5 px-1.5 text-left font-bold font-numeric">
-                      {formatIQD(item.total)}
+                      {formatCurrency(item.total, invCurrency)}
                     </td>
                   </tr>
                 ))}
@@ -140,7 +151,7 @@ export const InvoiceModal: React.FC = () => {
             <div className="flex items-center justify-between text-xs">
               <span className="text-slate-400 print:text-slate-700">کۆی گشتی فرۆش:</span>
               <span className="text-sm sm:text-base font-bold text-white print:text-black font-numeric">
-                {formatIQD(viewingInvoice.totalAmount)}
+                {formatCurrency(viewingInvoice.totalAmount, invCurrency)}
               </span>
             </div>
 
@@ -149,7 +160,7 @@ export const InvoiceModal: React.FC = () => {
                 بڕی پارەی دراو (Down Payment):
               </span>
               <span className="text-xs sm:text-sm font-semibold text-emerald-400 print:text-black font-numeric">
-                {formatIQD(viewingInvoice.paidAmount)}
+                {formatCurrency(viewingInvoice.paidAmount, invCurrency)}
               </span>
             </div>
 
@@ -165,8 +176,8 @@ export const InvoiceModal: React.FC = () => {
                 }`}
               >
                 {viewingInvoice.remainingAmount > 0
-                  ? formatIQD(viewingInvoice.remainingAmount)
-                  : 'پاکتاوکراوە (کاش)'}
+                  ? formatCurrency(viewingInvoice.remainingAmount, invCurrency)
+                  : (invCurrency === 'USD' ? 'پاکتاوکراوە ($0.00)' : 'پاکتاوکراوە (کاش)')}
               </span>
             </div>
           </div>

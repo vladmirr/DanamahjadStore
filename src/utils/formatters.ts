@@ -1,12 +1,13 @@
-// Currency and formatting utilities for Kurdish Sorani and Iraqi Dinar (IQD)
+// Currency and formatting utilities for Kurdish Sorani, Iraqi Dinar (IQD), and US Dollar (USD)
+import { Currency } from '../types';
 
 /**
- * Format number into US Dollar string (e.g. $25,000)
+ * Format number into US Dollar string (e.g. $1,450.00)
  */
 export function formatUSD(amount: number | null | undefined): string {
   const val = Number(amount) || 0;
   return '$' + new Intl.NumberFormat('en-US', {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(val);
 }
@@ -17,6 +18,33 @@ export function formatUSD(amount: number | null | undefined): string {
 export function formatIQD(amount: number | null | undefined): string {
   const val = Number(amount) || 0;
   return new Intl.NumberFormat('en-US').format(Math.round(val)) + ' د.ع';
+}
+
+/**
+ * Format amount by its exact currency
+ */
+export function formatCurrency(
+  amount: number | null | undefined,
+  currency: Currency | string = 'IQD'
+): string {
+  if (currency === 'USD') {
+    return formatUSD(amount);
+  }
+  return formatIQD(amount);
+}
+
+/**
+ * Get currency symbol ($ or د.ع)
+ */
+export function getCurrencySymbol(currency: Currency | string = 'IQD'): string {
+  return currency === 'USD' ? '$' : 'د.ع';
+}
+
+/**
+ * Get Kurdish Sorani currency label
+ */
+export function getCurrencyLabel(currency: Currency | string = 'IQD'): string {
+  return currency === 'USD' ? 'دۆلار ($ USD)' : 'دینار (د.ع IQD)';
 }
 
 /**

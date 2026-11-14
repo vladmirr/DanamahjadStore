@@ -17,8 +17,8 @@ import {
   FileSpreadsheet,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatNumber } from '../../utils/formatters';
-import { CustomerDebtSummary } from '../../types';
+import { formatIQD, formatUSD, formatCurrency, formatNumber } from '../../utils/formatters';
+import { CustomerDebtSummary, Currency } from '../../types';
 
 interface DebtLedgerProps {
   isPaymentModalOpen: boolean;
@@ -52,12 +52,14 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
   const [targetCustomer, setTargetCustomer] = useState(presetCustomerName || '');
   const [amount, setAmount] = useState('');
   const [notes, setNotes] = useState('');
+  const [paymentCurrency, setPaymentCurrency] = useState<Currency>('IQD');
 
   // Open modal with preselected customer
-  const handleOpenForCustomer = (name: string) => {
+  const handleOpenForCustomer = (name: string, preferredCurrency: Currency = 'IQD') => {
     setTargetCustomer(name);
     setAmount('');
     setNotes('وەرگیرا بە کاش');
+    setPaymentCurrency(preferredCurrency);
     setIsPaymentModalOpen(true);
   };
 
@@ -69,6 +71,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
     createPayment({
       customerName: targetCustomer.trim(),
       amount: Number(amount),
+      currency: paymentCurrency,
       notes: notes.trim() || 'وەرگیرا لە دەستی کڕیار',
       date: new Date().toISOString(),
     });
@@ -84,7 +87,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
   // Filter customers list
   const filteredCustomers = customers.filter((c) => {
     const matchesSearch = c.name.toLowerCase().includes(searchTerm.toLowerCase());
-    const isDebtor = c.outstandingDebt > 0;
+    const isDebtor = c.outstandingDebt > 0 || (c.outstandingDebtUSD || 0) > 0;
 
     if (filterType === 'debtors') return matchesSearch && isDebtor;
     if (filterType === 'settled') return matchesSearch && !isDebtor;
@@ -140,19 +143,33 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="p-4 rounded-xl glass-card border border-slate-800">
           <p className="text-xs text-slate-400">کۆی قەرزی ماوە لەسەر کڕیاران</p>
-          <p className="text-xl font-bold text-amber-400 mt-1.5 font-numeric">
-            {formatIQD(metrics.totalOutstandingDebt)}
-          </p>
+          <div className="mt-1.5 space-y-0.5">
+            <p className="text-xl font-bold text-amber-400 font-numeric">
+              {formatIQD(metrics.totalOutstandingDebt)}
+            </p>
+            {(metrics.totalOutstandingDebtUSD || 0) > 0 && (
+              <p className="text-sm font-bold text-emerald-400 font-numeric">
+                + {formatUSD(metrics.totalOutstandingDebtUSD || 0)}
+              </p>
+            )}
+          </div>
           <p className="text-[11px] text-slate-500 mt-1">
-            {customers.filter((c) => c.outstandingDebt > 0).length} کڕیاری قەرزدار
+            {customers.filter((c) => c.outstandingDebt > 0 || (c.outstandingDebtUSD || 0) > 0).length} کڕیاری قەرزدار
           </p>
         </div>
 
         <div className="p-4 rounded-xl glass-card border border-slate-800">
           <p className="text-xs text-slate-400">کۆی پارەی وەرگیراو لە کڕیاران</p>
-          <p className="text-xl font-bold text-emerald-400 mt-1.5 font-numeric">
-            {formatIQD(metrics.totalCashReceived)}
-          </p>
+          <div className="mt-1.5 space-y-0.5">
+            <p className="text-xl font-bold text-emerald-400 font-numeric">
+              {formatIQD(metrics.totalCashReceived)}
+            </p>
+            {(metrics.totalCashReceivedUSD || 0) > 0 && (
+              <p className="text-sm font-bold text-emerald-400 font-numeric">
+                + {formatUSD(metrics.totalCashReceivedUSD || 0)}
+              </p>
+            )}
+          </div>
           <p className="text-[11px] text-slate-500 mt-1">فرۆشتنی کاش + قیستە وەرگیراوەکان</p>
         </div>
 
@@ -162,7 +179,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
             {customers.length} کەس
           </p>
           <p className="text-[11px] text-slate-500 mt-1">
-            {customers.filter((c) => c.outstandingDebt === 0).length} کڕیاری پاکتاوکراو
+            {customers.filter((c) => c.outstandingDebt === 0 && (c.outstandingDebtUSD || 0) === 0).length} کڕیاری پاکتاوکراو
           </p>
         </div>
       </div>
@@ -199,7 +216,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                 : 'text-slate-400 hover:text-amber-300'
             }`}
           >
-            قەرزدارەکان ({customers.filter((c) => c.outstandingDebt > 0).length})
+            قەرزدارەکان ({customers.filter((c) => c.outstandingDebt > 0 || (c.outstandingDebtUSD || 0) > 0).length})
           </button>
           <button
             onClick={() => setFilterType('settled')}
@@ -209,7 +226,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                 : 'text-slate-400 hover:text-emerald-300'
             }`}
           >
-            پاکتاوکراوەکان ({customers.filter((c) => c.outstandingDebt === 0).length})
+            پاکتاوکراوەکان ({customers.filter((c) => c.outstandingDebt === 0 && (c.outstandingDebtUSD || 0) === 0).length})
           </button>
         </div>
       </div>
@@ -238,7 +255,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                 </tr>
               ) : (
                 filteredCustomers.map((cust) => {
-                  const hasDebt = cust.outstandingDebt > 0;
+                  const hasDebt = cust.outstandingDebt > 0 || (cust.outstandingDebtUSD || 0) > 0;
 
                   return (
                     <tr
@@ -256,17 +273,32 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                       <td className="py-3 px-4 font-numeric text-slate-300">
                         {cust.invoicesCount} پسوولە
                       </td>
-                      <td className="py-3 px-4 font-bold text-white font-numeric">
-                        {formatIQD(cust.totalPurchases)}
+                      <td className="py-3 px-4 font-numeric">
+                        <div className="font-bold text-white">{formatIQD(cust.totalPurchases)}</div>
+                        {(cust.totalPurchasesUSD || 0) > 0 && (
+                          <div className="text-[11px] text-emerald-400 font-semibold">{formatUSD(cust.totalPurchasesUSD || 0)}</div>
+                        )}
                       </td>
-                      <td className="py-3 px-4 font-semibold text-emerald-400 font-numeric">
-                        {formatIQD(cust.totalPaid)}
+                      <td className="py-3 px-4 font-numeric">
+                        <div className="font-semibold text-emerald-400">{formatIQD(cust.totalPaid)}</div>
+                        {(cust.totalPaidUSD || 0) > 0 && (
+                          <div className="text-[11px] text-emerald-300 font-semibold">{formatUSD(cust.totalPaidUSD || 0)}</div>
+                        )}
                       </td>
                       <td className="py-3 px-4 font-bold font-numeric">
                         {hasDebt ? (
-                          <span className="text-amber-400 font-numeric">
-                            {formatIQD(cust.outstandingDebt)}
-                          </span>
+                          <div className="space-y-0.5">
+                            {cust.outstandingDebt > 0 && (
+                              <div className="text-amber-400 font-numeric">
+                                {formatIQD(cust.outstandingDebt)}
+                              </div>
+                            )}
+                            {(cust.outstandingDebtUSD || 0) > 0 && (
+                              <div className="text-emerald-400 font-numeric">
+                                {formatUSD(cust.outstandingDebtUSD || 0)}
+                              </div>
+                            )}
+                          </div>
                         ) : (
                           <span className="text-slate-500 font-numeric">0 د.ع</span>
                         )}
@@ -287,7 +319,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                         <div className="flex items-center justify-center gap-2">
                           {hasDebt && (
                             <button
-                              onClick={() => handleOpenForCustomer(cust.name)}
+                              onClick={() => handleOpenForCustomer(cust.name, (cust.outstandingDebtUSD || 0) > 0 && cust.outstandingDebt === 0 ? 'USD' : 'IQD')}
                               className="px-2.5 py-1 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 text-xs font-medium cursor-pointer"
                             >
                               وەرگرتنی پارە
@@ -346,7 +378,7 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                       پسوولەی وەرگرتنی پارە لە کڕیار
                     </h3>
                     <p className="text-xs text-slate-400">
-                      تۆمارکردنی وەسڵی وەرگرتن و کەمکردنەوەی قەرز بە دینار
+                      تۆمارکردنی وەسڵی وەرگرتن بە دینار یان دۆلار و کەمکردنەوەی قەرز
                     </p>
                   </div>
                 </div>
@@ -359,6 +391,37 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
               </div>
 
               <form onSubmit={handleSubmitPayment} className="space-y-4 mt-5">
+                {/* Currency Selection for Payment */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    دراوی پارەدان (Currency) *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCurrency('IQD')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        paymentCurrency === 'IQD'
+                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      دینار (د.ع IQD)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaymentCurrency('USD')}
+                      className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        paymentCurrency === 'USD'
+                          ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50 shadow-sm'
+                          : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
+                    >
+                      دۆلار ($ USD)
+                    </button>
+                  </div>
+                </div>
+
                 {/* Customer name */}
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1.5">
@@ -373,11 +436,19 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                   {selectedCustObj && (
-                    <div className="mt-1.5 text-xs text-amber-400 flex items-center justify-between">
-                      <span>قەرزی ئێستای ئەم کڕیارە:</span>
-                      <span className="font-bold font-numeric">
-                        {formatIQD(selectedCustObj.outstandingDebt)}
-                      </span>
+                    <div className="mt-1.5 text-xs flex flex-wrap items-center justify-between gap-1">
+                      <span className="text-slate-400">قەرزی ئێستای ئەم کڕیارە:</span>
+                      <div className="flex items-center gap-2 font-bold font-numeric">
+                        {selectedCustObj.outstandingDebt > 0 && (
+                          <span className="text-amber-400">{formatIQD(selectedCustObj.outstandingDebt)}</span>
+                        )}
+                        {(selectedCustObj.outstandingDebtUSD || 0) > 0 && (
+                          <span className="text-emerald-400">{formatUSD(selectedCustObj.outstandingDebtUSD || 0)}</span>
+                        )}
+                        {selectedCustObj.outstandingDebt === 0 && (!selectedCustObj.outstandingDebtUSD || selectedCustObj.outstandingDebtUSD === 0) && (
+                          <span className="text-slate-500">پاکتاوە (بێ قەرز)</span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
@@ -386,22 +457,37 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-medium text-slate-300">
-                      بڕی پارەی وەرگیراو بە دینار (Amount Received) *
+                      بڕی پارەی وەرگیراو ({paymentCurrency === 'USD' ? 'دۆلار $' : 'دینار د.ع'}) *
                     </label>
-                    {selectedCustObj && selectedCustObj.outstandingDebt > 0 && (
-                      <button
-                        type="button"
-                        onClick={() => setAmount(selectedCustObj.outstandingDebt.toString())}
-                        className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
-                      >
-                        دانەوەی تەواوی قەرزەکە
-                      </button>
+                    {selectedCustObj && (
+                      paymentCurrency === 'USD' ? (
+                        (selectedCustObj.outstandingDebtUSD || 0) > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setAmount((selectedCustObj.outstandingDebtUSD || 0).toString())}
+                            className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
+                          >
+                            دانەوەی تەواوی قەرزی دۆلار
+                          </button>
+                        )
+                      ) : (
+                        selectedCustObj.outstandingDebt > 0 && (
+                          <button
+                            type="button"
+                            onClick={() => setAmount(selectedCustObj.outstandingDebt.toString())}
+                            className="text-[11px] text-emerald-400 hover:underline cursor-pointer"
+                          >
+                            دانەوەی تەواوی قەرزی دینار
+                          </button>
+                        )
+                      )
                     )}
                   </div>
                   <input
                     type="number"
                     required
-                    min="1"
+                    min="0.01"
+                    step="any"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
                     placeholder="0"
@@ -409,14 +495,14 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                   />
                   {/* Quick amount shortcuts */}
                   <div className="flex flex-wrap items-center gap-1.5 mt-2">
-                    {[10000, 25000, 50000, 100000].map((amt) => (
+                    {(paymentCurrency === 'USD' ? [50, 100, 250, 500, 1000] : [10000, 25000, 50000, 100000]).map((amt) => (
                       <button
                         key={amt}
                         type="button"
                         onClick={() => setAmount(amt.toString())}
                         className="px-2 py-1 rounded-lg bg-slate-900 border border-slate-800 text-[10px] text-slate-300 hover:text-emerald-400 hover:border-emerald-500/30 font-numeric cursor-pointer"
                       >
-                        +{formatNumber(amt)}
+                        +{paymentCurrency === 'USD' ? `$${amt}` : formatNumber(amt)}
                       </button>
                     ))}
                   </div>
@@ -439,9 +525,13 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                 {/* Remaining calculation preview */}
                 {selectedCustObj && amount && (
                   <div className="p-3 rounded-xl bg-slate-900/80 border border-slate-800 text-xs flex items-center justify-between">
-                    <span className="text-slate-400">قەرزی نوێ دوای ئەم پارەدانە:</span>
+                    <span className="text-slate-400">
+                      قەرزی نوێی {paymentCurrency === 'USD' ? 'دۆلار' : 'دینار'} دوای ئەم پارەدانە:
+                    </span>
                     <span className="font-bold text-emerald-400 font-numeric">
-                      {formatIQD(Math.max(0, selectedCustObj.outstandingDebt - Number(amount)))}
+                      {paymentCurrency === 'USD'
+                        ? formatUSD(Math.max(0, (selectedCustObj.outstandingDebtUSD || 0) - Number(amount)))
+                        : formatIQD(Math.max(0, selectedCustObj.outstandingDebt - Number(amount)))}
                     </span>
                   </div>
                 )}
@@ -509,23 +599,36 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">کۆی گشتی کڕین:</span>
-                  <span className="font-numeric text-slate-200">
-                    {formatIQD(customerToDelete.totalPurchases)}
-                  </span>
+                  <div className="text-left">
+                    <div className="font-numeric text-slate-200">{formatIQD(customerToDelete.totalPurchases)}</div>
+                    {(customerToDelete.totalPurchasesUSD || 0) > 0 && (
+                      <div className="font-numeric text-emerald-400 text-[11px]">{formatUSD(customerToDelete.totalPurchasesUSD || 0)}</div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">کۆی پارەی دراو:</span>
-                  <span className="font-numeric text-emerald-400">
-                    {formatIQD(customerToDelete.totalPaid)}
-                  </span>
+                  <div className="text-left">
+                    <div className="font-numeric text-emerald-400">{formatIQD(customerToDelete.totalPaid)}</div>
+                    {(customerToDelete.totalPaidUSD || 0) > 0 && (
+                      <div className="font-numeric text-emerald-300 text-[11px]">{formatUSD(customerToDelete.totalPaidUSD || 0)}</div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between pt-2 border-t border-slate-800">
                   <span className="text-slate-300 font-semibold">بڕی قەرزی ماوە:</span>
-                  <span className="font-bold text-amber-400 font-numeric text-sm">
-                    {formatIQD(customerToDelete.outstandingDebt)}
-                  </span>
+                  <div className="text-left">
+                    <div className="font-bold text-amber-400 font-numeric text-sm">
+                      {formatIQD(customerToDelete.outstandingDebt)}
+                    </div>
+                    {(customerToDelete.outstandingDebtUSD || 0) > 0 && (
+                      <div className="font-bold text-emerald-400 font-numeric text-xs">
+                        {formatUSD(customerToDelete.outstandingDebtUSD || 0)}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

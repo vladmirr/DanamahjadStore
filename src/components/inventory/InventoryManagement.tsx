@@ -15,8 +15,8 @@ import {
   CheckCircle2,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatNumber } from '../../utils/formatters';
-import { Product } from '../../types';
+import { formatIQD, formatUSD, formatCurrency, formatNumber } from '../../utils/formatters';
+import { Product, Currency } from '../../types';
 
 interface InventoryManagementProps {
   isAddModalOpen: boolean;
@@ -47,6 +47,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     unitsPerCarton: '',
     sellingPricePerUnit: '',
     minStockThreshold: '',
+    currency: 'IQD' as Currency,
   });
 
   // Filtered Products
@@ -68,12 +69,23 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     });
   }, [products, searchTerm, stockFilter]);
 
-  // Monetary stock values
-  const filteredCostValue = useMemo(() => {
-    return filteredProducts.reduce(
-      (acc, p) => acc + (p.costPricePerUnit || 0) * (p.totalUnits || 0),
-      0
-    );
+  // Monetary stock values separated by currency
+  const filteredCostValueIQD = useMemo(() => {
+    return filteredProducts
+      .filter((p) => p.currency !== 'USD')
+      .reduce(
+        (acc, p) => acc + (p.costPricePerUnit || 0) * (p.totalUnits || 0),
+        0
+      );
+  }, [filteredProducts]);
+
+  const filteredCostValueUSD = useMemo(() => {
+    return filteredProducts
+      .filter((p) => p.currency === 'USD')
+      .reduce(
+        (acc, p) => acc + (p.costPricePerUnit || 0) * (p.totalUnits || 0),
+        0
+      );
   }, [filteredProducts]);
 
   const filteredSellingValue = useMemo(() => {
@@ -99,6 +111,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
       unitsPerCarton: '',
       sellingPricePerUnit: '',
       minStockThreshold: '',
+      currency: 'IQD',
     });
     setIsAddModalOpen(true);
   };
@@ -115,6 +128,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
       unitsPerCarton: p.unitsPerCarton.toString(),
       sellingPricePerUnit: p.sellingPricePerUnit.toString(),
       minStockThreshold: p.minStockThreshold.toString(),
+      currency: p.currency || 'IQD',
     });
     setIsAddModalOpen(true);
   };
@@ -130,6 +144,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     const sellingPricePerUnit = Number(formData.sellingPricePerUnit) || costPricePerUnit * 1.25;
     const minStockThreshold = Number(formData.minStockThreshold) || 20;
     const totalUnits = Math.round(cartons * unitsPerCarton * 100) / 100;
+    const currency = formData.currency || 'IQD';
 
     if (editingProduct) {
       updateProduct(editingProduct.id, {
@@ -142,6 +157,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
         totalUnits,
         sellingPricePerUnit,
         minStockThreshold,
+        currency,
       });
     } else {
       addProduct({
@@ -153,6 +169,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
         unitsPerCarton,
         sellingPricePerUnit,
         minStockThreshold,
+        currency,
       });
     }
 
@@ -199,15 +216,20 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
           <div>
             <span className="text-xs font-bold text-slate-300">کۆی بەهای سەرمایەی کاڵاکانی کۆگا (بە پارە)</span>
             <p className="text-[11px] text-slate-400 mt-0.5">
-              کۆی پارەی تێچووی سەرجەم کاڵاکانی کۆگا بەپێی نرخی کڕین
+              کۆی پارەی تێچووی سەرجەم کاڵاکانی کۆگا بەپێی نرخی کڕین (دینار و دۆلار)
             </p>
           </div>
         </div>
 
-        <div className="text-right sm:text-left">
+        <div className="text-right sm:text-left flex flex-col sm:items-end gap-1">
           <span className="text-2xl sm:text-3xl font-black text-amber-300 font-numeric tracking-tight">
-            {formatIQD(filteredCostValue)}
+            {formatIQD(filteredCostValueIQD)}
           </span>
+          {filteredCostValueUSD > 0 && (
+            <span className="text-lg sm:text-xl font-bold text-emerald-400 font-numeric tracking-tight">
+              {formatUSD(filteredCostValueUSD)}
+            </span>
+          )}
         </div>
       </div>
 
@@ -260,6 +282,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
             <thead>
               <tr className="bg-slate-900/80 border-b border-slate-800 text-slate-400">
                 <th className="py-3.5 px-4 font-semibold">ناوی کاڵا</th>
+                <th className="py-3.5 px-4 font-semibold text-center">دراو</th>
                 <th className="py-3.5 px-4 font-semibold">بڕ بە کارتۆن</th>
                 <th className="py-3.5 px-4 font-semibold">یەکە لە کارتۆن</th>
                 <th className="py-3.5 px-4 font-semibold">کۆی دانەکان</th>
@@ -272,7 +295,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
             <tbody className="divide-y divide-slate-800/60">
               {filteredProducts.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-12 text-center text-slate-500">
+                  <td colSpan={9} className="py-12 text-center text-slate-500">
                     هیچ کاڵایەک نەدۆزرایەوە بەم مەرجانە!
                   </td>
                 </tr>
@@ -288,6 +311,17 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                       <td className="py-3 px-4">
                         <div className="font-semibold text-white">{p.name}</div>
                       </td>
+                      <td className="py-3 px-4 text-center">
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            p.currency === 'USD'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
+                          }`}
+                        >
+                          {p.currency === 'USD' ? '$ USD' : 'د.ع'}
+                        </span>
+                      </td>
                       <td className="py-3 px-4 font-semibold text-white font-numeric">
                         {p.cartons} CTN
                       </td>
@@ -298,10 +332,10 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                         {formatNumber(p.totalUnits)}
                       </td>
                       <td className="py-3 px-4 text-slate-300 font-numeric">
-                        {formatIQD(p.costPricePerUnit)}
+                        {formatCurrency(p.costPricePerUnit, p.currency)}
                       </td>
                       <td className="py-3 px-4 font-extrabold text-amber-300 font-numeric">
-                        {formatIQD(p.totalUnits * p.costPricePerUnit)}
+                        {formatCurrency(p.totalUnits * p.costPricePerUnit, p.currency)}
                       </td>
                       <td className="py-3 px-4">
                         {isLow ? (
@@ -341,7 +375,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
             </tbody>
             <tfoot className="bg-slate-950 border-t-2 border-slate-700/90 font-bold text-xs">
               <tr>
-                <td colSpan={3} className="py-3.5 px-4 text-slate-400">
+                <td colSpan={4} className="py-3.5 px-4 text-slate-400">
                   کۆی گشتی ({filteredProducts.length} جۆری کاڵا):
                 </td>
                 <td className="py-3.5 px-4 font-numeric text-white font-bold">
@@ -351,7 +385,12 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                   کۆی سەرمایەی کۆگا:
                 </td>
                 <td className="py-3.5 px-4 font-numeric text-amber-300 font-black text-sm">
-                  {formatIQD(filteredCostValue)}
+                  <div>{formatIQD(filteredCostValueIQD)}</div>
+                  {filteredCostValueUSD > 0 && (
+                    <div className="text-emerald-400 text-xs font-bold mt-0.5">
+                      {formatUSD(filteredCostValueUSD)}
+                    </div>
+                  )}
                 </td>
                 <td colSpan={2} className="py-3.5 px-4"></td>
               </tr>
@@ -393,6 +432,37 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
               </div>
 
               <form onSubmit={handleSubmitForm} className="space-y-4 mt-5">
+                {/* Currency Selector */}
+                <div>
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                    دراوی کڕین و کۆگا (Currency) *
+                  </label>
+                  <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950 border border-slate-700 rounded-xl">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, currency: 'IQD' })}
+                      className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        formData.currency === 'IQD'
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/35 shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <span>دینار (د.ع IQD)</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, currency: 'USD' })}
+                      className={`py-2 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                        formData.currency === 'USD'
+                          ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/35 shadow-sm'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <span>دۆلار ($ USD)</span>
+                    </button>
+                  </div>
+                </div>
+
                 {/* Product Name */}
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1.5">
@@ -466,15 +536,16 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                   </div>
                 </div>
 
-                {/* Purchase Cost (All in IQD) */}
+                {/* Purchase Cost */}
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                    نرخی کڕینی هەر دانەیەک (دینار) *
+                    نرخی کڕینی هەر دانەیەک ({formData.currency === 'USD' ? '$ دۆلار' : 'دینار'}) *
                   </label>
                   <input
                     type="number"
                     required
                     min="0"
+                    step="any"
                     value={formData.costPricePerUnit}
                     onChange={(e) =>
                       setFormData({ ...formData, costPricePerUnit: e.target.value })
@@ -485,7 +556,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-emerald-500/50 font-numeric"
                   />
                   <span className="text-[10px] text-slate-500 mt-1 block">
-                    تێچووی هەر کارتۆنێک: {formatIQD(calcCostUnit * calcUnitsPerCarton)}
+                    تێچووی هەر کارتۆنێک: {formatCurrency(calcCostUnit * calcUnitsPerCarton, formData.currency)}
                   </span>
                 </div>
 

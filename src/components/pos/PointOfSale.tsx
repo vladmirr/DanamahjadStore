@@ -16,8 +16,8 @@ import {
   Minus,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatNumber } from '../../utils/formatters';
-import { Product } from '../../types';
+import { formatIQD, formatUSD, formatCurrency, formatNumber } from '../../utils/formatters';
+import { Product, Currency } from '../../types';
 
 interface CartLine {
   productId: string;
@@ -39,6 +39,7 @@ export const PointOfSale: React.FC = () => {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [paidAmount, setPaidAmount] = useState<string>('');
   const [isCustomerDropdownOpen, setIsCustomerDropdownOpen] = useState(false);
+  const [saleCurrency, setSaleCurrency] = useState<Currency>('IQD');
 
   // Selected item adder controls
   const [selectedProductId, setSelectedProductId] = useState<string>('');
@@ -65,6 +66,9 @@ export const PointOfSale: React.FC = () => {
     setSelectedUnitType('unit');
     setSelectedQuantity('');
     setCustomPrice('');
+    if (cart.length === 0 && prod.currency) {
+      setSaleCurrency(prod.currency);
+    }
   };
 
   // Change unit type
@@ -205,6 +209,7 @@ export const PointOfSale: React.FC = () => {
     const newSale = createSale({
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
+      currency: saleCurrency,
       items: cart.map((c) => ({
         productId: c.productId,
         productName: c.productName,
@@ -254,17 +259,43 @@ export const PointOfSale: React.FC = () => {
             <h2 className="text-xl font-bold text-white">بەشی فرۆشتن</h2>
           </div>
           <p className="text-xs text-slate-400 mt-1">
-            دروستکردنی پسوولەی فرۆشتن، کەمکردنەوەی خۆکاری کۆگا و تۆمارکردنی کاش و قەرز بە دینار
+            دروستکردنی پسوولەی فرۆشتن بە دینار و دۆلار، کەمکردنەوەی خۆکاری کۆگا و تۆمارکردنی کاش و قەرز
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Currency Toggle for POS */}
+          <div className="flex items-center bg-slate-900 border border-slate-700/80 rounded-xl p-1">
+            <button
+              type="button"
+              onClick={() => setSaleCurrency('IQD')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                saleCurrency === 'IQD'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              دینار (د.ع IQD)
+            </button>
+            <button
+              type="button"
+              onClick={() => setSaleCurrency('USD')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                saleCurrency === 'USD'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              دۆلار ($ USD)
+            </button>
+          </div>
+
           <div className="px-3 py-1.5 rounded-xl bg-slate-900 border border-slate-800 text-xs">
             <span className="text-slate-400">کاڵا لە سەبەتەدا: </span>
             <span className="font-bold text-emerald-400 font-numeric">{cart.length}</span>
           </div>
           <div className="px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 font-bold font-numeric">
-            کۆی گشتی: {formatIQD(totalGrossAmount)}
+            کۆی گشتی: {formatCurrency(totalGrossAmount, saleCurrency)}
           </div>
         </div>
       </div>
@@ -386,7 +417,7 @@ export const PointOfSale: React.FC = () => {
                   {/* Dynamic Selling Price */}
                   <div>
                     <label className="block text-[11px] text-slate-400 mb-1.5">
-                      نرخی فرۆشتن (دینار - پێشنیارکراو)
+                      نرخی فرۆشتن ({saleCurrency === 'USD' ? 'دۆلار $' : 'دینار د.ع'} - پێشنیارکراو)
                     </label>
                     <input
                       type="number"
@@ -407,10 +438,11 @@ export const PointOfSale: React.FC = () => {
                   <div className="text-xs">
                     <span className="text-slate-400">کۆی ئەم کاڵایە: </span>
                     <span className="text-sm font-bold text-amber-300 font-numeric">
-                      {formatIQD(
+                      {formatCurrency(
                         selectedUnitType === 'carton'
                           ? (parseFloat(selectedQuantity) || 0) * (currentProduct.unitsPerCarton || 1) * (Number(customPrice) || defaultPrice)
-                          : (parseFloat(selectedQuantity) || 0) * (Number(customPrice) || defaultPrice)
+                          : (parseFloat(selectedQuantity) || 0) * (Number(customPrice) || defaultPrice),
+                        saleCurrency
                       )}
                     </span>
                     <span className="text-[11px] text-slate-500 block">
@@ -552,11 +584,18 @@ export const PointOfSale: React.FC = () => {
                         className="w-full text-right px-3 py-2 text-xs hover:bg-slate-800 text-slate-200 border-b border-slate-800/60 last:border-0 flex items-center justify-between cursor-pointer"
                       >
                         <span className="font-medium">{c.name}</span>
-                        {c.outstandingDebt > 0 && (
-                          <span className="text-[10px] text-amber-400 font-numeric">
-                            قەرزی پێشوو: {formatIQD(c.outstandingDebt)}
-                          </span>
-                        )}
+                        <div className="flex flex-col items-end gap-0.5">
+                          {c.outstandingDebt > 0 && (
+                            <span className="text-[10px] text-amber-400 font-numeric">
+                              قەرز: {formatIQD(c.outstandingDebt)}
+                            </span>
+                          )}
+                          {(c.outstandingDebtUSD || 0) > 0 && (
+                            <span className="text-[10px] text-emerald-400 font-numeric">
+                              قەرز: {formatUSD(c.outstandingDebtUSD || 0)}
+                            </span>
+                          )}
+                        </div>
                       </button>
                     ))}
                   </div>
@@ -608,7 +647,7 @@ export const PointOfSale: React.FC = () => {
                             <span className="text-[10px] text-slate-500 mr-1">
                               ({item.quantity * (item.unitsPerCarton || 1)} دانە)
                             </span>
-                          )} × {formatIQD(item.unitPrice)}
+                          )} × {formatCurrency(item.unitPrice, saleCurrency)}
                         </p>
                       </div>
 
@@ -636,10 +675,11 @@ export const PointOfSale: React.FC = () => {
 
                         {/* Line total */}
                         <span className="font-bold text-white font-numeric min-w-[75px] text-left">
-                          {formatIQD(
+                          {formatCurrency(
                             item.unitType === 'carton'
                               ? item.quantity * (item.unitsPerCarton || 1) * item.unitPrice
-                              : item.quantity * item.unitPrice
+                              : item.quantity * item.unitPrice,
+                            saleCurrency
                           )}
                         </span>
 
@@ -665,7 +705,7 @@ export const PointOfSale: React.FC = () => {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-400">کۆی گشتی فرۆش:</span>
                 <span className="text-base font-bold text-white font-numeric">
-                  {formatIQD(totalGrossAmount)}
+                  {formatCurrency(totalGrossAmount, saleCurrency)}
                 </span>
               </div>
 
@@ -702,6 +742,7 @@ export const PointOfSale: React.FC = () => {
                 <input
                   type="number"
                   min="0"
+                  step="any"
                   max={totalGrossAmount}
                   value={paidAmount}
                   onChange={(e) => setPaidAmount(e.target.value)}
@@ -718,7 +759,7 @@ export const PointOfSale: React.FC = () => {
                     remainingDebt > 0 ? 'text-amber-400' : 'text-emerald-400'
                   }`}
                 >
-                  {formatIQD(remainingDebt)}
+                  {formatCurrency(remainingDebt, saleCurrency)}
                 </span>
               </div>
             </div>
