@@ -62,7 +62,7 @@ import {
   PopcornDbStatus,
   DEFAULT_TRANSACTION,
 } from '../../services/popcornStorage';
-import { formatUSD, formatNumber, playSound } from '../../utils/formatters';
+import { formatUSD, formatNumber, roundPrecision, playSound } from '../../utils/formatters';
 import { exportPopcornToExcel, exportTrucksToExcel, exportExpensesToExcel } from '../../utils/excelExport';
 import { TiltCard } from '../common/TiltCard';
 import confetti from 'canvas-confetti';
@@ -402,7 +402,7 @@ export const PopcornManagement: React.FC = () => {
   const totalTonsCarried = useMemo(() => {
     const raw = trucks.reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0);
     if (raw === 0 && isTransactionCompleted) return totalCargoTons;
-    return raw;
+    return roundPrecision(raw, 2);
   }, [trucks, isTransactionCompleted, totalCargoTons]);
 
   const deliveredTons = useMemo(() => {
@@ -410,10 +410,10 @@ export const PopcornManagement: React.FC = () => {
       .filter((t) => t.status === 'delivered')
       .reduce((acc, t) => acc + (Number(t.tonsCarried) || 0), 0);
     if (raw === 0 && isTransactionCompleted) return totalCargoTons;
-    return raw;
+    return roundPrecision(raw, 2);
   }, [trucks, isTransactionCompleted, totalCargoTons]);
 
-  const remainingTonsToTransport = Math.max(0, totalCargoTons - totalTonsCarried);
+  const remainingTonsToTransport = Math.max(0, roundPrecision(totalCargoTons - totalTonsCarried, 2));
 
   // 3. Cost Iran Side & Cost Iraq Side
   const iranExpenses = useMemo(() => {
@@ -666,7 +666,7 @@ export const PopcornManagement: React.FC = () => {
       return;
     }
 
-    const tons = Number(truckForm.tonsCarried) || 0;
+    const tons = roundPrecision(Number(truckForm.tonsCarried) || 0, 2);
     const dest = truckForm.destination.trim() || '';
     const truckNotes = truckForm.notes.trim() || '';
 
@@ -863,13 +863,13 @@ export const PopcornManagement: React.FC = () => {
     if (!activeTransaction) return;
     const text = `📊 مامەڵەی: ${activeTransaction.name}
 ----------------------------------------
-${config.originCountry ? `📍 سەرچاوە: ${config.originCountry}\n` : ''}⚖️ بڕی بار: ${totalCargoTons} تۆن
+${config.originCountry ? `📍 سەرچاوە: ${config.originCountry}\n` : ''}⚖️ بڕی بار: ${formatNumber(totalCargoTons)} تۆن
 💵 نرخی کڕین: $${buyPricePerTon}/تۆن | کۆی کڕین: ${formatUSD(totalBuyingCost)}
 ${sellPricePerTon > 0 ? `📈 نرخی فرۆشتن: $${sellPricePerTon}/تۆن | کۆی داهات: ${formatUSD(expectedTotalRevenue)}` : '📈 نرخی فرۆشتن: دیاری نەکراوە (None)'}
 ----------------------------------------
 🚚 بارهەڵگرەکانی ئێران:
-- بڕی باری هاتووی تۆمارکراو: ${totalTonsCarried} تۆن (${trucks.length} بارهەڵگر)
-- بڕی ماوە: ${remainingTonsToTransport} تۆن
+- بڕی باری هاتووی تۆمارکراو: ${formatNumber(totalTonsCarried)} تۆن (${trucks.length} بارهەڵگر)
+- بڕی ماوە: ${formatNumber(remainingTonsToTransport)} تۆن
 ----------------------------------------
 📉 خەرجییەکان:
 - خەرجییەکانی ئێران و ترانزێت: ${formatUSD(totalIranSpending)}
@@ -1009,7 +1009,7 @@ ${
                   if (t.status && t.status !== 'delivered') return sum;
                   return sum + (Number(t.tonsCarried) || 0);
                 }, 0);
-                const arrivedTons = truckTons > 0 ? truckTons : (isCompleted ? totalTons : 0);
+                const arrivedTons = roundPrecision(truckTons > 0 ? truckTons : (isCompleted ? totalTons : 0), 2);
                 const arrivedPercent = totalTons > 0 ? Math.min(100, Math.round((arrivedTons / totalTons) * 100)) : 0;
                 const expenseCount = trans.expenses?.length || 0;
 
@@ -1609,7 +1609,7 @@ ${
               <span className="hidden sm:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-[#050505] border border-white/10 text-neutral-300 font-numeric font-medium text-xs">
                 <span>{trucks.length} بارهەڵگر</span>
                 <span className="text-neutral-600">|</span>
-                <span>{totalTonsCarried} لە {totalCargoTons} تۆن</span>
+                <span>{formatNumber(totalTonsCarried)} لە {formatNumber(totalCargoTons)} تۆن</span>
                 <span className="px-1.5 py-0.5 rounded bg-white/10 text-white border border-white/15 text-[10px] font-bold">
                   {Math.min(100, Math.round((totalTonsCarried / (totalCargoTons || 1)) * 100))}%
                 </span>
@@ -1645,7 +1645,7 @@ ${
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
                       <span>زانیاری بارهەڵگرەکان</span>
                       <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/[0.06] text-neutral-300 border border-white/10 font-numeric font-medium">
-                        {trucks.length} بارهەڵگر ({totalTonsCarried} لە {totalCargoTons} تۆن)
+                        {trucks.length} بارهەڵگر ({formatNumber(totalTonsCarried)} لە {formatNumber(totalCargoTons)} تۆن)
                       </span>
                     </h3>
                     <p className="text-xs text-neutral-400 mt-0.5">
@@ -1707,7 +1707,7 @@ ${
                 </div>
 
                 <div className="text-xs text-neutral-400 font-medium font-numeric">
-                  کۆی گشتی تۆمارکراو: <span className="text-white font-bold">{trucks.length}</span> بارهەڵگر ({totalTonsCarried} تۆن)
+                  کۆی گشتی تۆمارکراو: <span className="text-white font-bold">{trucks.length}</span> بارهەڵگر ({formatNumber(totalTonsCarried)} تۆن)
                 </div>
               </div>
 
@@ -3181,7 +3181,7 @@ ${
               <div>
                 <h4 className="text-base font-bold text-white">سڕینەوەی بارهەڵگر؟</h4>
                 <p className="text-xs text-neutral-400 mt-1">
-                  ئایا دڵنیایت لە سڕینەوەی بارهەڵگری <strong className="text-white">{truckToDelete.plateNumber}</strong> بە بڕی {truckToDelete.tonsCarried} تۆن؟
+                  ئایا دڵنیایت لە سڕینەوەی بارهەڵگری <strong className="text-white">{truckToDelete.plateNumber}</strong> بە بڕی {formatNumber(truckToDelete.tonsCarried)} تۆن؟
                 </p>
               </div>
               <div className="flex items-center justify-center gap-2 pt-2">

@@ -323,7 +323,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                         </span>
                       </td>
                       <td className="py-3 px-4 font-semibold text-white font-numeric">
-                        {p.cartons} CTN
+                        {formatNumber(p.cartons)} CTN
                       </td>
                       <td className="py-3 px-4 text-slate-300 font-numeric">
                         {p.unitsPerCarton} دانە
@@ -628,7 +628,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                 <span className="text-slate-400">ناوی کاڵا: </span>
                 <span className="font-bold text-white">{productToDelete.name}</span>
                 <div className="mt-1 text-slate-400">
-                  مەوجوود: {productToDelete.cartons} کارتۆن ({productToDelete.totalUnits} دانە)
+                  مەوجوود: {formatNumber(productToDelete.cartons)} کارتۆن ({formatNumber(productToDelete.totalUnits)} دانە)
                 </div>
               </div>
 

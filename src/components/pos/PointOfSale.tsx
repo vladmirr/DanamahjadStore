@@ -327,7 +327,7 @@ export const PointOfSale: React.FC = () => {
                   <option value="">-- کاڵایەک هەڵبژێرە لە کۆگا --</option>
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} (مەوجوود: {p.cartons} کارتۆن / {p.totalUnits} دانە)
+                      {p.name} (مەوجوود: {formatNumber(p.cartons)} کارتۆن / {formatNumber(p.totalUnits)} دانە)
                     </option>
                   ))}
                 </select>
@@ -358,7 +358,7 @@ export const PointOfSale: React.FC = () => {
                           : 'text-emerald-400'
                       }`}
                     >
-                      {currentProduct.cartons} CTN ({currentProduct.totalUnits} دانە)
+                      {formatNumber(currentProduct.cartons)} CTN ({formatNumber(currentProduct.totalUnits)} دانە)
                     </span>
                   </div>
                 </div>
@@ -446,7 +446,7 @@ export const PointOfSale: React.FC = () => {
                       )}
                     </span>
                     <span className="text-[11px] text-slate-500 block">
-                      کۆی دانەی کەمکراوە: {selectedUnitType === 'carton' ? Math.round(((parseFloat(selectedQuantity) || 0) * currentProduct.unitsPerCarton) * 100) / 100 : (parseFloat(selectedQuantity) || 0)} دانە
+                      کۆی دانەی کەمکراوە: {selectedUnitType === 'carton' ? formatNumber(Math.round(((parseFloat(selectedQuantity) || 0) * currentProduct.unitsPerCarton) * 100) / 100) : formatNumber(parseFloat(selectedQuantity) || 0)} دانە
                     </span>
                   </div>
 

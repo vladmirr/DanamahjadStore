@@ -48,11 +48,25 @@ export function getCurrencyLabel(currency: Currency | string = 'IQD'): string {
 }
 
 /**
- * Format raw number with comma separators (e.g. 1,500)
+ * Clean floating-point precision artifacts (e.g. 99.85000000000001 -> 99.85)
  */
-export function formatNumber(num: number | null | undefined): string {
-  const val = Number(num) || 0;
-  return new Intl.NumberFormat('en-US').format(val);
+export function roundPrecision(num: number | null | undefined, decimals: number = 2): number {
+  const val = Number(num);
+  if (isNaN(val)) return 0;
+  return Number(Math.round(Number(val + 'e' + decimals)) + 'e-' + decimals);
+}
+
+/**
+ * Format raw number with comma separators (e.g. 1,500 or 99.85)
+ * Strips floating-point noise like 99.85000000000001
+ */
+export function formatNumber(num: number | null | undefined, maxDecimals: number = 2): string {
+  const val = Number(num);
+  if (isNaN(val)) return '0';
+  const cleanVal = roundPrecision(val, maxDecimals);
+  return new Intl.NumberFormat('en-US', {
+    maximumFractionDigits: maxDecimals,
+  }).format(cleanVal);
 }
 
 /**

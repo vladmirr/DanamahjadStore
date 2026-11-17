@@ -27,6 +27,7 @@ import {
 import {
   generateInvoiceNumber,
   generateVoucherNumber,
+  roundPrecision,
   playSound,
 } from '../utils/formatters';
 import { exportAllDataToExcel } from '../utils/excelExport';
@@ -233,9 +234,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       (snapshot) => {
         const items = snapshot.docs.map((d) => {
           const data = d.data();
-          const cartons = Number(data.cartons ?? data.cartonQty) || 0;
+          const cartons = roundPrecision(Number(data.cartons ?? data.cartonQty) || 0, 2);
           const unitsPerCarton = Number(data.unitsPerCarton ?? data.piecesPerCarton) || 1;
-          const totalUnits = Number(data.totalUnits ?? data.totalPieces) || cartons * unitsPerCarton;
+          const totalUnits = roundPrecision(Number(data.totalUnits ?? data.totalPieces) || (cartons * unitsPerCarton), 2);
           const sellingPricePerUnit = Number(data.sellingPricePerUnit ?? data.pricePerPiece) || 0;
           const costPricePerUnit = Number(data.costPricePerUnit) || 0;
           const minStockThreshold = Number(data.minStockThreshold) || 5;
@@ -417,8 +418,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const prod = inventory.find((p) => p.id === line.productId);
         if (prod) {
           const qtyInUnits = line.quantityInUnits || (line.unitType === 'carton' ? line.quantity * (prod.unitsPerCarton || 1) : line.quantity);
-          const newTotal = Math.max(0, (prod.totalUnits || prod.totalPieces || 0) - qtyInUnits);
-          const newCartons = Math.round((newTotal / (prod.unitsPerCarton || prod.piecesPerCarton || 1)) * 100) / 100;
+          const newTotal = Math.max(0, roundPrecision((prod.totalUnits || prod.totalPieces || 0) - qtyInUnits, 2));
+          const newCartons = Math.max(0, roundPrecision(newTotal / (prod.unitsPerCarton || prod.piecesPerCarton || 1), 2));
           await setDoc(doc(db, 'inventory', prod.id), {
             totalUnits: newTotal,
             totalPieces: newTotal,
@@ -578,9 +579,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const prod = inventory.find((p) => p.id === item.productId);
           if (prod) {
             const currentUnits = prod.totalUnits || prod.totalPieces || 0;
-            const restoredUnits = currentUnits + (item.quantityInUnits || 0);
+            const restoredUnits = roundPrecision(currentUnits + (item.quantityInUnits || 0), 2);
             const unitsPerCarton = prod.unitsPerCarton || prod.piecesPerCarton || 1;
-            const newCartons = Math.round((restoredUnits / unitsPerCarton) * 100) / 100;
+            const newCartons = Math.max(0, roundPrecision(restoredUnits / unitsPerCarton, 2));
             await setDoc(doc(db, 'inventory', prod.id), {
               totalUnits: restoredUnits,
               totalPieces: restoredUnits,
@@ -625,9 +626,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const prod = inventory.find((p) => p.id === line.productId);
         if (prod) {
           const currentUnits = prod.totalUnits || prod.totalPieces || 0;
-          const newUnits = Math.max(0, currentUnits - line.quantityInUnits);
+          const newUnits = Math.max(0, roundPrecision(currentUnits - line.quantityInUnits, 2));
           const unitsPerCarton = prod.unitsPerCarton || prod.piecesPerCarton || 1;
-          const newCartons = Math.round((newUnits / unitsPerCarton) * 100) / 100;
+          const newCartons = Math.max(0, roundPrecision(newUnits / unitsPerCarton, 2));
           await setDoc(doc(db, 'inventory', prod.id), {
             totalUnits: newUnits,
             totalPieces: newUnits,
@@ -677,8 +678,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       for (const item of saleToDelete.items) {
         const prod = inventory.find((p) => p.id === item.productId);
         if (prod) {
-          const newTotal = (prod.totalUnits || prod.totalPieces || 0) + (item.quantityInUnits || 0);
-          const newCartons = Math.round((newTotal / (prod.unitsPerCarton || prod.piecesPerCarton || 1)) * 100) / 100;
+          const newTotal = roundPrecision((prod.totalUnits || prod.totalPieces || 0) + (item.quantityInUnits || 0), 2);
+          const newCartons = Math.max(0, roundPrecision(newTotal / (prod.unitsPerCarton || prod.piecesPerCarton || 1), 2));
           await setDoc(doc(db, 'inventory', prod.id), {
             totalUnits: newTotal,
             totalPieces: newTotal,
@@ -758,8 +759,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           for (const item of sale.items) {
             const prod = inventory.find((p) => p.id === item.productId);
             if (prod) {
-              const newTotal = (prod.totalUnits || prod.totalPieces || 0) + (item.quantityInUnits || 0);
-              const newCartons = Math.round((newTotal / (prod.unitsPerCarton || prod.piecesPerCarton || 1)) * 100) / 100;
+              const newTotal = roundPrecision((prod.totalUnits || prod.totalPieces || 0) + (item.quantityInUnits || 0), 2);
+              const newCartons = Math.max(0, roundPrecision(newTotal / (prod.unitsPerCarton || prod.piecesPerCarton || 1), 2));
               await setDoc(doc(db, 'inventory', prod.id), {
                 totalUnits: newTotal,
                 totalPieces: newTotal,

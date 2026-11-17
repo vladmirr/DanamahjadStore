@@ -3,7 +3,7 @@ import { saveAs } from 'file-saver';
 import { Product, Sale, PaymentVoucher, CustomerDebtSummary } from '../types';
 import { PopcornProjectData, PopcornTransaction, PopcornTruck, PopcornExpense, PopcornStoreState } from '../types/popcorn';
 import { loadLocalPopcornData, loadLocalPopcornStore, DEFAULT_TRANSACTION, fetchAllCloudTransactions } from '../services/popcornStorage';
-import { formatShortDate } from './formatters';
+import { formatShortDate, roundPrecision } from './formatters';
 
 interface ExportOptions {
   customerName?: string;
@@ -904,13 +904,15 @@ function renderSinglePopcornWorksheet(
   });
 
   // Trucks Total Row
+  const cleanTruckTons = roundPrecision(totalTruckTons, 2);
+  const cleanRemTons = Math.max(0, roundPrecision(totalCargoTons - cleanTruckTons, 2));
   const trkTotalRow = ws.addRow([
     `کۆی گشتی (${trucks.length} بارهەڵگر)`,
     '—',
-    totalTruckTons,
+    cleanTruckTons,
     '—',
     '—',
-    `ماوە بۆ ${totalCargoTons} تۆن: ${Math.max(0, totalCargoTons - totalTruckTons)} تۆن`,
+    `ماوە بۆ ${totalCargoTons} تۆن: ${cleanRemTons} تۆن`,
   ]);
   trkTotalRow.font = { bold: true, color: { argb: 'FF1E293B' } };
   trkTotalRow.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFFDE68A' } };
@@ -1321,7 +1323,7 @@ export function renderPopcornSummaryWorksheet(
   const totalRowValues = [
     'کۆی گشتی',
     `${transactions.length} مامەڵە`,
-    sumTons,
+    roundPrecision(sumTons, 2),
     '—',
     '—',
     sumBuyingCost,
@@ -1608,7 +1610,7 @@ export async function exportTrucksToExcel(
     `${trucks.length} بارهەڵگر`,
     '—',
     '—',
-    totalTons,
+    roundPrecision(totalTons, 2),
     '—',
     '—',
     '—',
