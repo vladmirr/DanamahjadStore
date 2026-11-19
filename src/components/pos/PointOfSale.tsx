@@ -434,8 +434,8 @@ export const PointOfSale: React.FC = () => {
                 aria-expanded={isProductComboboxOpen}
                 aria-haspopup="listbox"
                 onClick={handleToggleCombobox}
-                className={`w-full glass-combobox-trigger px-4 py-3 cursor-pointer flex items-center justify-between transition-all select-none ${
-                  isProductComboboxOpen ? 'open' : ''
+                className={`w-full glass-combobox-trigger bg-[#090e17] border border-slate-800 rounded-xl px-4 py-3 cursor-pointer flex items-center justify-between transition-all select-none hover:border-slate-700 ${
+                  isProductComboboxOpen ? 'open ring-1 ring-emerald-500/30 border-emerald-500/60' : ''
                 }`}
               >
                 {currentProduct ? (
@@ -497,12 +497,13 @@ export const PointOfSale: React.FC = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -6, scale: 0.99 }}
                     transition={{ duration: 0.18, ease: [0.4, 0, 0.2, 1] }}
-                    className="absolute left-0 right-0 top-full mt-2 z-50 glass-combobox-panel shadow-2xl overflow-hidden flex flex-col"
+                    className="absolute left-0 right-0 top-full mt-2 z-50 glass-combobox-panel bg-[#0c101d] border border-slate-700/80 shadow-[0_25px_60px_-10px_rgba(0,0,0,0.95)] rounded-2xl overflow-hidden flex flex-col"
+                    style={{ backgroundColor: '#0c101d' }}
                   >
                     {/* Integrated Live Search Bar */}
-                    <div className="p-3 border-b border-slate-800/80 bg-slate-950/95 sticky top-0 z-10 space-y-2">
-                      <div className="relative flex items-center bg-slate-900/90 rounded-xl border border-slate-700/70 focus-within:border-emerald-500/60 focus-within:ring-2 focus-within:ring-emerald-500/20 transition-all">
-                        <Search className="w-4 h-4 text-emerald-400 absolute right-3 pointer-events-none" />
+                    <div className="p-3 border-b border-slate-800 bg-[#0c101d] sticky top-0 z-10 space-y-2">
+                      <div className="relative flex items-center bg-slate-900/95 rounded-xl border border-slate-700/80 focus-within:border-emerald-500/50 focus-within:ring-1 focus-within:ring-emerald-500/25 transition-all">
+                        <Search className="w-4 h-4 text-slate-400 absolute right-3.5 pointer-events-none" />
                         <input
                           ref={searchInputRef}
                           type="text"
@@ -540,7 +541,8 @@ export const PointOfSale: React.FC = () => {
                     <div
                       ref={optionsListRef}
                       role="listbox"
-                      className="max-h-72 overflow-y-auto p-2 space-y-1.5 custom-combobox-scrollbar"
+                      className="max-h-72 overflow-y-auto p-2 space-y-1.5 custom-combobox-scrollbar bg-[#0c101d]"
+                      style={{ backgroundColor: '#0c101d' }}
                     >
                       {filteredComboboxProducts.length === 0 ? (
                         <div className="py-8 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
@@ -565,10 +567,10 @@ export const PointOfSale: React.FC = () => {
                               onMouseEnter={() => setHighlightedIndex(idx)}
                               className={`relative flex items-center justify-between p-3 rounded-xl cursor-pointer transition-all ${
                                 isSelected
-                                  ? 'bg-emerald-500/15 border border-emerald-500/40 shadow-md shadow-emerald-950/50'
+                                  ? 'bg-emerald-950/40 border border-emerald-500/50 shadow-md shadow-black/40'
                                   : isHighlighted
-                                  ? 'bg-slate-800/80 border border-slate-700/80'
-                                  : 'bg-slate-900/40 border border-slate-800/40 hover:bg-slate-800/60 hover:border-slate-700/50'
+                                  ? 'bg-slate-800/95 border border-slate-700/90 shadow-sm'
+                                  : 'bg-slate-900/95 border border-slate-800/80 hover:bg-slate-800/90 hover:border-slate-700/70'
                               }`}
                             >
                               {/* Right Side (RTL): Product Name & Currency & Price */}
