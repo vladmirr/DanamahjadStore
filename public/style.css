@@ -428,4 +428,56 @@
   box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.7), inset 0 0 20px rgba(16, 185, 129, 0.05);
 }
 
+/* ==========================================================================
+   Ultra-Modern Glassmorphic Searchable Combobox Styling
+   ========================================================================== */
+
+/* 1. Glassmorphic Combobox Trigger Box */
+.glass-combobox-trigger {
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-combobox-trigger:hover {
+  background: rgba(15, 23, 42, 0.95);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.glass-combobox-trigger.open,
+.glass-combobox-trigger:focus-within {
+  border-color: rgba(16, 185, 129, 0.5) !important;
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.18), inset 0 0 10px rgba(16, 185, 129, 0.05) !important;
+}
+
+/* 2. Floating Animated Dropdown Panel */
+.glass-combobox-panel {
+  background: rgba(11, 15, 25, 0.96);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 16px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.65), 0 0 25px rgba(16, 185, 129, 0.12);
+}
+
+/* 3. Custom Sleek Thin Scrollbar */
+.custom-combobox-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-combobox-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+  border-radius: 8px;
+}
+.custom-combobox-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+}
+.custom-combobox-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(16, 185, 129, 0.45);
+}
+
+
 

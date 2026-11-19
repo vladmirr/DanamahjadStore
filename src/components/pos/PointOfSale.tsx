@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ShoppingCart,
@@ -14,6 +14,10 @@ import {
   FileText,
   Boxes,
   Minus,
+  ChevronDown,
+  Check,
+  Package,
+  X,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatIQD, formatUSD, formatCurrency, formatNumber } from '../../utils/formatters';
@@ -47,6 +51,108 @@ export const PointOfSale: React.FC = () => {
   const [selectedQuantity, setSelectedQuantity] = useState<string>('');
   const [customPrice, setCustomPrice] = useState<string>('');
   const [productSearch, setProductSearch] = useState('');
+
+  // Glassmorphic Combobox state
+  const [isProductComboboxOpen, setIsProductComboboxOpen] = useState(false);
+  const [comboboxSearch, setComboboxSearch] = useState('');
+  const [highlightedIndex, setHighlightedIndex] = useState<number>(0);
+  const comboboxRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const optionsListRef = useRef<HTMLDivElement>(null);
+
+  // Filtered products for Combobox
+  const filteredComboboxProducts = useMemo(() => {
+    if (!comboboxSearch.trim()) return products;
+    const query = comboboxSearch.toLowerCase().trim();
+    return products.filter((p) =>
+      p.name.toLowerCase().includes(query) ||
+      (p.barcode && p.barcode.toLowerCase().includes(query)) ||
+      (p.category && p.category.toLowerCase().includes(query))
+    );
+  }, [products, comboboxSearch]);
+
+  // Open & Toggle Combobox
+  const handleOpenCombobox = () => {
+    setIsProductComboboxOpen(true);
+    setComboboxSearch('');
+    const idx = products.findIndex((p) => p.id === selectedProductId);
+    setHighlightedIndex(idx >= 0 ? idx : 0);
+  };
+
+  const handleToggleCombobox = () => {
+    if (isProductComboboxOpen) {
+      setIsProductComboboxOpen(false);
+    } else {
+      handleOpenCombobox();
+    }
+  };
+
+  // Close Combobox on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (comboboxRef.current && !comboboxRef.current.contains(e.target as Node)) {
+        setIsProductComboboxOpen(false);
+      }
+    };
+    if (isProductComboboxOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isProductComboboxOpen]);
+
+  // Autofocus search input when combobox opens
+  useEffect(() => {
+    if (isProductComboboxOpen) {
+      const timer = setTimeout(() => {
+        searchInputRef.current?.focus();
+      }, 50);
+      return () => clearTimeout(timer);
+    }
+  }, [isProductComboboxOpen]);
+
+  // Auto scroll highlighted item into view
+  useEffect(() => {
+    if (isProductComboboxOpen && optionsListRef.current) {
+      const activeEl = optionsListRef.current.children[highlightedIndex] as HTMLElement;
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest' });
+      }
+    }
+  }, [highlightedIndex, isProductComboboxOpen]);
+
+  // Keyboard navigation inside combobox
+  const handleComboboxKeyDown = (e: React.KeyboardEvent) => {
+    if (!isProductComboboxOpen) {
+      if (e.key === 'Enter' || e.key === 'ArrowDown' || e.key === ' ') {
+        e.preventDefault();
+        handleOpenCombobox();
+      }
+      return;
+    }
+
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      setIsProductComboboxOpen(false);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev < filteredComboboxProducts.length - 1 ? prev + 1 : 0
+      );
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setHighlightedIndex((prev) =>
+        prev > 0 ? prev - 1 : filteredComboboxProducts.length - 1
+      );
+    } else if (e.key === 'Enter') {
+      e.preventDefault();
+      if (filteredComboboxProducts[highlightedIndex]) {
+        handleSelectProduct(filteredComboboxProducts[highlightedIndex]);
+        setIsProductComboboxOpen(false);
+      }
+    }
+  };
 
   // Find currently selected product in dropdown
   const currentProduct = useMemo(
@@ -310,28 +416,227 @@ export const PointOfSale: React.FC = () => {
               <span>هەڵبژاردنی کاڵا و شێوازی یەکە</span>
             </h3>
 
-            {/* Product Quick Search / Dropdown */}
-            <div>
-              <label className="block text-xs text-slate-400 mb-1.5">
-                هەڵبژاردنی کاڵا (Dropdown search)
-              </label>
-              <div className="relative">
-                <select
-                  value={selectedProductId}
-                  onChange={(e) => {
-                    const prod = products.find((p) => p.id === e.target.value);
-                    if (prod) handleSelectProduct(prod);
-                  }}
-                  className="w-full bg-slate-900 border border-slate-700/80 rounded-xl px-4 py-3 text-xs text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
-                >
-                  <option value="">-- کاڵایەک هەڵبژێرە لە کۆگا --</option>
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} (مەوجوود: {formatNumber(p.cartons)} کارتۆن / {formatNumber(p.totalUnits)} دانە)
-                    </option>
-                  ))}
-                </select>
+            {/* Product Quick Search / Dropdown (Custom Glassmorphic Combobox) */}
+            <div className="relative" ref={comboboxRef} onKeyDown={handleComboboxKeyDown}>
+              <div className="flex items-center justify-between text-xs text-slate-400 mb-1.5">
+                <span>هەڵبژاردنی کاڵا (Dropdown search)</span>
+                {currentProduct && (
+                  <span className="text-[11px] text-emerald-400 font-numeric">
+                    کۆدی کاڵا: {currentProduct.barcode || currentProduct.id}
+                  </span>
+                )}
               </div>
+
+              {/* Glassmorphic Trigger Box */}
+              <div
+                tabIndex={0}
+                role="combobox"
+                aria-expanded={isProductComboboxOpen}
+                aria-haspopup="listbox"
+                onClick={handleToggleCombobox}
+                className={`w-full glass-combobox-trigger px-4 py-3 cursor-pointer flex items-center justify-between transition-all select-none ${
+                  isProductComboboxOpen ? 'open' : ''
+                }`}
+              >
+                {currentProduct ? (
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <div className="p-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 shrink-0">
+                      <Package className="w-4 h-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white text-xs sm:text-sm truncate">
+                          {currentProduct.name}
+                        </span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                            currentProduct.currency === 'USD'
+                              ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                              : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
+                          }`}
+                        >
+                          {currentProduct.currency === 'USD' ? '$ USD' : 'د.ع IQD'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-[11px] text-slate-400 font-numeric mt-0.5">
+                        <span className="text-emerald-400 font-medium">
+                          {formatNumber(currentProduct.cartons)} کارتۆن
+                        </span>
+                        <span className="text-slate-600">•</span>
+                        <span>{formatNumber(currentProduct.totalUnits)} دانە بەردەستە</span>
+                        <span className="text-slate-600">•</span>
+                        <span className="text-slate-300">
+                          نرخ: {formatCurrency(currentProduct.sellingPricePerUnit, currentProduct.currency)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2.5 text-slate-400 text-xs sm:text-sm">
+                    <Package className="w-4 h-4 text-slate-500" />
+                    <span>-- کاڵایەک هەڵبژێرە لە کۆگا --</span>
+                  </div>
+                )}
+
+                <div className="flex items-center gap-1.5 shrink-0 mr-2">
+                  <div
+                    className={`p-1 rounded-lg text-slate-400 transition-transform duration-200 ${
+                      isProductComboboxOpen ? 'rotate-180 text-emerald-400' : ''
+                    }`}
+                  >
+                    <ChevronDown className="w-4 h-4" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Floating Animated Dropdown Panel */}
+              <AnimatePresence>
+                {isProductComboboxOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8, scale: 0.99 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -8, scale: 0.99 }}
+                    transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
+                    className="absolute left-0 right-0 top-full mt-2 z-50 glass-combobox-panel shadow-2xl overflow-hidden flex flex-col"
+                  >
+                    {/* Sticky Built-in Live Search Bar */}
+                    <div className="p-3 border-b border-slate-800 bg-slate-950/90 sticky top-0 z-10">
+                      <div className="relative flex items-center">
+                        <Search className="w-4 h-4 text-emerald-400 absolute right-3 pointer-events-none" />
+                        <input
+                          ref={searchInputRef}
+                          type="text"
+                          value={comboboxSearch}
+                          onChange={(e) => {
+                            setComboboxSearch(e.target.value);
+                            setHighlightedIndex(0);
+                          }}
+                          placeholder="گەڕان بەدوای ناوی کاڵادا..."
+                          className="w-full bg-slate-900 border border-slate-700/80 rounded-xl pr-9 pl-8 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500/60 focus:ring-1 focus:ring-emerald-500/50"
+                        />
+                        {comboboxSearch && (
+                          <button
+                            type="button"
+                            onClick={() => setComboboxSearch('')}
+                            className="absolute left-2.5 text-slate-400 hover:text-white p-0.5 rounded cursor-pointer"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex items-center justify-between text-[10px] text-slate-400 mt-2 px-1">
+                        <span>لیستی کاڵاکانی کۆگا</span>
+                        <span className="font-numeric text-emerald-400">
+                          {filteredComboboxProducts.length} کاڵا دۆزرایەوە
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Scrollable Rich Options List */}
+                    <div
+                      ref={optionsListRef}
+                      role="listbox"
+                      className="max-h-64 overflow-y-auto p-2 space-y-1.5 custom-combobox-scrollbar"
+                    >
+                      {filteredComboboxProducts.length === 0 ? (
+                        <div className="py-8 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
+                          <Search className="w-6 h-6 text-slate-600" />
+                          <span>هیچ کاڵایەک بەم ناوە نەدۆزرایەوە</span>
+                        </div>
+                      ) : (
+                        filteredComboboxProducts.map((p, idx) => {
+                          const isSelected = selectedProductId === p.id;
+                          const isHighlighted = highlightedIndex === idx;
+                          const isLowStock = p.totalUnits <= p.minStockThreshold;
+
+                          return (
+                            <div
+                              key={p.id}
+                              role="option"
+                              aria-selected={isSelected}
+                              onClick={() => {
+                                handleSelectProduct(p);
+                                setIsProductComboboxOpen(false);
+                              }}
+                              onMouseEnter={() => setHighlightedIndex(idx)}
+                              className={`group relative flex items-center justify-between p-2.5 sm:p-3 rounded-xl cursor-pointer transition-all ${
+                                isSelected
+                                  ? 'bg-emerald-500/15 border border-emerald-500/40 shadow-sm'
+                                  : isHighlighted
+                                  ? 'bg-slate-800/70 border border-slate-700/60'
+                                  : 'hover:bg-slate-800/40 border border-transparent'
+                              }`}
+                            >
+                              {/* Emerald Accent Indicator when selected or highlighted */}
+                              {(isSelected || isHighlighted) && (
+                                <div className="absolute right-0 top-1/2 -translate-y-1/2 w-1 h-6 bg-emerald-400 rounded-l-full" />
+                              )}
+
+                              {/* Right Side (RTL): Product Name & Currency & Price */}
+                              <div className="min-w-0 pr-1 flex items-center gap-2">
+                                <div className="min-w-0">
+                                  <div className="flex items-center gap-1.5">
+                                    <span
+                                      className={`text-xs sm:text-sm font-bold truncate ${
+                                        isSelected ? 'text-emerald-300' : 'text-white'
+                                      }`}
+                                    >
+                                      {p.name}
+                                    </span>
+                                    <span
+                                      className={`px-1.5 py-0.2 rounded-full text-[9px] font-bold ${
+                                        p.currency === 'USD'
+                                          ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                          : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
+                                      }`}
+                                    >
+                                      {p.currency === 'USD' ? '$ USD' : 'د.ع'}
+                                    </span>
+                                    {isLowStock && (
+                                      <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-rose-500/15 text-rose-400 border border-rose-500/30">
+                                        کەمە
+                                      </span>
+                                    )}
+                                  </div>
+                                  <div className="text-[11px] text-slate-400 font-numeric mt-0.5">
+                                    نرخی فرۆشتن: {formatCurrency(p.sellingPricePerUnit, p.currency)}
+                                    {p.unitsPerCarton > 1 && (
+                                      <span className="text-slate-500 text-[10px] mr-2">
+                                        ({p.unitsPerCarton} دانە / کارتۆن)
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Left Side: Stock Badges & Selected Checkmark */}
+                              <div className="flex items-center gap-1.5 shrink-0">
+                                <span className="px-2 py-0.5 rounded-md bg-slate-900 border border-slate-700/80 text-[10px] sm:text-[11px] font-semibold text-slate-300 font-numeric">
+                                  {formatNumber(p.cartons)} کارتۆن
+                                </span>
+                                <span
+                                  className={`px-2 py-0.5 rounded-md text-[10px] sm:text-[11px] font-bold font-numeric border ${
+                                    isLowStock
+                                      ? 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+                                      : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
+                                  }`}
+                                >
+                                  {formatNumber(p.totalUnits)} دانە
+                                </span>
+                                {isSelected && (
+                                  <div className="p-1 rounded-full bg-emerald-500/20 text-emerald-400 mr-1">
+                                    <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
 
             {/* Packaging Unit & Price & Quantity Adjuster */}
