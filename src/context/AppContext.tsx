@@ -6,7 +6,8 @@ import {
   onSnapshot, 
   doc, 
   setDoc, 
-  deleteDoc 
+  deleteDoc,
+  arrayUnion,
 } from 'firebase/firestore';
 import {
   Product,
@@ -107,6 +108,16 @@ export interface AppContextType {
   addProduct: (product: any) => Promise<void>;
   updateProduct: (id: string, product: any) => Promise<void>;
   deleteProduct: (id: string) => Promise<void>;
+  restockProduct: (
+    productId: string,
+    restockData: {
+      addedQty: number;
+      addedCartons?: number;
+      newUnitBuyPrice: number;
+      newSellingPrice?: number;
+      notes?: string;
+    }
+  ) => Promise<void>;
   createSale: (saleInput: {
     customerName: string;
     customerPhone?: string;
@@ -241,6 +252,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const costPricePerUnit = Number(data.costPricePerUnit) || 0;
           const minStockThreshold = Number(data.minStockThreshold) || 5;
           const currency: Currency = data.currency === 'USD' ? 'USD' : 'IQD';
+          const stockHistory = Array.isArray(data.stockHistory) ? data.stockHistory : [];
 
           return {
             id: d.id,
@@ -257,6 +269,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             costPricePerUnit,
             minStockThreshold,
             currency,
+            stockHistory,
           } as Item;
         });
         setInventory(items);
@@ -456,6 +469,87 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const deleteProduct = async (id: string) => {
     await deleteItem(id);
+  };
+
+  const restockProduct = async (
+    productId: string,
+    restockData: {
+      addedQty: number; // in units
+      addedCartons?: number;
+      newUnitBuyPrice: number;
+      newSellingPrice?: number;
+      notes?: string;
+    }
+  ) => {
+    const prod = inventory.find((p) => p.id === productId);
+    if (!prod) return;
+
+    const existingQuantity = Math.max(0, prod.totalUnits || prod.totalPieces || 0);
+    const existingUnitBuyPrice = Number(prod.costPricePerUnit) || 0;
+    const addedQuantity = Math.max(0, Number(restockData.addedQty) || 0);
+    const newUnitBuyPrice = Math.max(0, Number(restockData.newUnitBuyPrice) || 0);
+
+    // Weighted Average Math
+    const oldTotalCapital = roundPrecision(existingQuantity * existingUnitBuyPrice, 2);
+    const newPurchaseCapital = roundPrecision(addedQuantity * newUnitBuyPrice, 2);
+    const updatedQuantity = roundPrecision(existingQuantity + addedQuantity, 2);
+    const updatedTotalCapital = roundPrecision(oldTotalCapital + newPurchaseCapital, 2);
+
+    const rawAverageBuyPrice = updatedQuantity > 0 
+      ? updatedTotalCapital / updatedQuantity 
+      : newUnitBuyPrice;
+
+    const currency: Currency = prod.currency === 'USD' ? 'USD' : 'IQD';
+    const updatedUnitBuyPrice = currency === 'USD'
+      ? roundPrecision(rawAverageBuyPrice, 2)
+      : (rawAverageBuyPrice % 1 === 0 ? rawAverageBuyPrice : roundPrecision(rawAverageBuyPrice, 2));
+
+    const unitsPerCarton = Number(prod.unitsPerCarton || prod.piecesPerCarton) || 1;
+    const calculatedAddedCartons = restockData.addedCartons !== undefined
+      ? roundPrecision(restockData.addedCartons, 2)
+      : roundPrecision(addedQuantity / unitsPerCarton, 2);
+    const updatedCartons = Math.max(0, roundPrecision(updatedQuantity / unitsPerCarton, 2));
+
+    const historyEntry = {
+      id: `restock-${Date.now()}`,
+      date: new Date().toISOString(),
+      addedQty: addedQuantity,
+      addedCartons: calculatedAddedCartons,
+      unitPrice: newUnitBuyPrice,
+      totalAddedCost: newPurchaseCapital,
+      previousQty: existingQuantity,
+      previousCostPrice: existingUnitBuyPrice,
+      newCostPrice: updatedUnitBuyPrice,
+      newSellingPrice: restockData.newSellingPrice !== undefined && Number(restockData.newSellingPrice) > 0
+        ? Number(restockData.newSellingPrice)
+        : (prod.sellingPricePerUnit || 0),
+      notes: restockData.notes?.trim() || 'زیادکردنی بڕی نوێ (کڕینەوە)',
+    };
+
+    const updatePayload: Record<string, any> = {
+      totalUnits: updatedQuantity,
+      totalPieces: updatedQuantity,
+      cartons: updatedCartons,
+      cartonQty: updatedCartons,
+      costPricePerUnit: updatedUnitBuyPrice,
+      updatedAt: new Date().toISOString(),
+      stockHistory: arrayUnion(historyEntry),
+    };
+
+    if (restockData.newSellingPrice !== undefined && Number(restockData.newSellingPrice) > 0) {
+      updatePayload.sellingPricePerUnit = Number(restockData.newSellingPrice);
+      updatePayload.pricePerPiece = Number(restockData.newSellingPrice);
+    }
+
+    await setDoc(doc(db, 'inventory', productId), updatePayload, { merge: true });
+    playSound('success');
+
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.7 },
+      colors: ['#10b981', '#34d399', '#fbbf24'],
+    });
   };
 
   const createSale = (saleInput: {
@@ -1079,6 +1173,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         addProduct,
         updateProduct,
         deleteProduct,
+        restockProduct,
         createSale,
         updateSale,
         deleteSale,

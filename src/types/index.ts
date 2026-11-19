@@ -1,17 +1,32 @@
 export type Currency = 'IQD' | 'USD';
 
+export interface StockHistoryEntry {
+  id: string;
+  date: string;
+  addedQty: number; // بڕی دانەی نوێی کڕدراو
+  addedCartons?: number; // بڕی کارتۆنی نوێ
+  unitPrice: number; // نرخی کڕینی نوێ بۆ هەر دانەیەک
+  totalAddedCost: number; // سەرمایەی کڕینی نوێ
+  previousQty?: number; // بڕی دانەی پێشوو لە کۆگا
+  previousCostPrice?: number; // نرخی کڕینی پێشوو
+  newCostPrice?: number; // تێکڕای نرخی کڕینی نوێ (Weighted Average)
+  newSellingPrice?: number; // نرخی فرۆشتنی نوێ ئەگەر گۆڕابێت
+  notes?: string;
+}
+
 export interface Product {
   id: string;
   name: string; // ناوی کاڵا
   barcode: string; // بارکۆد یان کۆد
   category: string; // پۆلێن
-  costPricePerUnit: number; // نرخی کڕینی یەک دانە
+  costPricePerUnit: number; // نرخی کڕینی یەک دانە (Weighted Average Unit Buy Price)
   cartons: number; // بڕ بە کارتۆن
   unitsPerCarton: number; // یەکە لە هەر کارتۆنێکدا
   totalUnits: number; // کۆی گشتی دانەکان (cartons * unitsPerCarton)
   sellingPricePerUnit: number; // نرخی پێشنیارکراوی فرۆشتن بۆ هەر دانەیەک
   minStockThreshold: number; // کەمترین بڕی ئاگادارکردنەوە
   currency?: Currency; // 'IQD' | 'USD' (default 'IQD')
+  stockHistory?: StockHistoryEntry[]; // مێژووی کڕینەوە و زیادکردنی بڕ
   createdAt: string;
   updatedAt: string;
 }
