@@ -1,5 +1,22 @@
 export type Currency = 'IQD' | 'USD';
 
+export interface PurchaseHistoryEntry {
+  id: string;
+  batchNumber: number;
+  type: 'initial' | 'restock';
+  date: string;
+  addedCartons?: number;
+  addedUnits: number;
+  unitPrice: number;
+  totalCost: number;
+  currency: Currency;
+  previousQty?: number;
+  previousCostPrice?: number;
+  newCostPrice?: number;
+  newSellingPrice?: number;
+  notes?: string;
+}
+
 export interface StockHistoryEntry {
   id: string;
   date: string;
@@ -38,6 +55,7 @@ export interface Product {
   sellingPricePerUnit: number; // نرخی پێشنیارکراوی فرۆشتن بۆ هەر دانەیەک
   minStockThreshold: number; // کەمترین بڕی ئاگادارکردنەوە
   currency?: Currency; // 'IQD' | 'USD' (default 'IQD')
+  purchaseHistory?: PurchaseHistoryEntry[]; // مێژووی تەواوی کڕینەکان لە کڕینی یەکەمەوە تاوەکو دواین کڕینەوە
   stockHistory?: StockHistoryEntry[]; // مێژووی کڕینەوە و زیادکردنی بڕ
   restockHistory?: StockHistoryEntry[];
   lastRestock?: LastRestockInfo; // وردەکاری دواین کڕینەوە

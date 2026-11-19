@@ -482,5 +482,36 @@
   background: rgba(16, 185, 129, 0.55);
 }
 
+/* ==========================================================================
+   Buying & Restock Purchase History Modal Styling
+   ========================================================================== */
+.purchase-history-card {
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.purchase-history-card:hover {
+  transform: translateY(-1px);
+  border-color: rgba(6, 182, 212, 0.35);
+  box-shadow: 0 4px 15px -2px rgba(0, 0, 0, 0.5);
+}
+
+.purchase-history-badge-initial {
+  background: rgba(6, 182, 212, 0.15);
+  border: 1px solid rgba(6, 182, 212, 0.35);
+  color: #67e8f9;
+}
+
+.purchase-history-badge-restock {
+  background: rgba(16, 185, 129, 0.15);
+  border: 1px solid rgba(16, 185, 129, 0.35);
+  color: #6ee7b7;
+}
+
+.purchase-history-summary-box {
+  background: radial-gradient(circle at top right, rgba(6, 182, 212, 0.08), transparent 70%), #090d16;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
+}
+
+
 
 

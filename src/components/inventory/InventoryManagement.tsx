@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatIQD, formatUSD, formatCurrency, formatNumber, roundPrecision, formatDateKurdish } from '../../utils/formatters';
+import { getProductPurchaseHistory, getPurchaseHistorySummary } from '../../utils/purchaseHistory';
 import { Product, Currency } from '../../types';
 
 interface InventoryManagementProps {
@@ -265,41 +266,16 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     ? roundPrecision(restockUpdatedUnits / restockUnitsPerCarton, 2)
     : 0;
 
-  // Active Restock Details for Details Modal
-  const activeRestockDetails = useMemo(() => {
-    if (!viewingRestockDetailsProduct) return null;
-    const p = viewingRestockDetailsProduct;
-    if (p.lastRestock) {
-      return {
-        ...p.lastRestock,
-        productName: p.name,
-        currency: (p.lastRestock.currency || p.currency || 'IQD') as Currency,
-        unitsPerCarton: p.unitsPerCarton || 1,
-        currentStockUnits: p.totalUnits,
-        currentStockCartons: p.cartons,
-      };
-    }
-    const history = p.restockHistory || p.stockHistory;
-    if (history && history.length > 0) {
-      const latest = history[history.length - 1];
-      return {
-        date: latest.date,
-        addedUnits: latest.addedQty,
-        addedCartons: latest.addedCartons,
-        previousUnitPrice: latest.previousCostPrice || 0,
-        newPurchaseUnitPrice: latest.unitPrice,
-        updatedAveragePrice: latest.newCostPrice || p.costPricePerUnit,
-        addedTotalCost: latest.totalAddedCost,
-        currency: (p.currency || 'IQD') as Currency,
-        notes: latest.notes,
-        productName: p.name,
-        unitsPerCarton: p.unitsPerCarton || 1,
-        currentStockUnits: p.totalUnits,
-        currentStockCartons: p.cartons,
-      };
-    }
-    return null;
+  // Full Chronological Buying & Restock History for the Modal
+  const productPurchaseHistory = useMemo(() => {
+    if (!viewingRestockDetailsProduct) return [];
+    return getProductPurchaseHistory(viewingRestockDetailsProduct);
   }, [viewingRestockDetailsProduct]);
+
+  // Summary Metrics across all batches
+  const purchaseHistorySummary = useMemo(() => {
+    return getPurchaseHistorySummary(productPurchaseHistory);
+  }, [productPurchaseHistory]);
 
   return (
     <div className="space-y-6">
@@ -481,13 +457,14 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                           </button>
                           {Boolean(
                             p.lastRestock ||
+                            (p.purchaseHistory && p.purchaseHistory.length > 0) ||
                             (p.restockHistory && p.restockHistory.length > 0) ||
                             (p.stockHistory && p.stockHistory.length > 0)
                           ) && (
                             <button
                               onClick={() => setViewingRestockDetailsProduct(p)}
-                              title="وردەکاری دواین زیادکردن (Restock Details)"
-                              aria-label="وردەکاری دواین زیادکردن (Restock Details)"
+                              title="مێژووی کڕینەکانی ئەم کاڵایە (Buying History)"
+                              aria-label="مێژووی کڕینەکانی ئەم کاڵایە (Buying History)"
                               className="p-1.5 rounded-lg btn-restock-details cursor-pointer shadow-sm"
                             >
                               <Clock className="w-4 h-4" />
@@ -1149,9 +1126,9 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Restock Details Modal */}
+      {/* Complete Buying & Restock History Modal */}
       <AnimatePresence>
-        {viewingRestockDetailsProduct && activeRestockDetails && (
+        {viewingRestockDetailsProduct && (
           <div 
             className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/80 backdrop-blur-sm overflow-y-auto"
             onClick={() => setViewingRestockDetailsProduct(null)}
@@ -1161,185 +1138,215 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 10 }}
               onClick={(e) => e.stopPropagation()}
-              className="w-full max-w-lg glass-card rounded-2xl border border-cyan-500/30 p-5 sm:p-6 my-4 relative overflow-hidden shadow-2xl max-h-[92vh] overflow-y-auto"
+              className="w-full max-w-2xl glass-card rounded-2xl border border-cyan-500/30 p-5 sm:p-6 my-4 relative overflow-hidden shadow-2xl max-h-[92vh] flex flex-col"
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+              <div className="flex items-center justify-between pb-4 border-b border-slate-800 shrink-0">
                 <div className="flex items-center gap-2.5">
-                  <div className="p-2 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-sm">
+                  <div className="p-2.5 rounded-xl bg-cyan-500/15 border border-cyan-500/30 text-cyan-400 shadow-sm">
                     <Clock className="w-5 h-5" />
                   </div>
                   <div>
                     <h3 className="text-base font-bold text-white flex items-center gap-2">
-                      <span>وردەکاری دواین کڕینەوە (Restock Details)</span>
+                      <span>مێژووی کڕینەکانی ئەم کاڵایە (Buying & Restock History)</span>
                     </h3>
                     <p className="text-xs text-slate-400 mt-0.5">
-                      تۆماری دواین بار و حیساباتی تێکڕای تێچووی کڕین
+                      تۆماری تەواوی کڕینەکان لە کڕینی یەکەمەوە تاوەکو دواین کڕینەوە بە حیساباتی ورد
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setViewingRestockDetailsProduct(null)}
-                  className="text-slate-400 hover:text-white text-lg p-1 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
+                  className="text-slate-400 hover:text-white text-lg p-1.5 rounded-lg hover:bg-slate-800 transition-colors cursor-pointer"
                   title="داخستن"
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
 
-              {/* Product Badge Banner */}
-              <div className="mt-4 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center justify-between">
-                <div>
+              {/* Product Info & Current Stock Summary Banner */}
+              <div className="mt-4 p-3.5 rounded-xl bg-slate-900/90 border border-slate-800 flex flex-wrap items-center justify-between gap-3 shrink-0">
+                <div className="min-w-0">
                   <span className="text-[11px] text-slate-400 block">ناوی کاڵا:</span>
-                  <div className="text-sm font-bold text-white mt-0.5">{activeRestockDetails.productName}</div>
+                  <div className="text-sm font-bold text-white mt-0.5 truncate flex items-center gap-2">
+                    <span>{viewingRestockDetailsProduct.name}</span>
+                    <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold shrink-0 ${
+                      viewingRestockDetailsProduct.currency === 'USD'
+                        ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                        : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
+                    }`}>
+                      {viewingRestockDetailsProduct.currency === 'USD' ? '$ USD' : 'د.ع IQD'}
+                    </span>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${
-                    activeRestockDetails.currency === 'USD'
-                      ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
-                      : 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
-                  }`}>
-                    {activeRestockDetails.currency === 'USD' ? '$ USD' : 'د.ع IQD'}
-                  </span>
-                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 font-numeric">
-                    مەوجوود: {formatNumber(activeRestockDetails.currentStockUnits)} دانە
-                  </span>
+
+                <div className="flex flex-wrap items-center gap-2 text-xs">
+                  <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 font-numeric">
+                    <span className="text-slate-400">مەوجوودی ئێستا: </span>
+                    <span className="text-emerald-400 font-bold">{formatNumber(viewingRestockDetailsProduct.totalUnits)} دانە</span>
+                    <span className="text-slate-500 mr-1">({formatNumber(viewingRestockDetailsProduct.cartons)} کارتۆن)</span>
+                  </div>
+
+                  <div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/25 font-numeric text-emerald-300 font-bold">
+                    <span className="text-slate-400 font-normal">تێکڕای نرخی کڕین: </span>
+                    <span>{formatCurrency(viewingRestockDetailsProduct.costPricePerUnit, viewingRestockDetailsProduct.currency)}</span>
+                  </div>
                 </div>
               </div>
 
-              {/* 6 Key Details Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4 text-xs">
-                {/* 1. Date & Time */}
-                <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                  <div className="flex items-center gap-1.5 text-slate-400 mb-1">
-                    <Calendar className="w-3.5 h-3.5 text-cyan-400" />
-                    <span>بەرواری زیادکردن (Date & Time):</span>
-                  </div>
-                  <div className="font-bold text-white text-xs font-numeric" dir="ltr">
-                    {formatDateKurdish(activeRestockDetails.date)}
-                  </div>
-                </div>
+              {/* History Subheading & Batch Count */}
+              <div className="flex items-center justify-between px-1 mt-4 mb-2 shrink-0 text-xs">
+                <span className="text-slate-300 font-semibold flex items-center gap-1.5">
+                  <History className="w-3.5 h-3.5 text-cyan-400" />
+                  <span>لیستی بارە کڕدراوەکان بەپێی بەروار (نوێترین بۆ کۆنترین):</span>
+                </span>
+                <span className="text-cyan-400 font-numeric bg-cyan-500/10 px-2 py-0.5 rounded-md border border-cyan-500/20 font-bold text-[11px]">
+                  {productPurchaseHistory.length} بار تۆمارکراوە
+                </span>
+              </div>
 
-                {/* 2. Quantity Added */}
-                <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                  <div className="flex items-center gap-1.5 text-slate-400 mb-1">
-                    <Package className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>بڕی زیادکراو (Quantity Added):</span>
+              {/* Scrollable Purchase History List */}
+              <div className="space-y-2.5 overflow-y-auto max-h-[360px] pr-1 pl-0.5 my-1 custom-combobox-scrollbar">
+                {productPurchaseHistory.length === 0 ? (
+                  <div className="py-8 text-center text-slate-500 text-xs flex flex-col items-center gap-2">
+                    <Package className="w-8 h-8 text-slate-600" />
+                    <span>هیچ مێژوویەکی کڕین نەدۆزرایەوە</span>
                   </div>
-                  <div className="font-extrabold text-emerald-400 text-sm font-numeric">
-                    +{formatNumber(activeRestockDetails.addedUnits)} دانە
-                  </div>
-                  <div className="text-[11px] text-slate-400 font-numeric">
-                    {activeRestockDetails.addedCartons
-                      ? `(${formatNumber(activeRestockDetails.addedCartons)} کارتۆن)`
-                      : `(${formatNumber(roundPrecision(activeRestockDetails.addedUnits / activeRestockDetails.unitsPerCarton, 2))} کارتۆن)`}
-                  </div>
-                </div>
+                ) : (
+                  [...productPurchaseHistory].reverse().map((entry) => {
+                    const isInitial = entry.type === 'initial';
+                    const unitsPerCarton = viewingRestockDetailsProduct.unitsPerCarton || 1;
 
-                {/* 3. Buying Price of New Batch */}
-                <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                  <div className="text-slate-400 mb-1">نرخی کڕینی بڕە نوێیەکە:</div>
-                  <div className="font-extrabold text-cyan-300 text-sm font-numeric">
-                    {formatCurrency(activeRestockDetails.newPurchaseUnitPrice, activeRestockDetails.currency)}
+                    return (
+                      <div
+                        key={entry.id}
+                        className={`p-3.5 rounded-xl border purchase-history-card transition-all ${
+                          isInitial
+                            ? 'bg-slate-900/90 border-cyan-500/40 shadow-sm shadow-cyan-950/20'
+                            : 'bg-slate-950/80 border-slate-800/90 hover:border-slate-700'
+                        }`}
+                      >
+                        {/* Top Row: Batch Badge + Date (Right) & Total Cost (Left) */}
+                        <div className="flex items-center justify-between pb-2 border-b border-slate-800/60">
+                          <div className="flex items-center gap-2">
+                            {isInitial ? (
+                              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold purchase-history-badge-initial flex items-center gap-1">
+                                <span>#1 کڕینی یەکەم (Initial Buy)</span>
+                              </span>
+                            ) : (
+                              <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold purchase-history-badge-restock flex items-center gap-1">
+                                <span>#{entry.batchNumber} زیادکردن (Restock)</span>
+                              </span>
+                            )}
+
+                            <span className="text-[11px] text-slate-400 font-numeric flex items-center gap-1" dir="ltr">
+                              <Calendar className="w-3 h-3 text-slate-500" />
+                              <span>{formatDateKurdish(entry.date)}</span>
+                            </span>
+                          </div>
+
+                          <div className="text-left font-numeric">
+                            <span className="text-[11px] text-slate-400 ml-1">کۆی تێچوو:</span>
+                            <span className="font-extrabold text-amber-300 text-sm">
+                              {formatCurrency(entry.totalCost, entry.currency)}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Bottom Grid: Quantity & Unit Price & Weighted Avg info */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2.5 text-xs">
+                          {/* 1. Quantity Added */}
+                          <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800/60">
+                            <span className="text-[10px] text-slate-400 block mb-0.5">بڕی کڕدراو:</span>
+                            <div className="font-bold text-white text-xs font-numeric">
+                              <span className={isInitial ? 'text-cyan-300' : 'text-emerald-400'}>
+                                {!isInitial ? '+' : ''}{formatNumber(entry.addedUnits)} دانە
+                              </span>
+                              {entry.addedCartons !== undefined && (
+                                <span className="text-[11px] text-slate-400 mr-1 font-normal">
+                                  ({formatNumber(entry.addedCartons)} کارتۆن)
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 2. Unit Buying Price */}
+                          <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800/60">
+                            <span className="text-[10px] text-slate-400 block mb-0.5">نرخی کڕینی یەکە:</span>
+                            <div className="font-bold text-cyan-300 text-xs font-numeric">
+                              {formatCurrency(entry.unitPrice, entry.currency)}
+                              {unitsPerCarton > 1 && (
+                                <span className="text-[10px] text-slate-500 block font-normal">
+                                  کارتۆن: {formatCurrency(roundPrecision(entry.unitPrice * unitsPerCarton, 2), entry.currency)}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* 3. Cost Transition / Notes */}
+                          <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800/60 col-span-2 sm:col-span-1">
+                            <span className="text-[10px] text-slate-400 block mb-0.5">
+                              {isInitial ? 'دۆخی دەستپێک:' : 'تێکڕای تێچوو:'}
+                            </span>
+                            <div className="font-numeric text-xs">
+                              {isInitial ? (
+                                <span className="text-slate-300 font-medium">سەرمایەی سەرەتایی کاڵا</span>
+                              ) : (
+                                <div className="text-[11px] text-emerald-300 font-bold">
+                                  تێکڕای نوێ: {formatCurrency(entry.newCostPrice || entry.unitPrice, entry.currency)}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Optional Notes */}
+                        {entry.notes && entry.notes !== 'کڕینی یەکەمی کاڵا (Initial Purchase)' && entry.notes !== 'زیادکردنی بڕی نوێ (کڕینەوە)' && (
+                          <div className="mt-2 pt-1.5 border-t border-slate-800/50 flex items-center gap-1.5 text-[11px] text-slate-400">
+                            <FileText className="w-3 h-3 text-slate-500 shrink-0" />
+                            <span className="truncate">{entry.notes}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
+              </div>
+
+              {/* Summary Footer Box across all batches */}
+              {productPurchaseHistory.length > 0 && (
+                <div className="mt-3 p-3.5 rounded-xl bg-slate-950 purchase-history-summary-box shrink-0 space-y-2">
+                  <div className="flex items-center justify-between text-xs pb-2 border-b border-slate-800/70">
+                    <span className="text-slate-400">
+                      سەرجەم بارەکان: <strong className="text-white font-numeric">{purchaseHistorySummary.totalBatches} بار</strong>
+                    </span>
+                    <span className="text-slate-400 font-numeric">
+                      کۆی دانەی کڕدراو: <strong className="text-emerald-400 font-bold">{formatNumber(purchaseHistorySummary.totalUnitsBought)} دانە</strong>
+                      <span className="text-slate-500 mr-1">({formatNumber(purchaseHistorySummary.totalCartonsBought)} کارتۆن)</span>
+                    </span>
                   </div>
-                  {activeRestockDetails.unitsPerCarton > 1 && (
-                    <div className="text-[10px] text-slate-500 font-numeric mt-0.5">
-                      هەر کارتۆنێک: {formatCurrency(roundPrecision(activeRestockDetails.newPurchaseUnitPrice * activeRestockDetails.unitsPerCarton, 2), activeRestockDetails.currency)}
+
+                  <div className="flex items-center justify-between text-xs pt-0.5">
+                    <div className="font-numeric">
+                      <span className="text-slate-400">کۆی گشتی سەرمایەی خەرجکراو: </span>
+                      <strong className="text-amber-300 font-extrabold text-sm font-numeric">
+                        {formatCurrency(purchaseHistorySummary.totalCapitalSpent, viewingRestockDetailsProduct.currency)}
+                      </strong>
                     </div>
-                  )}
-                </div>
 
-                {/* 4. Previous Buying Price */}
-                <div className="p-3 rounded-xl bg-slate-950/70 border border-slate-800/80">
-                  <div className="text-slate-400 mb-1">نرخی کڕینی پێشوو:</div>
-                  <div className="font-bold text-slate-300 text-sm font-numeric">
-                    {formatCurrency(activeRestockDetails.previousUnitPrice, activeRestockDetails.currency)}
-                  </div>
-                  <div className="text-[10px] text-slate-500 mt-0.5">پێش کڕینی ئەم بارە</div>
-                </div>
-
-                {/* 5. New Weighted Average Unit Price */}
-                <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30">
-                  <div className="text-emerald-300 font-semibold mb-1 flex items-center gap-1">
-                    <TrendingUp className="w-3.5 h-3.5" />
-                    <span>تێکڕای نرخی کڕینی نوێ:</span>
-                  </div>
-                  <div className="font-black text-emerald-300 text-base font-numeric">
-                    {formatCurrency(activeRestockDetails.updatedAveragePrice, activeRestockDetails.currency)}
-                  </div>
-                  <div className="text-[10px] text-emerald-400/80 mt-0.5">
-                    تێچووی تێکڕا بۆ هەر دانەیەک
-                  </div>
-                </div>
-
-                {/* 6. Total Cost of Added Batch */}
-                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30">
-                  <div className="text-amber-300 font-semibold mb-1 flex items-center gap-1">
-                    <DollarSign className="w-3.5 h-3.5" />
-                    <span>کۆی بەهای بڕە زیادکراوەکە:</span>
-                  </div>
-                  <div className="font-black text-amber-300 text-base font-numeric">
-                    {formatCurrency(activeRestockDetails.addedTotalCost, activeRestockDetails.currency)}
-                  </div>
-                  <div className="text-[10px] text-amber-400/80 mt-0.5">
-                    تێچووی کڕینی ئەم بارە
-                  </div>
-                </div>
-              </div>
-
-              {/* Notes / Supplier Memo */}
-              {activeRestockDetails.notes && (
-                <div className="mt-3 p-3 rounded-xl bg-slate-900/80 border border-slate-800 flex items-start gap-2 text-xs">
-                  <FileText className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="text-[11px] text-slate-400 block font-medium">تێبینی / پسوولە:</span>
-                    <p className="text-slate-200 mt-0.5">{activeRestockDetails.notes}</p>
-                  </div>
-                </div>
-              )}
-
-              {/* Past Restocks List if more than 1 exists */}
-              {viewingRestockDetailsProduct.stockHistory && viewingRestockDetailsProduct.stockHistory.length > 1 && (
-                <div className="mt-4 pt-3 border-t border-slate-800">
-                  <span className="text-xs font-semibold text-slate-300 block mb-2">
-                    سەرجەم کڕینەوەکانی پێشوو ({viewingRestockDetailsProduct.stockHistory.length} بار):
-                  </span>
-                  <div className="p-2 rounded-xl bg-slate-950 border border-slate-800 max-h-36 overflow-y-auto">
-                    <table className="w-full text-right text-[11px]">
-                      <thead>
-                        <tr className="text-slate-500 border-b border-slate-800">
-                          <th className="py-1 px-2">بەروار</th>
-                          <th className="py-1 px-2">بڕی نوێ</th>
-                          <th className="py-1 px-2">نرخی کڕین</th>
-                          <th className="py-1 px-2">کۆی تێچوو</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-800/40">
-                        {[...viewingRestockDetailsProduct.stockHistory].reverse().map((entry) => (
-                          <tr key={entry.id} className="text-slate-300">
-                            <td className="py-1.5 px-2 text-slate-400 font-numeric" dir="ltr">
-                              {new Date(entry.date).toLocaleDateString('en-GB')}
-                            </td>
-                            <td className="py-1.5 px-2 font-numeric text-white">
-                              +{formatNumber(entry.addedQty)} دانە
-                            </td>
-                            <td className="py-1.5 px-2 font-numeric text-cyan-400">
-                              {formatCurrency(entry.unitPrice, activeRestockDetails.currency)}
-                            </td>
-                            <td className="py-1.5 px-2 font-numeric text-amber-300">
-                              {formatCurrency(entry.totalAddedCost, activeRestockDetails.currency)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                    <div className="font-numeric text-left">
+                      <span className="text-slate-400">تێکڕای گشتی نرخی کڕین: </span>
+                      <strong className="text-emerald-400 font-bold">
+                        {formatCurrency(purchaseHistorySummary.overallWeightedAverage, viewingRestockDetailsProduct.currency)}
+                      </strong>
+                    </div>
                   </div>
                 </div>
               )}
 
               {/* Modal Actions */}
-              <div className="flex items-center justify-between gap-3 pt-4 mt-4 border-t border-slate-800">
+              <div className="flex items-center justify-between gap-3 pt-3.5 mt-3 border-t border-slate-800 shrink-0">
                 <button
                   type="button"
                   onClick={() => {
@@ -1347,7 +1354,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     setViewingRestockDetailsProduct(null);
                     handleOpenRestock(p);
                   }}
-                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:text-emerald-200 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 transition-all cursor-pointer"
+                  className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold text-emerald-300 hover:text-emerald-200 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 transition-all cursor-pointer shadow-sm shadow-emerald-950/40"
                 >
                   <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
                   <span>کڕینەوەی بڕی زیاتر (+)</span>
@@ -1356,7 +1363,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                 <button
                   type="button"
                   onClick={() => setViewingRestockDetailsProduct(null)}
-                  className="px-4 py-2 rounded-xl text-xs font-bold btn-gold cursor-pointer"
+                  className="px-5 py-2 rounded-xl text-xs font-bold btn-gold cursor-pointer"
                 >
                   داخستن
                 </button>

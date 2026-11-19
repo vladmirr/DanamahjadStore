@@ -16,6 +16,7 @@ import {
   DashboardMetrics,
   AdminUser,
   Currency,
+  PurchaseHistoryEntry,
 } from '../types';
 import {
   INITIAL_PRODUCTS,
@@ -31,6 +32,7 @@ import {
   roundPrecision,
   playSound,
 } from '../utils/formatters';
+import { getProductPurchaseHistory } from '../utils/purchaseHistory';
 import { exportAllDataToExcel } from '../utils/excelExport';
 import { loadLocalPopcornData, saveLocalPopcornData, syncPopcornDataToCloud } from '../services/popcornStorage';
 
@@ -252,19 +254,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const costPricePerUnit = Number(data.costPricePerUnit) || 0;
           const minStockThreshold = Number(data.minStockThreshold) || 5;
           const currency: Currency = data.currency === 'USD' ? 'USD' : 'IQD';
-          const rawHistory = Array.isArray(data.stockHistory) 
-            ? data.stockHistory 
-            : (Array.isArray(data.restockHistory) ? data.restockHistory : []);
-          const lastRestock = data.lastRestock || (rawHistory.length > 0 ? {
-            date: rawHistory[rawHistory.length - 1].date,
-            addedCartons: rawHistory[rawHistory.length - 1].addedCartons,
-            addedUnits: rawHistory[rawHistory.length - 1].addedQty,
-            previousUnitPrice: rawHistory[rawHistory.length - 1].previousCostPrice || 0,
-            newPurchaseUnitPrice: rawHistory[rawHistory.length - 1].unitPrice,
-            updatedAveragePrice: rawHistory[rawHistory.length - 1].newCostPrice || costPricePerUnit,
-            addedTotalCost: rawHistory[rawHistory.length - 1].totalAddedCost,
+          const purchaseHistory = getProductPurchaseHistory({
+            ...data,
+            id: d.id,
+            cartons,
+            unitsPerCarton,
+            totalUnits,
+            costPricePerUnit,
+            sellingPricePerUnit,
             currency,
-            notes: rawHistory[rawHistory.length - 1].notes,
+            createdAt: data.createdAt,
+          });
+          const rawHistory = Array.isArray(data.purchaseHistory) && data.purchaseHistory.length > 0
+            ? data.purchaseHistory
+            : (Array.isArray(data.stockHistory) 
+                ? data.stockHistory 
+                : (Array.isArray(data.restockHistory) ? data.restockHistory : []));
+          const restockOnlyEntries = purchaseHistory.filter((h) => h.type === 'restock');
+          const lastRestock = data.lastRestock || (restockOnlyEntries.length > 0 ? {
+            date: restockOnlyEntries[restockOnlyEntries.length - 1].date,
+            addedCartons: restockOnlyEntries[restockOnlyEntries.length - 1].addedCartons,
+            addedUnits: restockOnlyEntries[restockOnlyEntries.length - 1].addedUnits,
+            previousUnitPrice: restockOnlyEntries[restockOnlyEntries.length - 1].previousCostPrice || 0,
+            newPurchaseUnitPrice: restockOnlyEntries[restockOnlyEntries.length - 1].unitPrice,
+            updatedAveragePrice: restockOnlyEntries[restockOnlyEntries.length - 1].newCostPrice || costPricePerUnit,
+            addedTotalCost: restockOnlyEntries[restockOnlyEntries.length - 1].totalCost,
+            currency,
+            notes: restockOnlyEntries[restockOnlyEntries.length - 1].notes,
           } : undefined);
 
           return {
@@ -282,6 +298,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             costPricePerUnit,
             minStockThreshold,
             currency,
+            purchaseHistory,
             stockHistory: rawHistory,
             restockHistory: rawHistory,
             lastRestock,
@@ -368,6 +385,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const costPricePerUnit = Number(item.costPricePerUnit) || 0;
     const currency: Currency = item.currency === 'USD' ? 'USD' : 'IQD';
 
+    const initialTotalCost = roundPrecision(totalUnits * costPricePerUnit, 2);
+    const initialPurchaseEntry: PurchaseHistoryEntry = {
+      id: `purchase-init-${Date.now()}`,
+      batchNumber: 1,
+      type: 'initial',
+      date: item.createdAt || new Date().toISOString(),
+      addedCartons: cartons,
+      addedUnits: totalUnits,
+      unitPrice: costPricePerUnit,
+      totalCost: initialTotalCost,
+      currency,
+      notes: 'کڕینی یەکەمی کاڵا (Initial Purchase)',
+    };
+
     const cleanItem = {
       ...item,
       id,
@@ -383,6 +414,33 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       costPricePerUnit,
       minStockThreshold: item.minStockThreshold || 5,
       currency,
+      purchaseHistory: [initialPurchaseEntry],
+      stockHistory: [
+        {
+          id: initialPurchaseEntry.id,
+          date: initialPurchaseEntry.date,
+          addedQty: totalUnits,
+          addedCartons: cartons,
+          unitPrice: costPricePerUnit,
+          totalAddedCost: initialTotalCost,
+          newCostPrice: costPricePerUnit,
+          newSellingPrice: sellingPricePerUnit,
+          notes: initialPurchaseEntry.notes,
+        },
+      ],
+      restockHistory: [
+        {
+          id: initialPurchaseEntry.id,
+          date: initialPurchaseEntry.date,
+          addedQty: totalUnits,
+          addedCartons: cartons,
+          unitPrice: costPricePerUnit,
+          totalAddedCost: initialTotalCost,
+          newCostPrice: costPricePerUnit,
+          newSellingPrice: sellingPricePerUnit,
+          notes: initialPurchaseEntry.notes,
+        },
+      ],
       createdAt: item.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -525,13 +583,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       : roundPrecision(addedQuantity / unitsPerCarton, 2);
     const updatedCartons = Math.max(0, roundPrecision(updatedQuantity / unitsPerCarton, 2));
 
-    const historyEntry = {
+    const currentHistory = getProductPurchaseHistory(prod);
+    const nextBatchNumber = currentHistory.length + 1;
+
+    const historyEntry: PurchaseHistoryEntry = {
       id: `restock-${Date.now()}`,
+      batchNumber: nextBatchNumber,
+      type: 'restock',
       date: new Date().toISOString(),
-      addedQty: addedQuantity,
+      addedUnits: addedQuantity,
       addedCartons: calculatedAddedCartons,
       unitPrice: newUnitBuyPrice,
-      totalAddedCost: newPurchaseCapital,
+      totalCost: newPurchaseCapital,
+      currency,
       previousQty: existingQuantity,
       previousCostPrice: existingUnitBuyPrice,
       newCostPrice: updatedUnitBuyPrice,
@@ -540,6 +604,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         : (prod.sellingPricePerUnit || 0),
       notes: restockData.notes?.trim() || 'زیادکردنی بڕی نوێ (کڕینەوە)',
     };
+
+    const stockLegacyEntry = {
+      id: historyEntry.id,
+      date: historyEntry.date,
+      addedQty: addedQuantity,
+      addedCartons: calculatedAddedCartons,
+      unitPrice: newUnitBuyPrice,
+      totalAddedCost: newPurchaseCapital,
+      previousQty: existingQuantity,
+      previousCostPrice: existingUnitBuyPrice,
+      newCostPrice: updatedUnitBuyPrice,
+      newSellingPrice: historyEntry.newSellingPrice,
+      notes: historyEntry.notes,
+    };
+
+    const updatedPurchaseHistory = [...currentHistory, historyEntry];
 
     const lastRestock = {
       date: historyEntry.date,
@@ -561,8 +641,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       costPricePerUnit: updatedUnitBuyPrice,
       updatedAt: new Date().toISOString(),
       lastRestock,
-      stockHistory: arrayUnion(historyEntry),
-      restockHistory: arrayUnion(historyEntry),
+      purchaseHistory: updatedPurchaseHistory,
+      stockHistory: arrayUnion(stockLegacyEntry),
+      restockHistory: arrayUnion(stockLegacyEntry),
     };
 
     if (restockData.newSellingPrice !== undefined && Number(restockData.newSellingPrice) > 0) {
