@@ -210,7 +210,12 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
   // Submit Restock Form
   const handleSaveRestock = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!restockingProduct || restockInputQty <= 0) return;
+    if (!restockingProduct) return;
+
+    if (restockInputQty <= 0) {
+      alert('تکایە بڕی نوێی کڕدراو دیاری بکە (دەبێت لە ٠ زیاتر بێت)');
+      return;
+    }
 
     try {
       setIsSubmittingRestock(true);
@@ -222,8 +227,9 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
         notes: restockNotes,
       });
       setRestockingProduct(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to restock product:', err);
+      alert(`کێشەیەک ڕوویدا لە کاتی زیادکردنی بار: ${err?.message || err}`);
     } finally {
       setIsSubmittingRestock(false);
     }
@@ -905,7 +911,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     step="any"
                     inputMode="decimal"
                     required
-                    min="0.01"
+                    min="0.0001"
                     autoFocus
                     value={restockQty}
                     onChange={(e) => setRestockQty(e.target.value)}
@@ -933,7 +939,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                     step="any"
                     inputMode="decimal"
                     required
-                    min="0.0001"
+                    min="0"
                     value={restockBuyPrice}
                     onChange={(e) => setRestockBuyPrice(e.target.value)}
                     onFocus={(e) => e.target.select()}

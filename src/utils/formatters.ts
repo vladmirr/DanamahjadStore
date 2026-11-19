@@ -171,3 +171,25 @@ export function playSound(type: 'success' | 'click' | 'error' | 'delete') {
     // Ignore audio failures if browser blocks autoplay
   }
 }
+
+/**
+ * Recursively removes all undefined keys and values from an object or array
+ * so that Firebase Firestore setDoc/updateDoc never throws "Unsupported field value: undefined"
+ */
+export function cleanForFirestore<T>(data: T): T {
+  if (data === null || data === undefined) return data;
+  if (Array.isArray(data)) {
+    return data.map((item) => cleanForFirestore(item)) as unknown as T;
+  }
+  if (typeof data === 'object' && !(data instanceof Date)) {
+    const cleaned: Record<string, any> = {};
+    for (const [key, value] of Object.entries(data as Record<string, any>)) {
+      if (value !== undefined) {
+        cleaned[key] = cleanForFirestore(value);
+      }
+    }
+    return cleaned as T;
+  }
+  return data;
+}
+

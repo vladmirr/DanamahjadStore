@@ -40,7 +40,7 @@ export function getProductPurchaseHistory(product: Product | any): PurchaseHisto
       const unitPrice = Number(entry.unitPrice) || 0;
       const totalCost = Number(entry.totalCost ?? entry.totalAddedCost) || (addedUnits * unitPrice);
 
-      return {
+      const itemObj: PurchaseHistoryEntry = {
         id: entry.id || `batch-${index + 1}`,
         batchNumber: entry.batchNumber || (index + 1),
         type: isInitial ? 'initial' : 'restock',
@@ -50,12 +50,15 @@ export function getProductPurchaseHistory(product: Product | any): PurchaseHisto
         unitPrice: roundPrecision(unitPrice, 2),
         totalCost: roundPrecision(totalCost, 2),
         currency: (entry.currency || currency) as Currency,
-        previousQty: entry.previousQty,
-        previousCostPrice: entry.previousCostPrice,
-        newCostPrice: entry.newCostPrice,
-        newSellingPrice: entry.newSellingPrice,
         notes: entry.notes || (isInitial ? 'کڕینی یەکەمی کاڵا (Initial Purchase)' : 'زیادکردنی بڕی نوێ (کڕینەوە)'),
       };
+
+      if (entry.previousQty !== undefined && entry.previousQty !== null) itemObj.previousQty = Number(entry.previousQty);
+      if (entry.previousCostPrice !== undefined && entry.previousCostPrice !== null) itemObj.previousCostPrice = Number(entry.previousCostPrice);
+      if (entry.newCostPrice !== undefined && entry.newCostPrice !== null) itemObj.newCostPrice = Number(entry.newCostPrice);
+      if (entry.newSellingPrice !== undefined && entry.newSellingPrice !== null) itemObj.newSellingPrice = Number(entry.newSellingPrice);
+
+      return itemObj;
     });
   } else {
     // Dynamically reconstruct Entry #1 (Initial Purchase) for backward compatibility
@@ -67,7 +70,7 @@ export function getProductPurchaseHistory(product: Product | any): PurchaseHisto
       const unitPrice = Number(entry.unitPrice) || 0;
       const totalCost = Number(entry.totalCost ?? entry.totalAddedCost) || (addedUnits * unitPrice);
 
-      return {
+      const restockObj: PurchaseHistoryEntry = {
         id: entry.id || `restock-${idx + 1}`,
         batchNumber: idx + 2,
         type: 'restock',
@@ -77,12 +80,15 @@ export function getProductPurchaseHistory(product: Product | any): PurchaseHisto
         unitPrice: roundPrecision(unitPrice, 2),
         totalCost: roundPrecision(totalCost, 2),
         currency: (entry.currency || currency) as Currency,
-        previousQty: entry.previousQty,
-        previousCostPrice: entry.previousCostPrice,
-        newCostPrice: entry.newCostPrice,
-        newSellingPrice: entry.newSellingPrice,
         notes: entry.notes || 'زیادکردنی بڕی نوێ (کڕینەوە)',
       };
+
+      if (entry.previousQty !== undefined && entry.previousQty !== null) restockObj.previousQty = Number(entry.previousQty);
+      if (entry.previousCostPrice !== undefined && entry.previousCostPrice !== null) restockObj.previousCostPrice = Number(entry.previousCostPrice);
+      if (entry.newCostPrice !== undefined && entry.newCostPrice !== null) restockObj.newCostPrice = Number(entry.newCostPrice);
+      if (entry.newSellingPrice !== undefined && entry.newSellingPrice !== null) restockObj.newSellingPrice = Number(entry.newSellingPrice);
+
+      return restockObj;
     });
 
     const firstRestock = rawList[0] || product.lastRestock;

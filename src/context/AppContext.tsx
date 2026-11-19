@@ -31,6 +31,7 @@ import {
   generateVoucherNumber,
   roundPrecision,
   playSound,
+  cleanForFirestore,
 } from '../utils/formatters';
 import { getProductPurchaseHistory } from '../utils/purchaseHistory';
 import { exportAllDataToExcel } from '../utils/excelExport';
@@ -444,7 +445,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: item.createdAt || new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
-    await setDoc(doc(db, 'inventory', id), cleanItem);
+    await setDoc(doc(db, 'inventory', id), cleanForFirestore(cleanItem));
     playSound('success');
   };
 
@@ -633,6 +634,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes: restockData.notes?.trim() || '',
     };
 
+    const cleanStockEntry = cleanForFirestore(stockLegacyEntry);
+
     const updatePayload: Record<string, any> = {
       totalUnits: updatedQuantity,
       totalPieces: updatedQuantity,
@@ -640,10 +643,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       cartonQty: updatedCartons,
       costPricePerUnit: updatedUnitBuyPrice,
       updatedAt: new Date().toISOString(),
-      lastRestock,
-      purchaseHistory: updatedPurchaseHistory,
-      stockHistory: arrayUnion(stockLegacyEntry),
-      restockHistory: arrayUnion(stockLegacyEntry),
+      lastRestock: cleanForFirestore(lastRestock),
+      purchaseHistory: cleanForFirestore(updatedPurchaseHistory),
+      stockHistory: arrayUnion(cleanStockEntry),
+      restockHistory: arrayUnion(cleanStockEntry),
     };
 
     if (restockData.newSellingPrice !== undefined && Number(restockData.newSellingPrice) > 0) {
@@ -651,7 +654,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatePayload.pricePerPiece = Number(restockData.newSellingPrice);
     }
 
-    await setDoc(doc(db, 'inventory', productId), updatePayload, { merge: true });
+    await setDoc(doc(db, 'inventory', productId), cleanForFirestore(updatePayload), { merge: true });
     playSound('success');
 
     confetti({
