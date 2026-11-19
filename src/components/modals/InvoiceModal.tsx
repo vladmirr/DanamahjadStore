@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Printer, X, CheckCircle } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatCurrency, formatDateKurdish } from '../../utils/formatters';
+import { formatIQD, formatCurrency, formatDateKurdish, formatNumber } from '../../utils/formatters';
 
 export const InvoiceModal: React.FC = () => {
   const { viewingInvoice, setViewingInvoice } = useApp();
@@ -135,7 +135,7 @@ export const InvoiceModal: React.FC = () => {
                     <td className="py-2.5 px-1.5 text-slate-400 print:text-slate-700">
                       {item.unitType === 'carton' ? 'کارتۆن' : 'دانە'}
                     </td>
-                    <td className="py-2.5 px-1.5 font-bold font-numeric">{item.quantity}</td>
+                    <td className="py-2.5 px-1.5 font-bold font-numeric">{formatNumber(item.quantity)}</td>
                     <td className="py-2.5 px-1.5 font-numeric">{formatCurrency(item.unitPrice, invCurrency)}</td>
                     <td className="py-2.5 px-1.5 text-left font-bold font-numeric">
                       {formatCurrency(item.total, invCurrency)}

@@ -249,11 +249,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const items = snapshot.docs.map((d) => {
           const data = d.data();
           const cartons = roundPrecision(Number(data.cartons ?? data.cartonQty) || 0, 2);
-          const unitsPerCarton = Number(data.unitsPerCarton ?? data.piecesPerCarton) || 1;
+          const unitsPerCarton = Math.max(1, roundPrecision(Number(data.unitsPerCarton ?? data.piecesPerCarton) || 1, 2));
           const totalUnits = roundPrecision(Number(data.totalUnits ?? data.totalPieces) || (cartons * unitsPerCarton), 2);
-          const sellingPricePerUnit = Number(data.sellingPricePerUnit ?? data.pricePerPiece) || 0;
-          const costPricePerUnit = Number(data.costPricePerUnit) || 0;
-          const minStockThreshold = Number(data.minStockThreshold) || 5;
+          const sellingPricePerUnit = roundPrecision(Number(data.sellingPricePerUnit ?? data.pricePerPiece) || 0, 2);
+          const costPricePerUnit = roundPrecision(Number(data.costPricePerUnit) || 0, 2);
+          const minStockThreshold = roundPrecision(Number(data.minStockThreshold) || 5, 2);
           const currency: Currency = data.currency === 'USD' ? 'USD' : 'IQD';
           const purchaseHistory = getProductPurchaseHistory({
             ...data,
@@ -379,11 +379,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 2. Direct Cloud Writers (No local-only writes)
   const addItem = async (item: any) => {
     const id = item.id ? String(item.id) : `prod-${Date.now()}`;
-    const cartons = Number(item.cartons ?? item.cartonQty) || 0;
-    const unitsPerCarton = Number(item.unitsPerCarton ?? item.piecesPerCarton) || 1;
-    const totalUnits = Number(item.totalUnits ?? item.totalPieces) || cartons * unitsPerCarton;
-    const sellingPricePerUnit = Number(item.sellingPricePerUnit ?? item.pricePerPiece) || 0;
-    const costPricePerUnit = Number(item.costPricePerUnit) || 0;
+    const cartons = roundPrecision(Number(item.cartons ?? item.cartonQty) || 0, 2);
+    const unitsPerCarton = Math.max(1, roundPrecision(Number(item.unitsPerCarton ?? item.piecesPerCarton) || 1, 2));
+    const totalUnits = roundPrecision(Number(item.totalUnits ?? item.totalPieces) || (cartons * unitsPerCarton), 2);
+    const sellingPricePerUnit = roundPrecision(Number(item.sellingPricePerUnit ?? item.pricePerPiece) || 0, 2);
+    const costPricePerUnit = roundPrecision(Number(item.costPricePerUnit) || 0, 2);
     const currency: Currency = item.currency === 'USD' ? 'USD' : 'IQD';
 
     const initialTotalCost = roundPrecision(totalUnits * costPricePerUnit, 2);
@@ -415,6 +415,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       costPricePerUnit,
       minStockThreshold: item.minStockThreshold || 5,
       currency,
+      // Dedicated Immutable Original Purchase Fields (never reduced by sales)
+      initialCartons: cartons,
+      initialUnits: totalUnits,
+      initialBuyPrice: costPricePerUnit,
+      initialTotalCost: initialTotalCost,
       purchaseHistory: [initialPurchaseEntry],
       stockHistory: [
         {
@@ -453,9 +458,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (!item.id) return;
     const id = String(item.id);
     const cartons = item.cartons !== undefined || item.cartonQty !== undefined 
-      ? Number(item.cartons ?? item.cartonQty) : undefined;
+      ? roundPrecision(Number(item.cartons ?? item.cartonQty), 2) : undefined;
     const unitsPerCarton = item.unitsPerCarton !== undefined || item.piecesPerCarton !== undefined 
-      ? Number(item.unitsPerCarton ?? item.piecesPerCarton) : undefined;
+      ? Math.max(1, roundPrecision(Number(item.unitsPerCarton ?? item.piecesPerCarton), 2)) : undefined;
 
     const payload: any = {
       ...item,
@@ -466,6 +471,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     if (item.currency !== undefined) {
       payload.currency = item.currency === 'USD' ? 'USD' : 'IQD';
     }
+    if (item.costPricePerUnit !== undefined) {
+      payload.costPricePerUnit = roundPrecision(Number(item.costPricePerUnit), 2);
+    }
+    if (item.sellingPricePerUnit !== undefined || item.pricePerPiece !== undefined) {
+      const sp = roundPrecision(Number(item.sellingPricePerUnit ?? item.pricePerPiece), 2);
+      payload.sellingPricePerUnit = sp;
+      payload.pricePerPiece = sp;
+    }
     if (cartons !== undefined) {
       payload.cartons = cartons;
       payload.cartonQty = cartons;
@@ -475,11 +488,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       payload.piecesPerCarton = unitsPerCarton;
     }
     if (cartons !== undefined && unitsPerCarton !== undefined) {
-      payload.totalUnits = cartons * unitsPerCarton;
-      payload.totalPieces = cartons * unitsPerCarton;
+      const tu = roundPrecision(cartons * unitsPerCarton, 2);
+      payload.totalUnits = tu;
+      payload.totalPieces = tu;
     }
 
-    await setDoc(doc(db, 'inventory', id), payload, { merge: true });
+    await setDoc(doc(db, 'inventory', id), cleanForFirestore(payload), { merge: true });
     playSound('success');
   };
 
@@ -996,9 +1010,50 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     playSound('delete');
   };
 
-  // Aliases for components
-  const products = inventory as unknown as Product[];
+  // Aliases for components with dynamically computed purchase history accounting for sold units
+  const products = useMemo(() => {
+    return (inventory as unknown as Product[]).map((item) => ({
+      ...item,
+      purchaseHistory: getProductPurchaseHistory(item, sales),
+    }));
+  }, [inventory, sales]);
+
   const payments = debts as unknown as PaymentVoucher[];
+
+  // Automatic backfill for older products in Firestore lacking immutable initial purchase fields or with float noise
+  useEffect(() => {
+    if (inventory.length === 0) return;
+
+    inventory.forEach((item) => {
+      const needsInitialBackfill = item.initialUnits === undefined || Number(item.initialUnits) <= 0;
+      const hasFloatNoise = (typeof item.cartons === 'number' && item.cartons.toString().includes('0000000000')) ||
+        (typeof item.totalUnits === 'number' && item.totalUnits.toString().includes('0000000000')) ||
+        (typeof item.cartonQty === 'number' && item.cartonQty.toString().includes('0000000000')) ||
+        (typeof item.totalPieces === 'number' && item.totalPieces.toString().includes('0000000000'));
+
+      if (needsInitialBackfill || hasFloatNoise) {
+        const fullHistory = getProductPurchaseHistory(item, sales);
+        const initial = fullHistory[0];
+        if (initial) {
+          const updatePayload: Record<string, any> = {
+            initialUnits: roundPrecision(initial.addedUnits, 2),
+            initialCartons: roundPrecision(initial.addedCartons, 2),
+            initialBuyPrice: roundPrecision(initial.unitPrice, 2),
+            initialTotalCost: roundPrecision(initial.totalCost, 2),
+            purchaseHistory: cleanForFirestore(fullHistory),
+          };
+          if (hasFloatNoise) {
+            updatePayload.cartons = roundPrecision(item.cartons, 2);
+            updatePayload.cartonQty = roundPrecision(item.cartons, 2);
+            updatePayload.totalUnits = roundPrecision(item.totalUnits, 2);
+            updatePayload.totalPieces = roundPrecision(item.totalUnits, 2);
+          }
+          setDoc(doc(db, 'inventory', item.id), cleanForFirestore(updatePayload), { merge: true })
+            .catch((err) => console.error('Backfill error for', item.name, err));
+        }
+      }
+    });
+  }, [inventory, sales]);
 
   // Computed ledgers and metrics directly from Firestore state
   const customers = useMemo<CustomerDebtSummary[]>(() => {

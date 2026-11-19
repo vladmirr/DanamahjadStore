@@ -55,6 +55,11 @@ export interface Product {
   sellingPricePerUnit: number; // نرخی پێشنیارکراوی فرۆشتن بۆ هەر دانەیەک
   minStockThreshold: number; // کەمترین بڕی ئاگادارکردنەوە
   currency?: Currency; // 'IQD' | 'USD' (default 'IQD')
+  // Immutable initial purchase fields (NEVER decreased by sales)
+  initialCartons?: number; // بڕی کارتۆنی کڕدراو لە ڕۆژی یەکەم
+  initialUnits?: number; // بڕی دانەی کڕدراو لە ڕۆژی یەکەم
+  initialBuyPrice?: number; // نرخی کڕینی سەرەتایی لە ڕۆژی یەکەم
+  initialTotalCost?: number; // سەرمایەی سەرەتایی خەرجکراو لە ڕۆژی یەکەم
   purchaseHistory?: PurchaseHistoryEntry[]; // مێژووی تەواوی کڕینەکان لە کڕینی یەکەمەوە تاوەکو دواین کڕینەوە
   stockHistory?: StockHistoryEntry[]; // مێژووی کڕینەوە و زیادکردنی بڕ
   restockHistory?: StockHistoryEntry[];

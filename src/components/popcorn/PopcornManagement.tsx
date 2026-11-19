@@ -646,7 +646,7 @@ export const PopcornManagement: React.FC = () => {
     setEditingTruck(truck);
     setTruckForm({
       plateNumber: truck.plateNumber,
-      tonsCarried: String(truck.tonsCarried),
+      tonsCarried: String(roundPrecision(truck.tonsCarried, 2)),
       driverName: truck.driverName,
       destination: truck.destination || '',
       dispatchDate: truck.dispatchDate,

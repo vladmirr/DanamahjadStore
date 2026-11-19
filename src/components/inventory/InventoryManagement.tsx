@@ -36,7 +36,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
   isAddModalOpen,
   setIsAddModalOpen,
 }) => {
-  const { products, addProduct, updateProduct, deleteProduct, restockProduct, metrics } = useApp();
+  const { products, addProduct, updateProduct, deleteProduct, restockProduct, metrics, sales } = useApp();
 
   // Search & Filter State
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,11 +143,11 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
       name: p.name,
       barcode: p.barcode,
       category: p.category,
-      costPricePerUnit: p.costPricePerUnit.toString(),
-      cartons: p.cartons.toString(),
-      unitsPerCarton: p.unitsPerCarton.toString(),
-      sellingPricePerUnit: p.sellingPricePerUnit.toString(),
-      minStockThreshold: p.minStockThreshold.toString(),
+      costPricePerUnit: roundPrecision(p.costPricePerUnit, 2).toString(),
+      cartons: roundPrecision(p.cartons, 2).toString(),
+      unitsPerCarton: roundPrecision(p.unitsPerCarton, 2).toString(),
+      sellingPricePerUnit: roundPrecision(p.sellingPricePerUnit, 2).toString(),
+      minStockThreshold: roundPrecision(p.minStockThreshold, 2).toString(),
       currency: p.currency || 'IQD',
     });
     setIsAddModalOpen(true);
@@ -158,12 +158,12 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     e.preventDefault();
     if (!formData.name.trim()) return;
 
-    const costPricePerUnit = Number(formData.costPricePerUnit) || 0;
-    const cartons = Number(formData.cartons) || 0;
-    const unitsPerCarton = Number(formData.unitsPerCarton) || 1;
-    const sellingPricePerUnit = Number(formData.sellingPricePerUnit) || costPricePerUnit * 1.25;
-    const minStockThreshold = Number(formData.minStockThreshold) || 20;
-    const totalUnits = Math.round(cartons * unitsPerCarton * 100) / 100;
+    const costPricePerUnit = roundPrecision(Number(formData.costPricePerUnit) || 0, 2);
+    const cartons = roundPrecision(Number(formData.cartons) || 0, 2);
+    const unitsPerCarton = Math.max(1, roundPrecision(Number(formData.unitsPerCarton) || 1, 2));
+    const sellingPricePerUnit = roundPrecision(Number(formData.sellingPricePerUnit) || costPricePerUnit * 1.25, 2);
+    const minStockThreshold = roundPrecision(Number(formData.minStockThreshold) || 20, 2);
+    const totalUnits = roundPrecision(cartons * unitsPerCarton, 2);
     const currency = formData.currency || 'IQD';
 
     if (editingProduct) {
@@ -201,8 +201,8 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     setRestockingProduct(p);
     setRestockUnitType('carton');
     setRestockQty('');
-    setRestockBuyPrice(p.costPricePerUnit ? p.costPricePerUnit.toString() : '0');
-    setRestockSellPrice(p.sellingPricePerUnit ? p.sellingPricePerUnit.toString() : '0');
+    setRestockBuyPrice(p.costPricePerUnit ? roundPrecision(p.costPricePerUnit, 2).toString() : '0');
+    setRestockSellPrice(p.sellingPricePerUnit ? roundPrecision(p.sellingPricePerUnit, 2).toString() : '0');
     setRestockNotes('');
     setShowHistory(false);
   };
@@ -220,10 +220,10 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     try {
       setIsSubmittingRestock(true);
       await restockProduct(restockingProduct.id, {
-        addedQty: restockAddedUnits,
-        addedCartons: restockAddedCartons,
-        newUnitBuyPrice: restockNewUnitBuyPrice,
-        newSellingPrice: restockNewSellingPrice > 0 ? restockNewSellingPrice : undefined,
+        addedQty: roundPrecision(restockAddedUnits, 2),
+        addedCartons: roundPrecision(restockAddedCartons, 2),
+        newUnitBuyPrice: roundPrecision(restockNewUnitBuyPrice, 2),
+        newSellingPrice: restockNewSellingPrice > 0 ? roundPrecision(restockNewSellingPrice, 2) : undefined,
         notes: restockNotes,
       });
       setRestockingProduct(null);
@@ -236,18 +236,24 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
   };
 
   // Calculated preview in modal
-  const calcCartons = Number(formData.cartons) || 0;
-  const calcUnitsPerCarton = Number(formData.unitsPerCarton) || 0;
-  const calcTotalUnits = Math.round(calcCartons * calcUnitsPerCarton * 100) / 100;
-  const calcCostUnit = Number(formData.costPricePerUnit) || 0;
+  const calcCartons = roundPrecision(Number(formData.cartons) || 0, 2);
+  const calcUnitsPerCarton = Math.max(0, roundPrecision(Number(formData.unitsPerCarton) || 0, 2));
+  const calcTotalUnits = roundPrecision(calcCartons * calcUnitsPerCarton, 2);
+  const calcCostUnit = roundPrecision(Number(formData.costPricePerUnit) || 0, 2);
 
   // Live calculations for Restock Modal
-  const restockUnitsPerCarton = restockingProduct?.unitsPerCarton || 1;
+  const restockUnitsPerCarton = Math.max(1, restockingProduct?.unitsPerCarton || 1);
   const restockInputQty = Number(restockQty) || 0;
-  const restockAddedUnits = restockUnitType === 'carton' ? restockInputQty * restockUnitsPerCarton : restockInputQty;
-  const restockAddedCartons = restockUnitType === 'carton'
-    ? restockInputQty
-    : (restockUnitsPerCarton > 0 ? restockInputQty / restockUnitsPerCarton : 0);
+  const restockAddedUnits = roundPrecision(
+    restockUnitType === 'carton' ? restockInputQty * restockUnitsPerCarton : restockInputQty,
+    2
+  );
+  const restockAddedCartons = roundPrecision(
+    restockUnitType === 'carton'
+      ? restockInputQty
+      : (restockUnitsPerCarton > 0 ? restockInputQty / restockUnitsPerCarton : 0),
+    2
+  );
   const restockNewUnitBuyPrice = Number(restockBuyPrice) || 0;
   const restockNewSellingPrice = Number(restockSellPrice) || 0;
 
@@ -272,11 +278,11 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
     ? roundPrecision(restockUpdatedUnits / restockUnitsPerCarton, 2)
     : 0;
 
-  // Full Chronological Buying & Restock History for the Modal
+  // Full Chronological Buying & Restock History for the Modal (accounting for sold units)
   const productPurchaseHistory = useMemo(() => {
     if (!viewingRestockDetailsProduct) return [];
-    return getProductPurchaseHistory(viewingRestockDetailsProduct);
-  }, [viewingRestockDetailsProduct]);
+    return getProductPurchaseHistory(viewingRestockDetailsProduct, sales);
+  }, [viewingRestockDetailsProduct, sales]);
 
   // Summary Metrics across all batches
   const purchaseHistorySummary = useMemo(() => {
@@ -427,7 +433,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                         {formatNumber(p.cartons)} CTN
                       </td>
                       <td className="py-3 px-4 text-slate-300 font-numeric">
-                        {p.unitsPerCarton} دانە
+                        {formatNumber(p.unitsPerCarton)} دانە
                       </td>
                       <td className="py-3 px-4 font-bold text-white font-numeric">
                         {formatNumber(p.totalUnits)}
@@ -442,7 +448,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                         {isLow ? (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-rose-500/15 text-rose-400 border border-rose-500/30">
                             <AlertTriangle className="w-3 h-3" />
-                            کەمە ({p.totalUnits})
+                            کەمە ({formatNumber(p.totalUnits)})
                           </span>
                         ) : (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
@@ -651,9 +657,9 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                         کۆی گشتی دانەکان (خۆکار)
                       </label>
                       <div className="w-full bg-emerald-500/10 border border-emerald-500/30 rounded-lg px-3 py-2 text-xs text-emerald-300 font-bold font-numeric flex items-center justify-between">
-                        <span>{calcTotalUnits} دانە</span>
+                        <span>{formatNumber(calcTotalUnits)} دانە</span>
                         <span className="text-[10px] text-emerald-500 font-normal">
-                          {calcCartons} × {calcUnitsPerCarton}
+                          {formatNumber(calcCartons)} × {formatNumber(calcUnitsPerCarton)}
                         </span>
                       </div>
                     </div>
@@ -840,7 +846,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                   <div>
                     <span className="text-[11px] text-slate-400 block">یەکە لە کارتۆن:</span>
                     <span className="font-bold text-slate-200 font-numeric">
-                      {restockingProduct.unitsPerCarton} دانە
+                      {formatNumber(restockingProduct.unitsPerCarton)} دانە
                     </span>
                   </div>
                   <div>
@@ -1189,7 +1195,7 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
 
                 <div className="flex flex-wrap items-center gap-2 text-xs">
                   <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700/60 font-numeric">
-                    <span className="text-slate-400">مەوجوودی ئێستا: </span>
+                    <span className="text-slate-400">مەوجوودی ئێستای کۆگا: </span>
                     <span className="text-emerald-400 font-bold">{formatNumber(viewingRestockDetailsProduct.totalUnits)} دانە</span>
                     <span className="text-slate-500 mr-1">({formatNumber(viewingRestockDetailsProduct.cartons)} کارتۆن)</span>
                   </div>
@@ -1264,7 +1270,9 @@ export const InventoryManagement: React.FC<InventoryManagementProps> = ({
                         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 mt-2.5 text-xs">
                           {/* 1. Quantity Added */}
                           <div className="p-2 rounded-lg bg-slate-900/60 border border-slate-800/60">
-                            <span className="text-[10px] text-slate-400 block mb-0.5">بڕی کڕدراو:</span>
+                            <span className="text-[10px] text-slate-400 block mb-0.5">
+                              {isInitial ? 'بڕی کڕدراوی سەرەتایی:' : 'بڕی زیادکراو (Restock):'}
+                            </span>
                             <div className="font-bold text-white text-xs font-numeric">
                               <span className={isInitial ? 'text-cyan-300' : 'text-emerald-400'}>
                                 {!isInitial ? '+' : ''}{formatNumber(entry.addedUnits)} دانە

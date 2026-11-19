@@ -897,7 +897,7 @@ export const TransactionHistory: React.FC = () => {
                               {item.unitType === 'carton' ? 'کارتۆن' : 'دانە'}
                             </span>
                             {item.unitType === 'carton' && (
-                              <span>({item.quantityInUnits} دانە)</span>
+                              <span>({formatNumber(item.quantityInUnits)} دانە)</span>
                             )}
                           </div>
                         </div>

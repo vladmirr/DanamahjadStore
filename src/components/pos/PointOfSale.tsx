@@ -20,7 +20,7 @@ import {
   X,
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatIQD, formatUSD, formatCurrency, formatNumber } from '../../utils/formatters';
+import { formatIQD, formatUSD, formatCurrency, formatNumber, roundPrecision } from '../../utils/formatters';
 import { Product, Currency } from '../../types';
 
 interface CartLine {
@@ -199,7 +199,7 @@ export const PointOfSale: React.FC = () => {
       selectedUnitType === 'carton' ? qty * piecesPerCarton : qty;
 
     if (requiredUnits > currentProduct.totalUnits) {
-      alert(`ببورە! لە کۆگادا تەنها ${currentProduct.totalUnits} دانە بەردەستە.`);
+      alert(`ببورە! لە کۆگادا تەنها ${formatNumber(currentProduct.totalUnits)} دانە بەردەستە.`);
       return;
     }
 
@@ -263,7 +263,7 @@ export const PointOfSale: React.FC = () => {
       item.unitType === 'carton' ? newQty * (prod?.unitsPerCarton || 1) : newQty;
 
     if (prod && requiredUnits > prod.totalUnits) {
-      alert(`تەنها ${prod.totalUnits} دانە لەم کاڵایە لە کۆگادا بەردەستە.`);
+      alert(`تەنها ${formatNumber(prod.totalUnits)} دانە لەم کاڵایە لە کۆگادا بەردەستە.`);
       return;
     }
 
@@ -606,7 +606,7 @@ export const PointOfSale: React.FC = () => {
                                     <>
                                       <span className="text-slate-600">•</span>
                                       <span className="text-slate-500">
-                                        {p.unitsPerCarton} دانە / کارتۆن
+                                        {formatNumber(p.unitsPerCarton)} دانە / کارتۆن
                                       </span>
                                     </>
                                   )}
@@ -655,7 +655,7 @@ export const PointOfSale: React.FC = () => {
                   <div className="text-slate-300">
                     <span className="font-semibold text-white">{currentProduct.name}</span>
                     <span className="text-[11px] text-slate-500 block">
-                      هەر کارتۆنێک {currentProduct.unitsPerCarton} دانەیە
+                      هەر کارتۆنێک {formatNumber(currentProduct.unitsPerCarton)} دانەیە
                     </span>
                   </div>
                   <div className="text-left font-numeric">
@@ -951,10 +951,10 @@ export const PointOfSale: React.FC = () => {
                           {item.productName}
                         </p>
                         <p className="text-[11px] text-slate-400 font-numeric">
-                          {item.quantity} {item.unitType === 'carton' ? 'کارتۆن' : 'دانە'}
+                          {formatNumber(item.quantity)} {item.unitType === 'carton' ? 'کارتۆن' : 'دانە'}
                           {item.unitType === 'carton' && (
                             <span className="text-[10px] text-slate-500 mr-1">
-                              ({item.quantity * (item.unitsPerCarton || 1)} دانە)
+                              ({formatNumber(roundPrecision(item.quantity * (item.unitsPerCarton || 1), 2))} دانە)
                             </span>
                           )} × {formatCurrency(item.unitPrice, saleCurrency)}
                         </p>
@@ -971,7 +971,7 @@ export const PointOfSale: React.FC = () => {
                             <Minus className="w-3 h-3" />
                           </button>
                           <span className="w-6 text-center font-bold text-white font-numeric text-xs">
-                            {item.quantity}
+                            {formatNumber(item.quantity)}
                           </span>
                           <button
                             type="button"
