@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
-import { motion } from 'framer-motion';
-import { Printer, X, FileText } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Printer, X, FileText, Receipt, ChevronDown } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatIQD, formatUSD, formatCurrency, formatShortDate } from '../../utils/formatters';
 import { Currency } from '../../types';
@@ -8,6 +8,21 @@ import { Currency } from '../../types';
 export const StatementModal: React.FC = () => {
   const { viewingStatementCustomer, setViewingStatementCustomer, sales, payments, customers } =
     useApp();
+
+  // Single toggle state for hiding/showing ledger statement table (Default: hidden)
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Automatically reset to collapsed when customer statement opens or changes
+  useEffect(() => {
+    setIsExpanded(false);
+  }, [viewingStatementCustomer]);
+
+  // Expand automatically whenever browser print is triggered (Ctrl+P or button)
+  useEffect(() => {
+    const handleBeforePrint = () => setIsExpanded(true);
+    window.addEventListener('beforeprint', handleBeforePrint);
+    return () => window.removeEventListener('beforeprint', handleBeforePrint);
+  }, []);
 
   if (!viewingStatementCustomer) return null;
 
@@ -68,6 +83,96 @@ export const StatementModal: React.FC = () => {
     });
   }, [sales, payments, viewingStatementCustomer]);
 
+  const handlePrint = () => {
+    setIsExpanded(true);
+    setTimeout(() => {
+      window.print();
+    }, 80);
+  };
+
+  // Render the statement table and signature footer
+  const renderLedgerTableAndFooter = () => (
+    <>
+      {/* Timeline Table */}
+      <div className="overflow-x-auto -mx-1 sm:mx-0 rounded-xl border border-slate-800/80 bg-slate-950/40 p-1">
+        <table className="w-full min-w-[500px] sm:min-w-full text-right text-xs">
+          <thead>
+            <tr className="border-b border-slate-700 print:border-black text-slate-300 print:text-black font-semibold">
+              <th className="pb-2.5 px-1.5">بەروار</th>
+              <th className="pb-2.5 px-1.5">جۆری مامەڵە</th>
+              <th className="pb-2.5 px-1.5">دراو</th>
+              <th className="pb-2.5 px-1.5">ڕوونکردنەوە</th>
+              <th className="pb-2.5 px-1.5">کڕین / قەرز (+)</th>
+              <th className="pb-2.5 px-1.5">دراو / قیست (-)</th>
+              <th className="pb-2.5 px-1.5 text-left">قەرزی ماوە</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-800 print:divide-slate-200">
+            {timeline.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="py-8 text-center text-slate-500">
+                  هیچ تۆمارێکی دارایی نییە بۆ ئەم کڕیارە!
+                </td>
+              </tr>
+            ) : (
+              timeline.map((entry, idx) => (
+                <tr key={idx} className="text-slate-200 print:text-black hover:bg-slate-900/40 transition-colors">
+                  <td className="py-2.5 px-1.5 text-slate-400 print:text-slate-700 text-[11px]" dir="ltr">
+                    {formatShortDate(entry.date)}
+                  </td>
+                  <td className="py-2.5 px-1.5">
+                    <span
+                      className={`px-2 py-0.5 rounded text-[10px] font-medium font-mono ${
+                        entry.type === 'sale'
+                          ? 'bg-emerald-500/10 text-emerald-400 print:border print:border-black print:text-black'
+                          : 'bg-cyan-500/10 text-cyan-400 print:border print:border-black print:text-black'
+                      }`}
+                    >
+                      {entry.number}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-1.5">
+                    <span
+                      className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                        entry.currency === 'USD'
+                          ? 'bg-emerald-500/15 text-emerald-400'
+                          : 'bg-amber-500/15 text-amber-400'
+                      } print:border print:border-black print:text-black`}
+                    >
+                      {entry.currency === 'USD' ? '$ دۆلار' : 'د.ع'}
+                    </span>
+                  </td>
+                  <td className="py-2.5 px-1.5 max-w-xs truncate text-[11px] text-slate-300 print:text-black">
+                    {entry.description}
+                  </td>
+                  <td className="py-2.5 px-1.5 font-numeric text-white print:text-black font-medium">
+                    {entry.debit > 0 ? formatCurrency(entry.debit, entry.currency) : '—'}
+                  </td>
+                  <td className="py-2.5 px-1.5 font-numeric text-emerald-400 print:text-black font-medium">
+                    {entry.credit > 0 ? formatCurrency(entry.credit, entry.currency) : '—'}
+                  </td>
+                  <td className="py-2.5 px-1.5 text-left font-bold font-numeric text-amber-400 print:text-black">
+                    {formatCurrency(entry.runningBalance, entry.currency)}
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Footer Signatures */}
+      <div className="pt-4 sm:pt-6 border-t border-slate-800 print:border-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-400 print:text-slate-700">
+        <div>
+          <span>مۆری کۆگا و ژمێریاری: ____________________</span>
+        </div>
+        <div>
+          <span>ئیمزای کڕیار: ____________________</span>
+        </div>
+      </div>
+    </>
+  );
+
   return (
     <div className="fixed inset-0 z-50 flex items-start sm:items-center justify-center p-2.5 sm:p-4 bg-black/85 backdrop-blur-sm overflow-y-auto">
       <motion.div
@@ -76,7 +181,7 @@ export const StatementModal: React.FC = () => {
         exit={{ opacity: 0, scale: 0.95, y: 10 }}
         className="w-full max-w-3xl my-2 sm:my-8 bg-[#0c0e14] border border-slate-800 rounded-2xl shadow-2xl overflow-hidden print-card relative"
       >
-        {/* Controls */}
+        {/* Controls (No Print) */}
         <div className="p-3 sm:p-4 bg-slate-950/90 border-b border-slate-800 flex items-center justify-between gap-2 no-print">
           <div className="flex items-center gap-1.5 sm:gap-2 text-cyan-400 text-xs font-semibold shrink-0">
             <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-cyan-400 shrink-0" />
@@ -85,7 +190,7 @@ export const StatementModal: React.FC = () => {
 
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
-              onClick={() => window.print()}
+              onClick={handlePrint}
               className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold btn-gold cursor-pointer"
             >
               <Printer className="w-3.5 h-3.5" />
@@ -189,81 +294,89 @@ export const StatementModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Timeline Table */}
-          <div className="overflow-x-auto -mx-1 sm:mx-0">
-            <table className="w-full min-w-[500px] sm:min-w-full text-right text-xs">
-              <thead>
-                <tr className="border-b border-slate-700 print:border-black text-slate-300 print:text-black font-semibold">
-                  <th className="pb-2.5 px-1.5">بەروار</th>
-                  <th className="pb-2.5 px-1.5">جۆری مامەڵە</th>
-                  <th className="pb-2.5 px-1.5">دراو</th>
-                  <th className="pb-2.5 px-1.5">ڕوونکردنەوە</th>
-                  <th className="pb-2.5 px-1.5">کڕین / قەرز (+)</th>
-                  <th className="pb-2.5 px-1.5">دراو / قیست (-)</th>
-                  <th className="pb-2.5 px-1.5 text-left">قەرزی ماوە</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-800 print:divide-slate-200">
-                {timeline.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">
-                      هیچ تۆمارێکی دارایی نییە بۆ ئەم کڕیارە!
-                    </td>
-                  </tr>
-                ) : (
-                  timeline.map((entry, idx) => (
-                    <tr key={idx} className="text-slate-200 print:text-black">
-                      <td className="py-2.5 px-1.5 text-slate-400 print:text-slate-700 text-[11px]" dir="ltr">
-                        {formatShortDate(entry.date)}
-                      </td>
-                      <td className="py-2.5 px-1.5">
-                        <span
-                          className={`px-2 py-0.5 rounded text-[10px] font-medium font-mono ${
-                            entry.type === 'sale'
-                              ? 'bg-emerald-500/10 text-emerald-400 print:border print:border-black print:text-black'
-                              : 'bg-cyan-500/10 text-cyan-400 print:border print:border-black print:text-black'
-                          }`}
-                        >
-                          {entry.number}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-1.5">
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                          entry.currency === 'USD'
-                            ? 'bg-emerald-500/15 text-emerald-400'
-                            : 'bg-amber-500/15 text-amber-400'
-                        } print:border print:border-black print:text-black`}>
-                          {entry.currency === 'USD' ? '$ دۆلار' : 'د.ع'}
-                        </span>
-                      </td>
-                      <td className="py-2.5 px-1.5 max-w-xs truncate text-[11px] text-slate-300 print:text-black">
-                        {entry.description}
-                      </td>
-                      <td className="py-2.5 px-1.5 font-numeric text-white print:text-black font-medium">
-                        {entry.debit > 0 ? formatCurrency(entry.debit, entry.currency) : '—'}
-                      </td>
-                      <td className="py-2.5 px-1.5 font-numeric text-emerald-400 print:text-black font-medium">
-                        {entry.credit > 0 ? formatCurrency(entry.credit, entry.currency) : '—'}
-                      </td>
-                      <td className="py-2.5 px-1.5 text-left font-bold font-numeric text-amber-400 print:text-black">
-                        {formatCurrency(entry.runningBalance, entry.currency)}
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
+          {/* Single Sleek FinTech Toggle Button for Statement Ledger (Hidden in Print) */}
+          <div className="no-print pt-1">
+            <motion.button
+              type="button"
+              whileHover={{ scale: 1.01 }}
+              whileTap={{ scale: 0.99 }}
+              onClick={() => setIsExpanded((prev) => !prev)}
+              className={`w-full py-3 px-4 rounded-xl border statement-toggle-btn transition-all duration-200 flex items-center justify-between group cursor-pointer shadow-md select-none ${
+                isExpanded
+                  ? 'bg-slate-900/95 border-cyan-500/50 shadow-cyan-950/30'
+                  : 'bg-slate-950/80 hover:bg-slate-900 border-slate-800 hover:border-slate-700 shadow-black/40'
+              }`}
+              aria-expanded={isExpanded}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className={`p-2.5 rounded-xl transition-all duration-200 shrink-0 ${
+                    isExpanded
+                      ? 'bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 shadow-sm shadow-cyan-500/20'
+                      : 'bg-slate-900 text-slate-400 border border-slate-800 group-hover:text-cyan-400 group-hover:border-cyan-500/30 group-hover:bg-cyan-500/10'
+                  }`}
+                >
+                  <Receipt className="w-4 h-4" />
+                </div>
+                <div className="text-right">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-xs sm:text-sm text-white block">
+                      {isExpanded ? 'شاردنەوەی کەشفی حیساب' : 'بینینی هەموو مامەڵەکان (کەشفی حیساب)'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    {isExpanded
+                      ? 'داخستنی خشتە و کورتکردنەوەی بینینی پڕۆفایل'
+                      : 'پیشاندانی سەرجەم پسوولە و وەسڵەکانی ئەم کڕیارە'}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2.5">
+                <span
+                  className={`px-2.5 py-1 rounded-lg text-xs font-bold font-numeric border transition-colors ${
+                    isExpanded
+                      ? 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30'
+                      : 'bg-slate-900 text-slate-300 border-slate-800 group-hover:border-slate-700'
+                  }`}
+                >
+                  {timeline.length} مامەڵە
+                </span>
+                <div
+                  className={`w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-300 ${
+                    isExpanded
+                      ? 'bg-cyan-500/20 text-cyan-300 rotate-180'
+                      : 'bg-slate-900 text-slate-400 group-hover:text-white'
+                  }`}
+                >
+                  <ChevronDown className="w-4 h-4" />
+                </div>
+              </div>
+            </motion.button>
           </div>
 
-          {/* Footer */}
-          <div className="pt-4 sm:pt-6 border-t border-slate-800 print:border-slate-300 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-slate-400 print:text-slate-700">
-            <div>
-              <span>مۆری کۆگا و ژمێریاری: ____________________</span>
+          {/* Statement Ledger Container (Table + Signatures) - Smooth Collapse on Screen, Always Visible on Print */}
+          <AnimatePresence initial={false}>
+            {isExpanded && (
+              <motion.div
+                key="statement-table-view"
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+                className="overflow-hidden space-y-4 sm:space-y-6 statement-ledger-content"
+              >
+                {renderLedgerTableAndFooter()}
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Static Print Fallback: Guarantees full table & signatures render on paper even when collapsed on screen */}
+          {!isExpanded && (
+            <div className="hidden print:!block space-y-4 sm:space-y-6 statement-ledger-content">
+              {renderLedgerTableAndFooter()}
             </div>
-            <div>
-              <span>ئیمزای کڕیار: ____________________</span>
-            </div>
-          </div>
+          )}
         </div>
       </motion.div>
     </div>
