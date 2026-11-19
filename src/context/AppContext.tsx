@@ -252,7 +252,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const costPricePerUnit = Number(data.costPricePerUnit) || 0;
           const minStockThreshold = Number(data.minStockThreshold) || 5;
           const currency: Currency = data.currency === 'USD' ? 'USD' : 'IQD';
-          const stockHistory = Array.isArray(data.stockHistory) ? data.stockHistory : [];
+          const rawHistory = Array.isArray(data.stockHistory) 
+            ? data.stockHistory 
+            : (Array.isArray(data.restockHistory) ? data.restockHistory : []);
+          const lastRestock = data.lastRestock || (rawHistory.length > 0 ? {
+            date: rawHistory[rawHistory.length - 1].date,
+            addedCartons: rawHistory[rawHistory.length - 1].addedCartons,
+            addedUnits: rawHistory[rawHistory.length - 1].addedQty,
+            previousUnitPrice: rawHistory[rawHistory.length - 1].previousCostPrice || 0,
+            newPurchaseUnitPrice: rawHistory[rawHistory.length - 1].unitPrice,
+            updatedAveragePrice: rawHistory[rawHistory.length - 1].newCostPrice || costPricePerUnit,
+            addedTotalCost: rawHistory[rawHistory.length - 1].totalAddedCost,
+            currency,
+            notes: rawHistory[rawHistory.length - 1].notes,
+          } : undefined);
 
           return {
             id: d.id,
@@ -269,7 +282,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             costPricePerUnit,
             minStockThreshold,
             currency,
-            stockHistory,
+            stockHistory: rawHistory,
+            restockHistory: rawHistory,
+            lastRestock,
           } as Item;
         });
         setInventory(items);
@@ -526,6 +541,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes: restockData.notes?.trim() || 'زیادکردنی بڕی نوێ (کڕینەوە)',
     };
 
+    const lastRestock = {
+      date: historyEntry.date,
+      addedCartons: calculatedAddedCartons,
+      addedUnits: addedQuantity,
+      previousUnitPrice: existingUnitBuyPrice,
+      newPurchaseUnitPrice: newUnitBuyPrice,
+      updatedAveragePrice: updatedUnitBuyPrice,
+      addedTotalCost: newPurchaseCapital,
+      currency,
+      notes: restockData.notes?.trim() || '',
+    };
+
     const updatePayload: Record<string, any> = {
       totalUnits: updatedQuantity,
       totalPieces: updatedQuantity,
@@ -533,7 +560,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       cartonQty: updatedCartons,
       costPricePerUnit: updatedUnitBuyPrice,
       updatedAt: new Date().toISOString(),
+      lastRestock,
       stockHistory: arrayUnion(historyEntry),
+      restockHistory: arrayUnion(historyEntry),
     };
 
     if (restockData.newSellingPrice !== undefined && Number(restockData.newSellingPrice) > 0) {

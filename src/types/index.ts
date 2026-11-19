@@ -14,6 +14,18 @@ export interface StockHistoryEntry {
   notes?: string;
 }
 
+export interface LastRestockInfo {
+  date: string;
+  addedCartons?: number;
+  addedUnits: number;
+  previousUnitPrice: number;
+  newPurchaseUnitPrice: number;
+  updatedAveragePrice: number;
+  addedTotalCost: number;
+  currency: Currency;
+  notes?: string;
+}
+
 export interface Product {
   id: string;
   name: string; // ناوی کاڵا
@@ -27,6 +39,8 @@ export interface Product {
   minStockThreshold: number; // کەمترین بڕی ئاگادارکردنەوە
   currency?: Currency; // 'IQD' | 'USD' (default 'IQD')
   stockHistory?: StockHistoryEntry[]; // مێژووی کڕینەوە و زیادکردنی بڕ
+  restockHistory?: StockHistoryEntry[];
+  lastRestock?: LastRestockInfo; // وردەکاری دواین کڕینەوە
   createdAt: string;
   updatedAt: string;
 }
