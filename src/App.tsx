@@ -14,6 +14,7 @@ import { BackupManager } from './components/backup/BackupManager';
 import { PopcornManagement } from './components/popcorn/PopcornManagement';
 import { InvoiceModal } from './components/modals/InvoiceModal';
 import { StatementModal } from './components/modals/StatementModal';
+import { ErrorBoundary } from './components/common/ErrorBoundary';
 
 const MainLayout: React.FC = () => {
   const { adminUser, activeTab, setIsSidebarOpen } = useApp();
@@ -95,16 +96,20 @@ const MainLayout: React.FC = () => {
 
       {/* Global Modals */}
       <InvoiceModal />
-      <StatementModal />
+      <ErrorBoundary fallbackTitle="هەڵەیەک لە کردنەوەی کەشف حساب ڕوویدا">
+        <StatementModal />
+      </ErrorBoundary>
     </div>
   );
 };
 
 export function App() {
   return (
-    <AppProvider>
-      <MainLayout />
-    </AppProvider>
+    <ErrorBoundary fallbackTitle="سیستەم تووشی هەڵەی نەخوازراو بوو">
+      <AppProvider>
+        <MainLayout />
+      </AppProvider>
+    </ErrorBoundary>
   );
 }
 

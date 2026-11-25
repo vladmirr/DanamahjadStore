@@ -383,7 +383,8 @@ export const OverviewDashboard: React.FC<OverviewDashboardProps> = () => {
                   </div>
 
                   <button
-                    onClick={() => setViewingStatementCustomer(cust.name)}
+                    type="button"
+                    onClick={() => setViewingStatementCustomer(cust.name?.trim() || '')}
                     className="px-2.5 py-1.5 rounded-lg bg-white/[0.06] hover:bg-white/12 text-white border border-white/10 text-xs font-medium cursor-pointer transition-colors"
                   >
                     کەشف حساب

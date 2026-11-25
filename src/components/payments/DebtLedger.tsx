@@ -112,6 +112,24 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
 
         <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 self-start sm:self-auto w-full sm:w-auto">
           <motion.button
+            type="button"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() => {
+              const defaultCust =
+                customers.find((c) => c.outstandingDebt > 0 || c.totalPurchases > 0)?.name ||
+                customers[0]?.name ||
+                '';
+              setViewingStatementCustomer(defaultCust);
+            }}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-3.5 py-2.5 rounded-xl font-medium text-xs bg-slate-900 hover:bg-slate-800 text-cyan-400 border border-cyan-500/30 cursor-pointer"
+            title="بینینی کەشف حسابی کڕیاران"
+          >
+            <FileText className="w-4 h-4 text-cyan-400" />
+            <span>کەشف حساب</span>
+          </motion.button>
+
+          <motion.button
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => exportExcel()}
@@ -326,7 +344,8 @@ export const DebtLedger: React.FC<DebtLedgerProps> = ({
                             </button>
                           )}
                           <button
-                            onClick={() => setViewingStatementCustomer(cust.name)}
+                            type="button"
+                            onClick={() => setViewingStatementCustomer(cust.name?.trim() || '')}
                             className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-cyan-300 border border-slate-700 text-xs font-medium flex items-center gap-1 cursor-pointer"
                           >
                             <FileText className="w-3 h-3" />
