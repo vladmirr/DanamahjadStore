@@ -134,11 +134,6 @@ export const StatementModal: React.FC = () => {
               <p className="font-bold text-white print:text-black text-sm mt-0.5 truncate">
                 {targetCustomerName}
               </p>
-              {customerObj?.phone && (
-                <p className="text-[11px] text-slate-500 font-mono mt-0.5" dir="ltr">
-                  {customerObj.phone}
-                </p>
-              )}
             </div>
 
             <div>
